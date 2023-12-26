@@ -181,7 +181,7 @@ DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
 DBBACKUP_CLEANUP_KEEP = True
 DBBACKUP_CLEANUP_KEEP_NUMBER = 3  # Số lượng bản sao lưu giữ lại
 DBBACKUP_STORAGE_OPTIONS = {
-    'location': '/root/stockwarehouse/backup/', 
+    'location': '/root/web2/backup/', 
 }
 
 
@@ -198,8 +198,5 @@ CRONJOBS = [
     ('30 4 * * 1-5', 'stockwarehouse.schedule.schedule_mid_trading_date'),# chạy lúc 11h30 sáng
     ('00 7 * * 1-5', 'infotrading.models.get_info_stock_price_filter'),# chạy lúc 14h00 trưa
     ('45 7 * * 1-5', 'infotrading.models.get_info_stock_price_filter'),# chạy lúc 14h45 trưa
-    # ('40 8 * * 1-5', 'ecotrading.schedule.schedule_after_trading_date'), # Chạy lúc 15:40 từ thứ 2 đến thứ 6
-    # ('30 15 * * 1-5', 'portfolio.models.get_all_info_stock_price'), # Chạy lúc 21h từ thứ 2 đến thứ 6
-
-
+    
 ]
