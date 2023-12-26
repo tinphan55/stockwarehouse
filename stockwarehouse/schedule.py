@@ -2,6 +2,7 @@ from operation.models import *
 # from infotrading.models import get_all_info_stock_price
 from stockwarehouse.backup import run_database_backup
 from datetime import datetime
+from infotrading import *
 
 
 def schedule_morning():
@@ -79,3 +80,7 @@ def schedule_mid_trading_date():
 #     else:
 #         pass
 
+def get_info_stock_price_filter():
+    stock_list = Portfolio.objects.values_list('stock', flat=True).distinct()
+    stock_list_python = list(stock_list)
+    get_list_stock_price(stock_list_python)
