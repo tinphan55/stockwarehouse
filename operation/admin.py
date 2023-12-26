@@ -10,8 +10,8 @@ class AccountAdmin(admin.ModelAdmin):
     # list_display = ['name','id','formatted_cash_balance','interest_cash_balance','market_value','nav','margin_ratio','status']
     # readonly_fields=['cash_balance','market_value','nav','margin_ratio','excess_equity','user_created','initial_margin_requirement','net_cash_flow','net_trading_value','status']
     list_display = ['name', 'id', 'formatted_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','formatted_excess_equity', 'status']
-    readonly_fields = ['cash_balance', 'market_value', 'nav', 'margin_ratio', 'excess_equity', 'user_created', 'initial_margin_requirement', 'net_cash_flow', 'net_trading_value', 'status','cash_t2','cash_t1','excess_equity', 'interest_cash_balance' , 'total_loan_interest']
-    search_fields = ['name',]
+    readonly_fields = ['cash_balance', 'market_value', 'nav', 'margin_ratio', 'excess_equity', 'user_created', 'initial_margin_requirement', 'net_cash_flow', 'net_trading_value', 'status','cash_t2','cash_t1','excess_equity', 'interest_cash_balance' , 'total_loan_interest', 'user_modified']
+    search_fields = ['id','name']
     def save_model(self, request, obj, form, change):
         # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
         if not change:  # Kiểm tra xem có phải là tạo mới hay không
@@ -58,6 +58,7 @@ class StockListMarginAdmin(admin.ModelAdmin):
     model= StockListMargin
     list_display = ['stock','initial_margin_requirement','ranking','exchanges','created_at','modified_at','user_created']
     search_fields = ['stock',]
+    readonly_fields = ['modified_at','user_created']
     def save_model(self, request, obj, form, change):
         # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
         if not change:  # Kiểm tra xem có phải là tạo mới hay không
@@ -74,7 +75,7 @@ class TransactionAdmin(admin.ModelAdmin):
     list_display_links = ['stock',]
     list_display = ['account','date','stock','position','formatted_price','formatted_qty','formatted_net_total_value','created_at','user_created','formatted_transaction_fee','formatted_tax']
     readonly_fields = ['user_created','user_modified','transaction_fee','tax','total_value','net_total_value']
-    search_fields = ['account__name','stock__stock']
+    search_fields = ['account__id','account__name','stock__stock']
     def save_model(self, request, obj, form, change):
         # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
         if not change:  # Kiểm tra xem có phải là tạo mới hay không
@@ -114,8 +115,8 @@ admin.site.register(Transaction,TransactionAdmin)
 class PortfolioAdmin(admin.ModelAdmin):
     model = Portfolio
     list_display = ['account', 'stock', 'formatted_market_price', 'formatted_avg_price', 'formatted_on_hold', 'formatted_receiving_t1', 'formatted_receiving_t2', 'formatted_profit', 'percent_profit', 'formatted_sum_stock']
-    readonly_fields = ['account','stock','market_price','avg_price','on_hold','receiving_t1','receiving_t2','profit','percent_profit', 'sum_stock']
-    search_fields = ['stock','account__name']
+    readonly_fields = ['account','stock','market_price','avg_price','on_hold','receiving_t1','receiving_t2','profit','percent_profit', 'sum_stock', 'market_value']
+    search_fields = ['stock','account__id','account__name']
     def get_queryset(self, request):
         # Chỉ trả về các bản ghi có sum_stock > 0
         return super().get_queryset(request).filter(sum_stock__gt=0)
@@ -159,7 +160,7 @@ admin.site.register(Portfolio,PortfolioAdmin)
 class ExpenseStatementAdmin(admin.ModelAdmin):
     model = ExpenseStatement
     list_display = ['account', 'date', 'type', 'formatted_amount', 'description']
-    search_fields = ['account__name']
+    search_fields = ['account__id','account__name']
 
     def formatted_amount(self, obj):
         return '{:,.0f}'.format(obj.amount)
@@ -172,7 +173,7 @@ class CashTransferAdmin(admin.ModelAdmin):
     model = CashTransfer
     list_display = ['account', 'date', 'formatted_amount', 'user_created', 'user_modified', 'created_at']
     readonly_fields = ['user_created', 'user_modified']
-    search_fields = ['account__name']
+    search_fields = ['account__id','account__name']
 
     def formatted_amount(self, obj):
         return '{:,.0f}'.format(obj.amount)
