@@ -2,7 +2,7 @@ from operation.models import *
 # from infotrading.models import get_all_info_stock_price
 from stockwarehouse.backup import run_database_backup
 from datetime import datetime
-from infotrading import *
+from infotrading.models import get_list_stock_price
 
 
 def schedule_morning():
