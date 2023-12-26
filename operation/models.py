@@ -63,10 +63,11 @@ class Account (models.Model):
     
     def save(self, *args, **kwargs):
         self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_loan_interest
-        stock_mapping = {obj.stock: obj.initial_margin_requirement  for obj in StockListMargin.objects.all()}
+        # stock_mapping = {obj.stock: obj.initial_margin_requirement  for obj in StockListMargin.objects.all()}
         # port = Portfolio.objects.filter(account =self.pk)
         sum_initial_margin = 0
         self.margin_ratio = 0
+        self.market_value = Portfolio.objects.filter(account=self.pk).aggregate(Sum('market_value'))['market_value__sum'] or 0
         self.nav = self.market_value + self.cash_balance 
         self.initial_margin_requirement = sum_initial_margin
         self.excess_equity = self.nav - self.initial_margin_requirement
@@ -441,13 +442,10 @@ def update_market_price_port(sender, instance, created, **kwargs):
     port = Portfolio.objects.filter(sum_stock__gt=0, stock =instance.ticker)
     if port:
         for item in port:
-            old_value = item.market_value
             new_price = instance.close*1000
             item.market_price = new_price*item.sum_stock
             item.save()
             account = Account.objects.get(pk =item.pk)
-            change_market_value = item.market_price - old_value
-            account.market_value += change_market_value
             account.save()
 
 
@@ -483,7 +481,8 @@ def created_transaction(instance, portfolio, account):
                 amount = instance.tax*-1,
                 description = instance.pk
                 )
-    account.market_value = Portfolio.objects.filter(account__pk=account.pk).aggregate(Sum('market_value'))['market_value__sum'] or 0
+    
+    
     
     
                 
@@ -531,12 +530,12 @@ def update_account_transaction(account, transaction_items):
     account.cash_t1 = cash_t1
     account.interest_cash_balance = cash_t0 
     account.net_trading_value = sum(item.net_total_value for item in transaction_items)
-    account.market_value = Portfolio.objects.filter(account__pk=account.pk).aggregate(Sum('market_value'))['market_value__sum'] or 0
+    
 
 
 
 
-def update_expense_transaction(instance, description_type):
+def update_or_created_expense_transaction(instance, description_type):
     ExpenseStatement.objects.update_or_create(
         description=instance.pk,
         type=description_type,
@@ -565,9 +564,9 @@ def save_field_account(sender, instance, **kwargs):
         transaction_items = Transaction.objects.filter(account=account)
         if not created:
             # sửa sao kê phí và thuế
-            update_expense_transaction(instance,'transaction_fee' )
+            update_or_created_expense_transaction(instance,'transaction_fee' )
             if instance.position =='sell':
-                update_expense_transaction(instance,'tax' )
+                update_or_created_expense_transaction(instance,'tax' )
             # sửa sao kê lãi
             # sửa danh mục
             update_portfolio_transaction(instance, portfolio, account)     
@@ -577,9 +576,11 @@ def save_field_account(sender, instance, **kwargs):
             
         else:
             created_transaction(instance, portfolio, account)
+            if portfolio:
+                portfolio.save()
             account.save()
-        if portfolio:
-            portfolio.save()
+            update_or_created_expense_transaction(instance,'transaction_fee' )
+            
             
         
     
