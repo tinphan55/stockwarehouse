@@ -24,7 +24,7 @@ class Account (models.Model):
     description = models.TextField(max_length=255, blank=True, verbose_name= 'Mô tả')
     referrer = models.CharField(max_length=50,blank=True, null=True, verbose_name= 'Người giới thiệu' )
     interest_fee = models.FloatField(default=0.15,verbose_name= 'Lãi suất')
-    transaction_fee = models.FloatField(default=0.0015, verbose_name= 'Phí giao dịch')
+    transaction_fee = models.FloatField(default=0.0016, verbose_name= 'Phí giao dịch')
     tax = models.FloatField(default=0.001, verbose_name= 'Thuế')
     # bot = models.ForeignKey(BotTelegram,on_delete=models.CASCADE, verbose_name= 'Bot' )
     net_cash_flow= models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng')
@@ -63,9 +63,13 @@ class Account (models.Model):
     
     def save(self, *args, **kwargs):
         self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_loan_interest
-        # stock_mapping = {obj.stock: obj.initial_margin_requirement  for obj in StockListMargin.objects.all()}
-        # port = Portfolio.objects.filter(account =self.pk)
+        stock_mapping = {obj.stock: obj.initial_margin_requirement  for obj in StockListMargin.objects.all()}
+        port = Portfolio.objects.filter(account =self.pk)
         sum_initial_margin = 0
+        if port:
+            for item in port:
+                initial_margin = stock_mapping.get(item.stock, 0)*item.sum_stock*item.avg_price/100
+                sum_initial_margin +=initial_margin
         self.margin_ratio = 0
         self.market_value = Portfolio.objects.filter(account=self.pk).aggregate(Sum('market_value'))['market_value__sum'] or 0
         self.nav = self.market_value + self.cash_balance 
