@@ -330,7 +330,7 @@ def update_market_price_port(sender, instance, created, **kwargs):
             new_price = instance.close*1000
             item.market_price = new_price*item.sum_stock
             item.save()
-            account = Account.objects.get(pk =item.pk)
+            account = Account.objects.get(pk =item.account.pk)
             account.save()
 
 

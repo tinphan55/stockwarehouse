@@ -62,24 +62,25 @@ def schedule_mid_trading_date():
     else:
         pass
 
-# def schedule_after_trading_date():
-#     today = datetime.now().date()
-#     not_trading_dates = DateNotTrading.objects.filter(date=today)
-    
-#     if not not_trading_dates:
-    
-#         # try:
-#         #     auto_news_daily()
-#         # except Exception as e_auto_news:
-#         #     print(f"An error occurred while running auto_news_daily: {e_auto_news}")
-#         # try:
-#         #     filter_stock_daily()
-#         # except Exception as e_filter_stock:
-#         #     print(f"An error occurred while running filter_stock_daily: {e_filter_stock}")
-#     else:
-#         pass
-
 def get_info_stock_price_filter():
     stock_list = Portfolio.objects.values_list('stock', flat=True).distinct()
     stock_list_python = list(stock_list)
     get_list_stock_price(stock_list_python)
+
+def schedule_after_trading_date():
+    today = datetime.now().date()
+    not_trading_dates = DateNotTrading.objects.filter(date=today)
+    
+    if not not_trading_dates:
+    
+        try:
+            get_info_stock_price_filter()
+        except Exception as e_auto_news:
+            print(f"An error occurred while running auto_news_daily: {e_auto_news}")
+        # try:
+        #     filter_stock_daily()
+        # except Exception as e_filter_stock:
+        #     print(f"An error occurred while running filter_stock_daily: {e_filter_stock}")
+    else:
+        pass
+

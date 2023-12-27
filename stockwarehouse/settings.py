@@ -197,6 +197,6 @@ CRONJOBS = [
     ('30 2 * * 1-5', 'stockwarehouse.schedule.get_info_stock_price_filter'),# chạy lúc 9h30 sáng
     ('30 4 * * 1-5', 'stockwarehouse.schedule.schedule_mid_trading_date'),# chạy lúc 11h30 sáng
     ('00 7 * * 1-5', 'stockwarehouse.schedule.get_info_stock_price_filter'),# chạy lúc 14h00 trưa
-    ('45 7 * * 1-5', 'stockwarehouse.schedule.get_info_stock_price_filter'),# chạy lúc 14h45 trưa
+    ('00 8 * * 1-5', 'stockwarehouse.schedule.schedule_after_trading_date()'),# chạy lúc 14h45 trưa
     
 ]
