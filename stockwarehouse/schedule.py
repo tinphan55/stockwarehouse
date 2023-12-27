@@ -8,7 +8,6 @@ from infotrading.models import get_list_stock_price
 def schedule_morning():
     today = datetime.now().date()
     not_trading_dates = DateNotTrading.objects.filter(date=today)
-
     # try:
     #     # Uncomment nếu bạn có một hàm check_update_analysis_and_send_notifications
     #     # check_update_analysis_and_send_notifications()
@@ -22,20 +21,20 @@ def schedule_morning():
         print(f"An error occurred while running morning_check: {e_morning_check}")
 
     if not not_trading_dates:
-        try:
-            # Thực hiện công việc cần làm vào 7h30
-            # Ví dụ: Gửi email
-            # send_mail(
-            #     'Morning Check',
-            #     'Nội dung kiểm tra buổi sáng...',
-            #     'from@example.com',
-            #     ['to@example.com'],
-            #     fail_silently=False,
-            # )
+        # try:
+        #     # Thực hiện công việc cần làm vào 7h30
+        #     # Ví dụ: Gửi email
+        #     # send_mail(
+        #     #     'Morning Check',
+        #     #     'Nội dung kiểm tra buổi sáng...',
+        #     #     'from@example.com',
+        #     #     ['to@example.com'],
+        #     #     fail_silently=False,
+        #     # )
 
-            check_dividend()
-        except Exception as e_check_dividend:
-            print(f"An error occurred while running check_dividend: {e_check_dividend}")
+        #     check_dividend()
+        # except Exception as e_check_dividend:
+        #     print(f"An error occurred while running check_dividend: {e_check_dividend}")
         
         try:
             run_database_backup()

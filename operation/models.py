@@ -442,7 +442,7 @@ def save_field_account(sender, instance, **kwargs):
             cash_items = CashTransfer.objects.filter(account=account)
             account.net_cash_flow = sum(item.amount for item in cash_items)
         else:
-            account.net_cash_flow += + instance.amount
+            account.net_cash_flow +=  instance.amount
         account.save()
 
     elif sender == Transaction:
@@ -477,18 +477,18 @@ def save_field_account(sender, instance, **kwargs):
 def save_field_account(sender, instance, **kwargs):
     created = kwargs.get('created', False)
     account = instance.account 
-    if not created:
-            interests = ExpenseStatement.objects.filter(account= account , type ='interest')
-            sum_interest =0
-            for item in interests:
-                sum_interest +=item.amount
-            account.total_loan_interest = sum_interest
+    interests = ExpenseStatement.objects.filter(account= account , type ='interest')
+    if not created and interests :
+        sum_interest =0
+        for item in interests:
+            sum_interest +=item.amount
+        account.total_loan_interest = sum_interest
+        account.save()
                 
 
-    else:
-            account.total_loan_interest+= instance.amount
+    
         
-    account.save()
+    
 
         
 
@@ -514,11 +514,12 @@ def morning_check():
     account = Account.objects.filter(interest_cash_balance__lt=0)
     if account:
         for instance in account:
+            amount = instance.interest_fee * instance.interest_cash_balance/360
             ExpenseStatement.objects.create(
                 account=instance,
                 date=datetime.now().date()-timedelta(days=1),
                 type = 'interest',
-                amount = instance.interest_fee * instance.interest_cash_balance/360,
+                amount = amount,
                 description = instance.pk,
                 interest_cash_balance = instance.interest_cash_balance
                 )
@@ -526,6 +527,7 @@ def morning_check():
             instance.interest_cash_balance += instance.cash_t1
             instance.cash_t1= instance.cash_t2
             instance.cash_t2 =0
+            instance.total_loan_interest += amount
             instance.save()
 
 def atternoon_check():

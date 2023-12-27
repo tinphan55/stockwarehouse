@@ -1,8 +1,13 @@
 from django.contrib import admin
 from .models import *
 from django.contrib.humanize.templatetags.humanize import intcomma
+from django.contrib import messages
+from django.utils import timezone
+from django import forms
+from django.core.exceptions import ValidationError
 
 # Register your models here.
+
 
 
 class AccountAdmin(admin.ModelAdmin):
@@ -18,7 +23,8 @@ class AccountAdmin(admin.ModelAdmin):
             obj.user_created = request.user
         else:
             obj.user_modified = request.user.username
-        obj.save()
+        super().save_model(request, obj, form, change)
+
 
     def formatted_number(self, value):
         # Format number with commas as thousand separators and no decimal places
@@ -65,24 +71,47 @@ class StockListMarginAdmin(admin.ModelAdmin):
             obj.user_created = request.user
         else:
             obj.user_modified = request.user.username
-        obj.save()
+        super().save_model(request, obj, form, change)
+
 
 
 admin.site.register(StockListMargin,StockListMarginAdmin)
 
+
+class TransactionForm(forms.ModelForm):
+    class Meta:
+        model = Transaction
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        change = self.instance.pk is not None  # Kiểm tra xem có phải là sửa đổi không
+
+        today = timezone.now().date()
+
+        # Kiểm tra quyền
+        if change and self.instance.created_at.date() != today:
+            raise ValidationError("Bạn không có quyền sửa đổi các bản ghi được tạo ngày trước đó.")
+
+        return cleaned_data
+    
+    
+
 class TransactionAdmin(admin.ModelAdmin):
-    model= Transaction
+    form = TransactionForm
     list_display_links = ['stock',]
     list_display = ['account','date','stock','position','formatted_price','formatted_qty','formatted_net_total_value','created_at','user_created','formatted_transaction_fee','formatted_tax']
     readonly_fields = ['user_created','user_modified','transaction_fee','tax','total_value','net_total_value']
     search_fields = ['account__id','account__name','stock__stock']
+    
     def save_model(self, request, obj, form, change):
         # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
         if not change:  # Kiểm tra xem có phải là tạo mới hay không
             obj.user_created = request.user
         else:
             obj.user_modified = request.user.username
-        obj.save()
+        super().save_model(request, obj, form, change)
+
 
     def formatted_number(self, value):
         # Format number with commas as thousand separators and no decimal places
@@ -169,8 +198,25 @@ class ExpenseStatementAdmin(admin.ModelAdmin):
 
 admin.site.register(ExpenseStatement, ExpenseStatementAdmin)
 
+class CashTransferForm(forms.ModelForm):
+    class Meta:
+        model = CashTransfer
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        change = self.instance.pk is not None  # Kiểm tra xem có phải là sửa đổi không
+
+        today = timezone.now().date()
+
+        # Kiểm tra quyền
+        if change and self.instance.created_at.date() != today:
+            raise ValidationError("Bạn không có quyền sửa đổi các bản ghi được tạo ngày trước đó.")
+
+        return cleaned_data
+
 class CashTransferAdmin(admin.ModelAdmin):
-    model = CashTransfer
+    form  = CashTransferForm
     list_display = ['account', 'date', 'formatted_amount', 'user_created', 'user_modified', 'created_at']
     readonly_fields = ['user_created', 'user_modified']
     search_fields = ['account__id','account__name']
@@ -181,11 +227,15 @@ class CashTransferAdmin(admin.ModelAdmin):
     formatted_amount.short_description = 'Số tiền'
     
     def save_model(self, request, obj, form, change):
-        # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
         if not change:  # Kiểm tra xem có phải là tạo mới hay không
             obj.user_created = request.user
+         # Check if the record is being edited
         else:
             obj.user_modified = request.user.username
-        obj.save()
+                
+        super().save_model(request, obj, form, change)
+
+        
+
 
 admin.site.register(CashTransfer,CashTransferAdmin)
