@@ -41,7 +41,7 @@ class Account (models.Model):
     cash_t2= models.FloatField(default=0,verbose_name= 'Số dư tiền T2')
     interest_cash_balance= models.FloatField(default=0,verbose_name= 'Số dư tiền tính lãi')
     total_loan_interest= models.FloatField(default=0,verbose_name= 'Tổng lãi vay đã trả')
-    
+    total_pl = models.FloatField(default=0,verbose_name= 'Tổng lời lỗ')
     class Meta:
          verbose_name = 'Tài khoản'
          verbose_name_plural = 'Tài khoản'
@@ -78,8 +78,9 @@ class Account (models.Model):
         self.nav = self.market_value + self.cash_balance 
         self.initial_margin_requirement = sum_initial_margin
         self.excess_equity = self.nav - self.initial_margin_requirement
-        if self.cash_balance <0:
+        if self.market_value !=0:
             self.margin_ratio = abs(round((self.nav/self.market_value)*100,2))
+        self.total_pl = self.nav - self.net_cash_flow
         super(Account, self).save(*args, **kwargs)
     
 

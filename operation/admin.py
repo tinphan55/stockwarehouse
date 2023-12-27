@@ -14,7 +14,7 @@ class AccountAdmin(admin.ModelAdmin):
     model= Account
     # list_display = ['name','id','formatted_cash_balance','interest_cash_balance','market_value','nav','margin_ratio','status']
     # readonly_fields=['cash_balance','market_value','nav','margin_ratio','excess_equity','user_created','initial_margin_requirement','net_cash_flow','net_trading_value','status']
-    list_display = ['name', 'id', 'formatted_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','formatted_excess_equity', 'status']
+    list_display = ['name', 'id', 'formatted_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','formatted_excess_equity','formatted_total_pl', 'status']
     readonly_fields = ['cash_balance', 'market_value', 'nav', 'margin_ratio', 'excess_equity', 'user_created', 'initial_margin_requirement', 'net_cash_flow', 'net_trading_value', 'status','cash_t2','cash_t1','excess_equity', 'interest_cash_balance' , 'total_loan_interest', 'user_modified']
     search_fields = ['id','name']
     def save_model(self, request, obj, form, change):
@@ -47,6 +47,9 @@ class AccountAdmin(admin.ModelAdmin):
     def formatted_margin_ratio(self, obj):
         return self.formatted_number(obj.margin_ratio)
 
+
+    def formatted_total_pl(self, obj):
+        return self.formatted_number(obj.total_pl)
     # Add other formatted_* methods for other numeric fields
 
     
@@ -56,6 +59,7 @@ class AccountAdmin(admin.ModelAdmin):
     formatted_nav.short_description = 'Tài sản ròng'
     formatted_margin_ratio.short_description = 'Tỷ lệ kí quỹ'
     formatted_excess_equity.short_description = 'Dư kí quỹ'
+    formatted_total_pl.short_description = 'Tổng lãi lỗ'
 
 
 admin.site.register(Account,AccountAdmin)
