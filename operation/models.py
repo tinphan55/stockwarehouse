@@ -64,14 +64,17 @@ class Account (models.Model):
     def save(self, *args, **kwargs):
         self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_loan_interest
         stock_mapping = {obj.stock: obj.initial_margin_requirement  for obj in StockListMargin.objects.all()}
-        port = Portfolio.objects.filter(account =self.pk)
+        port = Portfolio.objects.filter(account =self.pk, sum_stock__gt=0)
         sum_initial_margin = 0
+        market_value =0
         if port:
             for item in port:
                 initial_margin = stock_mapping.get(item.stock, 0)*item.sum_stock*item.avg_price/100
                 sum_initial_margin +=initial_margin
+                market_value += item.market_value
         self.margin_ratio = 0
-        self.market_value = Portfolio.objects.filter(account=self.pk).aggregate(Sum('market_value'))['market_value__sum'] or 0
+        # self.market_value = Portfolio.objects.filter(account=self.pk).aggregate(Sum('market_value'))['market_value__sum'] or 0
+        self.market_value = market_value
         self.nav = self.market_value + self.cash_balance 
         self.initial_margin_requirement = sum_initial_margin
         self.excess_equity = self.nav - self.initial_margin_requirement
