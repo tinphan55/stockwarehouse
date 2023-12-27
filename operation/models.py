@@ -23,8 +23,8 @@ class Account (models.Model):
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
     description = models.TextField(max_length=255, blank=True, verbose_name= 'Mô tả')
     referrer = models.CharField(max_length=50,blank=True, null=True, verbose_name= 'Người giới thiệu' )
-    interest_fee = models.FloatField(default=0.15,verbose_name= 'Lãi suất')
-    transaction_fee = models.FloatField(default=0.0016, verbose_name= 'Phí giao dịch')
+    interest_fee = models.FloatField(default=0.16,verbose_name= 'Lãi suất')
+    transaction_fee = models.FloatField(default=0.0015, verbose_name= 'Phí giao dịch')
     tax = models.FloatField(default=0.001, verbose_name= 'Thuế')
     # bot = models.ForeignKey(BotTelegram,on_delete=models.CASCADE, verbose_name= 'Bot' )
     net_cash_flow= models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng')
@@ -118,6 +118,8 @@ class CashTransfer(models.Model):
     
     def __str__(self):
         return str(self.amount) 
+    
+    
 
 class Transaction (models.Model):
     POSITION_CHOICES = [
@@ -537,6 +539,8 @@ def atternoon_check():
             item.receiving_t2 = qty_buy_today
             item.save()
 
+
+# stockbiz đổi web, tạm thời hàm lỗi
 def save_event_stock(stock):
     list_event =[]
     linkbase= 'https://www.stockbiz.vn/MarketCalendar.aspx?Symbol='+ stock
