@@ -10,6 +10,9 @@ from bs4 import BeautifulSoup
 from infotrading.models import DateNotTrading, StockPriceFilter, DividendManage
 from django.db.models import Sum
 from django.utils import timezone
+from telegram import Bot
+from django.db.models import Q
+
 
 
 maintenance_margin_ratio = 17
@@ -58,7 +61,7 @@ class Account (models.Model):
             if check <= maintenance_margin_ratio and check >force_sell_margin_ratio:
                 status = f"CẢNH BÁO, số âm {value_force}"
             elif check <= force_sell_margin_ratio:
-                status = f"BÁN GIẢI CHẤP {value_force}"
+                status = f"BÁN GIẢI CHẤP {value_force*5}"
             return status
     
     def save(self, *args, **kwargs):
@@ -81,6 +84,12 @@ class Account (models.Model):
         if self.market_value !=0:
             self.margin_ratio = abs(round((self.nav/self.market_value)*100,2))
         self.total_pl = self.nav - self.net_cash_flow
+        bot = Bot(token='5806464470:AAH9bLZxhx6xXDJ9rlPKkhaJ6lKpKRrZEfA')
+        if self.status:
+            noti = f"Tài khoản {self.pk}, tên {self.name} bị {self.status} "
+            bot.send_message(
+                chat_id='-4055438156', 
+                text=noti)
         super(Account, self).save(*args, **kwargs)
     
 
@@ -233,7 +242,7 @@ class Portfolio (models.Model):
         return self.stock
     
     def save(self, *args, **kwargs):
-        self.sum_stock = self.receiving_t2+ self.receiving_t1+self.on_hold
+        self.sum_stock = self.receiving_t2+ self.receiving_t1+self.on_hold 
         self.profit =0
         self.percent_profit = 0
         if self.sum_stock >0:
@@ -541,6 +550,18 @@ def atternoon_check():
             item.receiving_t1 = item.receiving_t2  - qty_buy_today
             item.receiving_t2 = qty_buy_today
             item.save()
+
+def check_dividend_recevie():
+    #check cổ tức
+    port = Portfolio.objects.filter(Q(cash_divident__gt=0) | Q(stock_divident__gt=0))
+    if port:
+        for item in port:
+            item.on_hold += item.stock_divident
+            account = item.account
+            account.cash_balance += item.cash_divident
+            account.interest_cash_balance += item.cash_divident
+            item.save()
+            account.save()
 
 
 # stockbiz đổi web, tạm thời hàm lỗi

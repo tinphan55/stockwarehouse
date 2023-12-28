@@ -21,20 +21,20 @@ def schedule_morning():
         print(f"An error occurred while running morning_check: {e_morning_check}")
 
     if not not_trading_dates:
-        # try:
-        #     # Thực hiện công việc cần làm vào 7h30
-        #     # Ví dụ: Gửi email
-        #     # send_mail(
-        #     #     'Morning Check',
-        #     #     'Nội dung kiểm tra buổi sáng...',
-        #     #     'from@example.com',
-        #     #     ['to@example.com'],
-        #     #     fail_silently=False,
-        #     # )
+        try:
+            # Thực hiện công việc cần làm vào 7h30
+            # Ví dụ: Gửi email
+            # send_mail(
+            #     'Morning Check',
+            #     'Nội dung kiểm tra buổi sáng...',
+            #     'from@example.com',
+            #     ['to@example.com'],
+            #     fail_silently=False,
+            # )
 
-        #     check_dividend()
-        # except Exception as e_check_dividend:
-        #     print(f"An error occurred while running check_dividend: {e_check_dividend}")
+            check_dividend_recevie()
+        except Exception as e_check_dividend:
+            print(f"An error occurred while running check_dividend: {e_check_dividend}")
         
         try:
             run_database_backup()
@@ -50,15 +50,18 @@ def schedule_mid_trading_date():
     not_trading_dates = DateNotTrading.objects.filter(date=today)
     
     if not not_trading_dates:
-        # try:
-        #     get_info_stock_price_filter()
-        # except Exception as e_get_info_stock:
-        #     print(f"An error occurred while running get_info_stock_price_filter: {e_get_info_stock}")
-
+        
         try:
             atternoon_check()
+            
         except Exception as e_afternoon_check:
             print(f"An error occurred while running atternoon_check: {e_afternoon_check}")
+        
+        try:
+            check_dividend_recevie()
+        except Exception as e_get_info_stock:
+            print(f"An error occurred while running get_info_stock_price_filter: {e_get_info_stock}")
+
     else:
         pass
 
