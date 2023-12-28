@@ -12,6 +12,7 @@ from django.db.models import Sum
 from django.utils import timezone
 from telegram import Bot
 from django.db.models import Q
+from cpd.models import ClientPartnerInfo
 
 
 
@@ -25,7 +26,7 @@ class Account (models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
     description = models.TextField(max_length=255, blank=True, verbose_name= 'Mô tả')
-    referrer = models.CharField(max_length=50,blank=True, null=True, verbose_name= 'Người giới thiệu' )
+    cpd = models.ForeignKey(ClientPartnerInfo,null=True, blank = True,on_delete=models.CASCADE, verbose_name= 'Người giới thiệu' )
     interest_fee = models.FloatField(default=0.16,verbose_name= 'Lãi suất')
     transaction_fee = models.FloatField(default=0.0015, verbose_name= 'Phí giao dịch')
     tax = models.FloatField(default=0.001, verbose_name= 'Thuế')

@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'operation',
     'infotrading',
     'dbbackup',
+    'cpd',
   
     
 ]
