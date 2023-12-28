@@ -14,8 +14,8 @@ JAZZMIN_SETTINGS = {
     "site_logo_classes": "img-circle" ,
 
     # Relative path to a favicon for your site, will default to site_logo if absent (ideally 32x32 px)
-    "site_icon": "/portfolio/img/logo.PNG",
-    "site_logo": "/portfolio/img/logo.PNG",
+    "site_icon": "/infotrading/img/logo.PNG",
+    "site_logo": "/infotrading/img/logo.PNG",
 
 
     # Welcome text on the login screen
@@ -97,12 +97,17 @@ JAZZMIN_SETTINGS = {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user",
         "auth.Group": "fas fa-users",
-        "stocklist.StrategyTrading": "fas fa-chess-queen",
-        "stocklist.Signaldaily": "far fa-lightbulb",
-        "stocklist.OverviewBacktest": "fas fa-check-circle",
-        "stocklist.TransactionBacktest": "fas fa-list-alt",
-        "stocklist.RatingStrategy": "fas fa-star",
-        "stocklist.ParamsOptimize": "fas fa-vials",
+        "cpd.ClientPartnerInfo": "fas fa-user-shield",
+        "operation.StockListMargin": "fas fa-chess-queen",
+        "operation.Portfolio": "far fa-lightbulb",
+        "operation.CashTransfer": "fas fa-warehouse",
+        "operation.Transaction": "fas fa-list-alt",
+        "operation.Account": "fas fa-star",
+        "operation.Account": "fas fa-vials",
+        "operation.ExpenseStatement":"fas fa-receipt",
+        "infotrading.DateNotTrading":"far fa-calendar-check",
+        "infotrading.DividendManage":"fas fa-magic",
+        "infotrading.StockPriceFilter":"fas fa-check-circle",
         
     },
     # Icons that are used when one is not manually specified
