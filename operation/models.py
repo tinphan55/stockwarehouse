@@ -64,6 +64,7 @@ class Account (models.Model):
             elif check <= force_sell_margin_ratio:
                 status = f"BÁN GIẢI CHẤP {value_force*5}"
             return status
+   
     
     def save(self, *args, **kwargs):
         self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_loan_interest

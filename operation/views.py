@@ -8,6 +8,9 @@ from django.http import JsonResponse
 from infotrading.models import get_list_stock_price
 
 
+
+
+
 def warehouse(request):
     # Xử lý logic cho trang warehouse ở đây
     if request.method == 'POST':

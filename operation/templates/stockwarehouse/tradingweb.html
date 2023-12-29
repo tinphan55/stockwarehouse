@@ -66,32 +66,32 @@
         </tr>
         <tr>
             <td>Số dư tiền:</td>
-            <td id="balance">{{account.cash_balance}}</td>
+            <td id="balance">{{account.cash_balance|format_currency_0}}</td>
         </tr>
         <tr>
             <td>Số dư tiền tính lãi vay:</td>
-            <td id="interest_cash">{{account.interest_cash_balance}}</td>
+            <td id="interest_cash">{{account.interest_cash_balance|format_currency_0}}</td>
         </tr>
         <tr>
             <td>Tài sản ròng:</td>
-            <td id="nav">{{account.nav}}</td>
+            <td id="nav">{{account.nav|format_currency_0}}</td>
         </tr>
         <tr>
             <td>Giá trị thị trường:</td>
-            <td id="market_value">{{account.market_value}}</td>
+            <td id="market_value">{{account.market_value|format_currency_0}}</td>
         </tr>
         
         <tr>
             <td>Dư kí quỹ:</td>
-            <td id="excess_equity">{{account.excess_equity}}</td>
+            <td id="excess_equity">{{account.excess_equity|format_currency_0}}</td>
         </tr>
         <tr>
             <td>Tỷ lệ margin:</td>
-            <td id="marginRatio">{{account.margin_ratio}}</td>
+            <td id="marginRatio">{{account.margin_ratio}}%</td>
         </tr>
         <tr>
             <td>Tổng lãi lỗ:</td>
-            <td id="profitLoss">{{account.total_pl}}</td>
+            <td id="profitLoss">{{account.total_pl|format_currency_0}}</td>
         </tr>
         <tr>
             <td>Trạng thái tài khoản:</td>
@@ -120,13 +120,13 @@
 							<tr>
 							  <td class="no">{{ forloop.counter }}</td>
                               <td class="stock">{{ item.stock }}</td>
-                              <td class="market_price">{{ item.market_price }}</td>
-							  <td class="avg_price">{{item.avg_price}}</td>
-							  <td class="unit">{{ item.on_hold }}</td>
-                              <td class="unit">{{ item.receiving_t1 }}</td>
-                              <td class="unit">{{ item.receiving_t2 }}</td>
-							  <td class="profit">{{ item.profit }}</td>
-							  <td class="percent_profit">{{ item.percent_profit }}</td>
+                              <td class="market_price">{{ item.market_price|format_currency_0 }}</td>
+							  <td class="avg_price">{{item.avg_price|format_currency_0}}</td>
+							  <td class="unit">{{ item.on_hold|format_currency_0 }}</td>
+                              <td class="unit">{{ item.receiving_t1|format_currency_0 }}</td>
+                              <td class="unit">{{ item.receiving_t2|format_currency_0 }}</td>
+							  <td class="profit">{{ item.profit|format_currency_0 }}</td>
+							  <td class="percent_profit">{{ item.percent_profit|format_currency_2}}%</td>
 							</tr>
 						  {% endfor %}
         <!-- Thêm các dòng cho cổ phiếu khác tùy ý -->
@@ -153,11 +153,11 @@
             <td>{{item.date}}</td>
             <td>{{item.stock}}</td>
             <td>{{item.position}}</td>
-            <td>{{item.price}}</td>
-            <td>{{item.qty}}</td>
-            <td>{{item.transaction_fee}}</td>
-            <td>{{item.tax}}</td>
-            <td>{{item.total_value}}</td>
+            <td>{{item.price|format_currency_0}}</td>
+            <td>{{item.qty|format_currency_0}}</td>
+            <td>{{item.transaction_fee|format_currency_0}}</td>
+            <td>{{item.tax|format_currency_0}}</td>
+            <td>{{item.total_value|format_currency_0}}</td>
         </tr>
         {% endfor %}
         <!-- Thêm các dòng cho sổ lệnh khác tùy ý -->
@@ -186,7 +186,7 @@
               </td>
               
               
-            <td>{{item.amount}}</td>
+            <td>{{item.amount|format_currency_0}}</td>
             <td>{{item.description}}</td>
         </tr>
         {% endfor %}
@@ -207,7 +207,7 @@
         <tr>
             <td>{{item.date}}</td>
             <td>{{item.type}}</td>
-            <td>{{item.amount}}</td>
+            <td>{{item.amount|format_currency_0}}</td>
             <td>{{item.description}}</td>
         </tr>
         {% endfor %}

@@ -70,10 +70,12 @@ INTERNAL_IPS = ['127.0.0.1', 'localhost']
 
 ROOT_URLCONF = 'stockwarehouse.urls'
 
+
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -82,6 +84,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
+            'builtins': ['operation.custom_filters'],  # Thay 'your_app_name' bằng tên ứng dụng của bạn
         },
     },
 ]
