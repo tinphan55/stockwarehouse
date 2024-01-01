@@ -3,12 +3,13 @@ from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from operation.models import *
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template import loader
 from django.urls import reverse
+from django.contrib.auth.forms import PasswordChangeForm
 
 
 def LoginUser(request):
@@ -98,3 +99,17 @@ def LogoutUser(request):
     return redirect('loginuser')     
 
 
+@login_required(login_url="/loginuser/")
+def change_password(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # Đảm bảo người dùng vẫn đăng nhập
+            messages.success(request, 'Mật khẩu đã được thay đổi thành công.')
+            return redirect('change_password')
+        else:
+            messages.error(request, 'Vui lòng kiểm tra lại thông tin đầu vào.')
+    else:
+        form = PasswordChangeForm(request.user)
+    return render(request, 'stockwarehouse/change_password.html', {'form': form})

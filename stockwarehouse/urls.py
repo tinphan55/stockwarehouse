@@ -29,6 +29,7 @@ urlpatterns = [
     path('logout/', LogoutUser, name="logout"),
     path('clicklogin', clicklogin, name="clicklogin"),
     path('',LoginUser,name=""),
+    path('change_password/', change_password, name='change_password'),
 
 ]
 
