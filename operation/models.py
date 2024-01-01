@@ -1,7 +1,7 @@
 import re
 from django.db import models
 from django.db.models.signals import post_save, post_delete,pre_save, pre_delete
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.dispatch import receiver
 from datetime import datetime, timedelta
 from django.forms import ValidationError
@@ -13,6 +13,7 @@ from django.utils import timezone
 from telegram import Bot
 from django.db.models import Q
 from cpd.models import ClientPartnerInfo
+from django.contrib.auth.hashers import make_password
 
 
 
@@ -93,6 +94,19 @@ class Account (models.Model):
                 chat_id='-4055438156', 
                 text=noti)
         super(Account, self).save(*args, **kwargs)
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Tạo một User mới nếu chưa tồn tại với username là mã pk của Account và password là tên của Account
+        user, created = User.objects.get_or_create(username=str(self.pk))
+        if created:
+            # Cập nhật mật khẩu của User là kết hợp của name và pk của Account
+            user.set_password(f'{self.name}{self.pk}')
+            user.save()
+            
+            # Thêm user vào nhóm "customer"
+            group, created = Group.objects.get_or_create(name='customer')
+            user.groups.add(group)
     
 
    

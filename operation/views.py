@@ -1,11 +1,15 @@
 import math
-from django.shortcuts import render
 from django.http import HttpResponse
 from .models import *
 from django.template import loader
 from statistics import mean
 from django.http import JsonResponse
 from infotrading.models import get_list_stock_price
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib import messages
+from django.contrib.auth import authenticate, login
 
 
 
@@ -44,22 +48,3 @@ def warehouse(request):
     return render(request, 'stockwarehouse/warehouse.html')
 
 
-def customer_view(request, pk):
-    template = loader.get_template('stockwarehouse/tradingweb.html')
-    account = Account.objects.get(pk=pk)
-    port = Portfolio.objects.filter(account = account, sum_stock__gt=0)
-    transaction = Transaction.objects.filter(account = account)
-    cash = CashTransfer.objects.filter(account=account)
-    expense = ExpenseStatement.objects.filter(account=account)
-    list_margin = StockListMargin.objects.all()
-    context = {
-        'account':account,
-        'port': port,
-        'transaction':transaction,
-        'cash':cash,
-        'expense':expense,
-        'list_margin':list_margin,
-
-
-    }
-    return HttpResponse(template.render(context, request))

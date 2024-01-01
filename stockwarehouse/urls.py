@@ -19,11 +19,16 @@ from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
 import debug_toolbar
-
+from .views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('operation.urls'))
+    path('', include('operation.urls')),
+    path('customer/<int:pk>', customer_view, name='customer_detail'),
+    path('loginuser/', LoginUser, name="loginuser"),
+    path('logout/', LogoutUser, name="logout"),
+    path('clicklogin', clicklogin, name="clicklogin"),
+    path('',LoginUser,name=""),
 
 ]
 
