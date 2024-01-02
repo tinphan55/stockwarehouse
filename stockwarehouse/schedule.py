@@ -16,7 +16,7 @@ def schedule_morning():
 
    
     try:
-        morning_check()
+        calculate_interest()
     except Exception as e_morning_check:
         print(f"An error occurred while running morning_check: {e_morning_check}")
 
@@ -35,6 +35,11 @@ def schedule_morning():
             check_dividend_recevie()
         except Exception as e_check_dividend:
             print(f"An error occurred while running check_dividend: {e_check_dividend}")
+        
+        try:
+            pay_money_back()
+        except Exception as e_auto_news:
+            print(f"An error occurred while running auto_news_stock_worlds: {e_auto_news}")
         
         try:
             run_database_backup()

@@ -68,46 +68,47 @@ class Account (models.Model):
    
     
     def save(self, *args, **kwargs):
+    # Your first save method code
         self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_loan_interest
-        stock_mapping = {obj.stock: obj.initial_margin_requirement  for obj in StockListMargin.objects.all()}
-        port = Portfolio.objects.filter(account =self.pk, sum_stock__gt=0)
+        stock_mapping = {obj.stock: obj.initial_margin_requirement for obj in StockListMargin.objects.all()}
+        port = Portfolio.objects.filter(account=self.pk, sum_stock__gt=0)
         sum_initial_margin = 0
-        market_value =0
+        market_value = 0
         if port:
             for item in port:
-                initial_margin = stock_mapping.get(item.stock, 0)*item.sum_stock*item.avg_price/100
-                sum_initial_margin +=initial_margin
+                initial_margin = stock_mapping.get(item.stock, 0) * item.sum_stock * item.avg_price / 100
+                sum_initial_margin += initial_margin
                 market_value += item.market_value
         self.margin_ratio = 0
-        # self.market_value = Portfolio.objects.filter(account=self.pk).aggregate(Sum('market_value'))['market_value__sum'] or 0
         self.market_value = market_value
-        self.nav = self.market_value + self.cash_balance 
+        self.nav = self.market_value + self.cash_balance
         self.initial_margin_requirement = sum_initial_margin
         self.excess_equity = self.nav - self.initial_margin_requirement
-        if self.market_value !=0:
-            self.margin_ratio = abs(round((self.nav/self.market_value)*100,2))
+        if self.market_value != 0:
+            self.margin_ratio = abs(round((self.nav / self.market_value) * 100, 2))
         self.total_pl = self.nav - self.net_cash_flow
         bot = Bot(token='5806464470:AAH9bLZxhx6xXDJ9rlPKkhaJ6lKpKRrZEfA')
         if self.status:
             noti = f"Tài khoản {self.pk}, tên {self.name} bị {self.status} "
             bot.send_message(
-                chat_id='-4055438156', 
+                chat_id='-4055438156',
                 text=noti)
+
+        # Your second save method code
         super(Account, self).save(*args, **kwargs)
-    
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        # Tạo một User mới nếu chưa tồn tại với username là mã pk của Account và password là tên của Account
+
+        # Additional code from the second save method
+        # ...
+
+        # Tạo hoặc cập nhật User
         user, created = User.objects.get_or_create(username=str(self.pk))
         if created:
-            # Cập nhật mật khẩu của User là kết hợp của name và pk của Account
-            user.set_password(f'{self.name}{self.pk}')
+            user.set_password("20241q2w3e4r")
             user.save()
-            
+
             # Thêm user vào nhóm "customer"
             group, created = Group.objects.get_or_create(name='customer')
             user.groups.add(group)
-    
 
    
 
@@ -535,12 +536,14 @@ def update_market_price_for_port():
         # item.percent_profit = round((item.market_price/item.avg_price-1)*100,2)
         item.save()
 
-def morning_check():
+def calculate_interest():
     #kiểm tra vào tính lãi suất
     account = Account.objects.filter(interest_cash_balance__lt=0)
     if account:
         for instance in account:
             amount = instance.interest_fee * instance.interest_cash_balance/360
+            instance.total_loan_interest += amount
+            instance.save()
             ExpenseStatement.objects.create(
                 account=instance,
                 date=datetime.now().date()-timedelta(days=1),
@@ -549,11 +552,15 @@ def morning_check():
                 description = instance.pk,
                 interest_cash_balance = instance.interest_cash_balance
                 )
-    # chuyển tiền dồn lên 1 ngày
+
+def pay_money_back():
+    account = Account.objects.all()
+    if account:
+        for instance in account:
+        # chuyển tiền dồn lên 1 ngày
             instance.interest_cash_balance += instance.cash_t1
             instance.cash_t1= instance.cash_t2
             instance.cash_t2 =0
-            instance.total_loan_interest += amount
             instance.save()
 
 def atternoon_check():
