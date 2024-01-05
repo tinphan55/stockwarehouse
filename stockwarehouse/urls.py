@@ -30,7 +30,8 @@ urlpatterns = [
     path('clicklogin', clicklogin, name="clicklogin"),
     path('',LoginUser,name=""),
     path('change_password/', change_password, name='change_password'),
-
+    path('cal_trading_power_customer/', cal_trading_power_customer, name='cal_trading_power_customer'),
+   
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

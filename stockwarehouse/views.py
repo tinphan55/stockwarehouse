@@ -1,5 +1,6 @@
+import math
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.contrib.auth.models import User
@@ -17,7 +18,10 @@ def LoginUser(request):
     if pk=="":
         return render(request,"stockwarehouse/login.html")
     else:
-        return redirect('customer_detail',pk=pk)
+        if pk.isnumeric():
+            return redirect('customer_detail',pk=pk)
+        else:
+            return HttpResponse("<h1> Bạn đang truy cập trang admin, hãy thoát ra trước khi truy cập giao diện cho KH<h1>")
 
 @login_required(login_url="/loginuser/")
 def customer_view(request, pk):
@@ -70,7 +74,8 @@ def customer_view(request, pk):
 
 def clicklogin(request):
     if request.method != "POST":
-        return HttpResponse("<h1> Method not allowed<h1>")
+        # return HttpResponse("<h1> Method not allowed<h1>")
+        return HttpResponseRedirect(reverse('loginuser'))
     else:
         username = request.POST.get('username', '')
         password = request.POST.get('password', '')
@@ -79,9 +84,13 @@ def clicklogin(request):
         if user is not None:
             login(request, user)
             if user.is_authenticated:
-                # Nếu người dùng đã đăng nhập, sử dụng user.pk
-    
-                return redirect('customer_detail', pk=username)
+                # Nếu người dùng đã đăng nhập và không đăng nhập vào trang admin, sử dụng user.pk
+                if username.isnumeric():
+                    return redirect('customer_detail', pk=username)
+                else:
+                    HttpResponse("<h1> Bạn đang truy cập trang admin, hãy thoát ra trước khi truy cập giao diện cho KH<h1>")
+                    
+            
             else:
                 # Xử lý nếu người dùng chưa đăng nhập
                 # Ví dụ: return redirect('home')
@@ -113,3 +122,37 @@ def change_password(request):
     else:
         form = PasswordChangeForm(request.user)
     return render(request, 'stockwarehouse/change_password.html', {'form': form})
+
+def cal_trading_power_customer(request):
+    if request.method == 'POST':
+        try:
+            # Lấy thông tin từ yêu cầu
+            pk = int(request.user.username)
+            ticker = request.POST.get('ticker', '').upper()
+            price = float(request.POST.get('price', ''))
+        except (ValueError, KeyError) as e:
+            return JsonResponse({'error': 'Tham số không hợp lệ'}, status=400)
+
+        # Lấy thông tin tài khoản và biên độ cổ phiếu
+        account = get_object_or_404(Account, pk=pk)
+        margin = StockListMargin.objects.filter(stock=ticker).first()
+
+        if not margin:
+            return JsonResponse({'error': 'Cổ phiếu không hợp lệ'}, status=400)
+
+        # Thực hiện tính toán
+        if account.excess_equity > 0:
+            initial_margin_requirement = margin.initial_margin_requirement
+            max_value = abs(account.excess_equity / (initial_margin_requirement / 100))
+            qty = math.floor(max_value / price)
+            string_qty = '{:,.0f}'.format(qty)
+
+            # Trả về kết quả tính toán
+            return JsonResponse({'qty': string_qty})
+        else:
+            return JsonResponse({'error': 'Không đủ vốn để mua cổ phiếu'}, status=400)
+
+    # Trường hợp không phải POST
+    return JsonResponse({'error': 'Yêu cầu không hợp lệ'}, status=400)
+            
+

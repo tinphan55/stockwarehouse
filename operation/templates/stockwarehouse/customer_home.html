@@ -8,7 +8,7 @@
         a:visited {
             background-color: white;
             color: black;
-            border: 2px solid green;
+            border: 2px solid rgb(86, 91, 86);
             padding: 10px 20px;
             text-align: center;
             text-decoration: none;
@@ -17,13 +17,16 @@
 
         a:hover,
         a:active {
-            background-color: green;
+            background-color: #eee;
             color: white;
         }
 
         .lay-out {
             display: flex;
             justify-content: space-between;
+            padding-top: 10px;
+
+
         }
         .lay-out .lay-out-tabs{
             display: flex;
@@ -38,45 +41,47 @@
 
         .lay-out .header h2 {
             margin-right: 8px;
+            font-size: 25px;
         }
 
         .lay-out .header a {
             margin-right: 8px;
+            font-size: 20px;
         }
-    </style>
-</head>
-
-<body>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý tài khoản chứng khoán</title>
-    <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: "Arimo", sans-serif;
             margin: 20px;
+            
         }
 
         .tab-content {
             display: none;
+            margin-top: 3rem;
+            margin-left: 2rem;
+            font-size: 20px;
         }
 
         .active {
             display: block;
+          
         }
 
         ul.tabs {
             list-style: none;
-            padding: 0;
+            padding: 0.5rem;
             margin: 0;
             display: flex;
+            font-size: 20px;
         }
 
         ul.tabs li {
-            margin-right: 10px;
+            margin-right: 0.5rem;
+            margin-left: 0.5rem; 
             cursor: pointer;
             padding: 10px;
             background-color: #eee;
-            border-radius: 5px;
+            border-radius: 7px;
+            
         }
 
         table {
@@ -92,7 +97,18 @@
             padding: 10px;
             text-align: left;
         }
+       
+        
+   
+        
     </style>
+</head>
+
+<body>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý tài khoản chứng khoán</title>
+
     </head>
 
     <body>
@@ -105,6 +121,7 @@
                     <li onclick="showTab('statement_cash')">Sao kê tiền</li>
                     <li onclick="showTab('statement')">Sao kê phí</li>
                     <li onclick="showTab('loanPortfolio')">Danh mục cho vay</li>
+                    <li onclick="showTab('caltradingpower')">Tính sức mua</li>
                 </ul>
             </div>
 
@@ -120,11 +137,17 @@
         </div>
 
         <div id="account" class="tab-content active">
+          
             <h2>Thông tin tài khoản</h2>
+
             <table>
                 <tr>
                     <td>Mã tài khoản:</td>
                     <td id="pk">{{account.pk}}</td>
+                </tr>
+                <tr>
+                    <td>Tên:</td>
+                    <td id="pk">{{account.name}}</td>
                 </tr>
                 <tr>
                     <td>Số dư tiền:</td>
@@ -157,8 +180,15 @@
                 </tr>
                 <tr>
                     <td>Trạng thái tài khoản:</td>
-                    <td id="profitLoss">{{account.status}}</td>
+                    <td id="status">
+                        {% if account.status %}
+                            {{ account.status }}
+                        {% else %}
+                            Bình thường
+                        {% endif %}
+                    </td>
                 </tr>
+                
             </table>
         </div>
 
@@ -178,19 +208,25 @@
                 </tr>
 
 
-                {% for item in port %}
-                <tr>
-                    <td class="no">{{ forloop.counter }}</td>
-                    <td class="stock">{{ item.stock }}</td>
-                    <td class="market_price">{{ item.market_price|format_currency_0 }}</td>
-                    <td class="avg_price">{{item.avg_price|format_currency_0}}</td>
-                    <td class="unit">{{ item.on_hold|format_currency_0 }}</td>
-                    <td class="unit">{{ item.receiving_t1|format_currency_0 }}</td>
-                    <td class="unit">{{ item.receiving_t2|format_currency_0 }}</td>
-                    <td class="profit">{{ item.profit|format_currency_0 }}</td>
-                    <td class="percent_profit">{{ item.percent_profit|format_currency_2}}%</td>
-                </tr>
-                {% endfor %}
+                {% if port %}
+                    {% for item in port %}
+                        <tr>
+                            <td class="no">{{ forloop.counter }}</td>
+                            <td class="stock">{{ item.stock }}</td>
+                            <td class="market_price">{{ item.market_price|format_currency_0 }}</td>
+                            <td class="avg_price">{{ item.avg_price|format_currency_0 }}</td>
+                            <td class="unit">{{ item.on_hold|format_currency_0 }}</td>
+                            <td class="unit">{{ item.receiving_t1|format_currency_0 }}</td>
+                            <td class="unit">{{ item.receiving_t2|format_currency_0 }}</td>
+                            <td class="profit">{{ item.profit|format_currency_0 }}</td>
+                            <td class="percent_profit">{{ item.percent_profit|format_currency_2}}%</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+    <tr>
+        <td colspan="9"><em>Chưa có dữ liệu</em></td>
+    </tr>
+{% endif %}
                 <!-- Thêm các dòng cho cổ phiếu khác tùy ý -->
             </table>
         </div>
@@ -215,18 +251,25 @@
 
 
                 </tr>
-                {% for item in transaction %}
-                <tr>
-                    <td>{{item.date}}</td>
-                    <td>{{item.stock}}</td>
-                    <td>{{item.position}}</td>
-                    <td>{{item.price|format_currency_0}}</td>
-                    <td>{{item.qty|format_currency_0}}</td>
-                    <td>{{item.transaction_fee|format_currency_0}}</td>
-                    <td>{{item.tax|format_currency_0}}</td>
-                    <td>{{item.total_value|format_currency_0}}</td>
-                </tr>
-                {% endfor %}
+                {% if transaction %}
+                    {% for item in transaction %}
+                        <tr>
+                            <td>{{ item.date }}</td>
+                            <td>{{ item.stock }}</td>
+                            <td>{{ item.position }}</td>
+                            <td>{{ item.price|format_currency_0 }}</td>
+                            <td>{{ item.qty|format_currency_0 }}</td>
+                            <td>{{ item.transaction_fee|format_currency_0 }}</td>
+                            <td>{{ item.tax|format_currency_0 }}</td>
+                            <td>{{ item.total_value|format_currency_0 }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+    <tr>
+        <td colspan="8"><em>Chưa có dữ liệu</em></td>
+    </tr>
+{% endif %}
+
                 <!-- Thêm các dòng cho sổ lệnh khác tùy ý -->
             </table>
         </div>
@@ -241,22 +284,27 @@
                     <th>Diễn giải</th>
                 </tr>
 
-                {% for item in cash %}
-                <tr>
-                    <td>{{item.date}}</td>
-                    <td>
-                        {% if item.amount > 0 %}
-                        Nạp tiền
-                        {% else %}
-                        Rút tiền
-                        {% endif %}
-                    </td>
+                {% if cash %}
+                    {% for item in cash %}
+                        <tr>
+                            <td>{{ item.date }}</td>
+                            <td>
+                                {% if item.amount > 0 %}
+                                    Nạp tiền
+                                {% else %}
+                                    Rút tiền
+                                {% endif %}
+                            </td>
+                            <td>{{ item.amount|format_currency_0 }}</td>
+                            <td>{{ item.description }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="4"><em>Chưa có dữ liệu</em></td>
+                    </tr>
+                {% endif %}
 
-
-                    <td>{{item.amount|format_currency_0}}</td>
-                    <td>{{item.description}}</td>
-                </tr>
-                {% endfor %}
                 <!-- Thêm các dòng cho sao kê phí khác tùy ý -->
             </table>
         </div>
@@ -270,14 +318,21 @@
                     <th>Số tiền</th>
                     <th>Diễn giải</th>
                 </tr>
-                {% for item in expense %}
-                <tr>
-                    <td>{{item.date}}</td>
-                    <td>{{item.type}}</td>
-                    <td>{{item.amount|format_currency_0}}</td>
-                    <td>{{item.description}}</td>
-                </tr>
-                {% endfor %}
+                {% if expense %}
+                    {% for item in expense %}
+                        <tr>
+                            <td>{{ item.date }}</td>
+                            <td>{{ item.type }}</td>
+                            <td>{{ item.amount|format_currency_0 }}</td>
+                            <td>{{ item.description }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="4"><em>Chưa có dữ liệu</em></td>
+                    </tr>
+                {% endif %}
+
                 <!-- Thêm các dòng cho sao kê phí khác tùy ý -->
             </table>
         </div>
@@ -303,6 +358,125 @@
         </div>
 
 
+        <!-- <title>Calculate Trading Power</title> -->
+    
+        <!-- Thêm thư viện Bootstrap -->
+         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"> 
+        <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+        <!-- Đoạn mã JavaScript để kiểm tra và hiển thị modal -->
+<!-- Đoạn mã JavaScript để kiểm tra và hiển thị modal -->
+<!-- Đoạn mã JavaScript để kiểm tra và hiển thị modal -->
+
+<style>
+    .modal {
+        display: none;
+    }
+</style>
+
+<script>
+    $(document).ready(function () {
+        var hasResult = false; // Biến để kiểm tra có kết quả hay không
+
+        $('#calculate-form').submit(function (event) {
+            // Ngăn chặn gửi yêu cầu mặc định của biểu mẫu
+            event.preventDefault();
+
+            // Lấy dữ liệu từ biểu mẫu
+            var formData = {
+                'action': $('input[name=action]').val(),
+                'ticker': $('#ticker').val(),
+                'price': $('#price').val(),
+                'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()  // Include CSRF token
+            };
+
+            // Gửi yêu cầu AJAX
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: formData,
+                success: function (data) {
+                    // Xử lý kết quả từ server
+                    if ('qty' in data) {
+                        // Hiển thị kết quả trong modal Bootstrap
+                        $('#result-modal .modal-body').text('Số lượng tối đa có thể mua: ' + data.qty);
+
+                        // Hiển thị modal
+                        $('#result-modal').modal('show');
+
+                        // Đặt biến hasResult thành true
+                        hasResult = true;
+
+
+                    } else {
+                        // Ẩn modal nếu không có kết quả hoặc lỗi
+                        $('#result-modal').modal('hide');
+                        
+                        // Đặt biến hasResult thành false
+                        hasResult = false;
+
+                        // Ẩn modal-header và modal-footer
+                        $('#result-modal .modal-header').hide();
+                        $('#result-modal .modal-footer').hide();
+                    }
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    // Xử lý lỗi AJAX
+                    console.log('Error:', errorThrown);
+                }
+            });
+        });
+
+        // Ẩn modal khi đóng chỉ nếu không có kết quả
+        $('#result-modal').on('hidden.bs.modal', function () {
+            if (!hasResult) {
+                // Xóa nội dung modal khi ẩn
+                $(this).find('.modal-body').empty();
+            }
+        });
+    });
+</script>
+
+
+
+        
+
+    <div id="caltradingpower" class="tab-content">
+        <!-- <h2>Khối lượng mua tối đa theo kho</h2> -->
+        <form id="calculate-form" method="POST" action="{% url 'cal_trading_power_customer' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="calculate_max_qty_buy">
+    
+            <label for="ticker">Mã cổ phiếu:</label>
+            <input type="text" id="ticker" name="ticker" placeholder="Nhập mã CP" required><br><br>
+    
+            <label for="price">Giá mua:</label>
+            <input type="number" id="price" name="price" placeholder="Nhập giá đầy đủ" required><br><br>
+    
+            <button type="submit">Tính toán</button>
+        </form>
+    </div>
+    
+    <!-- Modal Bootstrap -->
+    <div class="modal" id="result-modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Kết quả tính toán</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Nội dung kết quả sẽ được hiển thị ở đây -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+        
 
         <!-- Lọc từ ngày đến ngày-->
         <!-- <script>
@@ -370,6 +544,9 @@
                 selectedTab.classList.add('active');
             }
         </script>
+
+
+        
 
     </body>
 
