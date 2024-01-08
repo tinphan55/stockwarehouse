@@ -31,7 +31,7 @@ urlpatterns = [
     path('',LoginUser,name=""),
     path('change_password/', change_password, name='change_password'),
     path('cal_trading_power_customer/', cal_trading_power_customer, name='cal_trading_power_customer'),
-   
+    path('<int:pk>/assumption_sell_stock/<int:port_pk>', assumption_sell_stock, name='assumption_sell_stock'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

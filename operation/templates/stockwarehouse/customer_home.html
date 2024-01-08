@@ -195,41 +195,63 @@
         <div id="portfolio" class="tab-content">
             <h2>Danh mục</h2>
             <table>
-                <tr>
-                    <th></th>
-                    <th>Cổ phiếu</th>
-                    <th>Giá thị trường</th>
-                    <th>Giá trung bình</th>
-                    <th>Khối lượng khả dụng</th>
-                    <th>Khối lượng chờ về T1</th>
-                    <th>Khối lượng chờ về T2</th>
-                    <th>Lời lỗ</th>
-                    <th>Tỷ lệ lời lỗ</th>
-                </tr>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Cổ phiếu</th>
+                        <th>Giá thị trường</th>
+                        <th>Giá trung bình</th>
+                        <th>Khối lượng khả dụng</th>
+                        <th>Khối lượng chờ về T1</th>
+                        <th>Khối lượng chờ về T2</th>
+                        <th>Lời lỗ</th>
+                        <th>Tỷ lệ lời lỗ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if port %}
+                        {% for item in port %}
+                            <tr>
+                                <td class="no">{{ forloop.counter }}</td>
+                                <td class="stock">{{ item.stock }}</td>
+                                <td class="market_price">{{ item.market_price|format_currency_0 }}</td>
+                                <td class="avg_price">{{ item.avg_price|format_currency_0 }}</td>
+                                <td class="unit">{{ item.on_hold|format_currency_0 }}</td>
+                                <td class="unit">{{ item.receiving_t1|format_currency_0 }}</td>
+                                <td class="unit">{{ item.receiving_t2|format_currency_0 }}</td>
+                                <td class="profit">{{ item.profit|format_currency_0 }}</td>
+                                <td class="percent_profit">{{ item.percent_profit|format_currency_2}}%</td>
+                            </tr>
 
+                            <td colspan="9">
+                                <a href="{% url 'assumption_sell_stock' pk=account.id port_pk=item.id %}">Tính toán giả định</a>
 
-                {% if port %}
-                    {% for item in port %}
+                                <br>
+                                <span style="font-size: 80%; color: #555;">
+                                    Chú thích: Để tính toán lợi nhuận giả định theo giá bán tùy chỉnh
+                                </span>
+                            </td>
+                        {% endfor %}
+                        
+                        
+                        
+                        
+                    {% else %}
                         <tr>
-                            <td class="no">{{ forloop.counter }}</td>
-                            <td class="stock">{{ item.stock }}</td>
-                            <td class="market_price">{{ item.market_price|format_currency_0 }}</td>
-                            <td class="avg_price">{{ item.avg_price|format_currency_0 }}</td>
-                            <td class="unit">{{ item.on_hold|format_currency_0 }}</td>
-                            <td class="unit">{{ item.receiving_t1|format_currency_0 }}</td>
-                            <td class="unit">{{ item.receiving_t2|format_currency_0 }}</td>
-                            <td class="profit">{{ item.profit|format_currency_0 }}</td>
-                            <td class="percent_profit">{{ item.percent_profit|format_currency_2}}%</td>
+                            <td colspan="9"><em>Chưa có dữ liệu</em></td>
                         </tr>
-                    {% endfor %}
-                {% else %}
-    <tr>
-        <td colspan="9"><em>Chưa có dữ liệu</em></td>
-    </tr>
-{% endif %}
-                <!-- Thêm các dòng cho cổ phiếu khác tùy ý -->
+                    {% endif %}
+                    
+                    <!-- Additional row for "Tính toán giả định" -->
+                 
+                    
+
+                    
+                    <!-- Add additional rows for other stocks as needed -->
+                </tbody>
             </table>
         </div>
+        
 
         <div id="transactions" class="tab-content">
             <h2>Sổ lệnh</h2>
@@ -546,7 +568,7 @@
         </script>
 
 
-        
+
 
     </body>
 

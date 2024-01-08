@@ -65,12 +65,17 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware', 
+    'django_auto_logout.middleware.auto_logout',
 ]
 
 INTERNAL_IPS = ['127.0.0.1', 'localhost']
 
 ROOT_URLCONF = 'stockwarehouse.urls'
 
+AUTO_LOGOUT = {
+    'IDLE_TIME': timedelta(minutes=360),
+    'REDIRECT_TO_LOGIN_IMMEDIATELY': True,
+}
 
 
 TEMPLATES = [
@@ -122,8 +127,18 @@ DATABASES_LIST = [{
         'HOST': 'localhost',
         'PORT': '5432',
     }
+},
+{
+     'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',                      
+        'USER': 'postgres',
+        'PASSWORD': 'Ecotrading2024',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }]
-DATABASES = DATABASES_LIST[0]
+DATABASES = DATABASES_LIST[2]
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators

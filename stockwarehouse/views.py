@@ -11,6 +11,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.template import loader
 from django.urls import reverse
 from django.contrib.auth.forms import PasswordChangeForm
+from .forms import *
 
 
 def LoginUser(request):
@@ -156,3 +157,27 @@ def cal_trading_power_customer(request):
     return JsonResponse({'error': 'Yêu cầu không hợp lệ'}, status=400)
             
 
+def assumption_sell_stock(request,pk,port_pk):
+    pk = int(request.user.username)
+    account = get_object_or_404(Account, pk =pk)
+    portfolio = get_object_or_404(Portfolio, pk=port_pk, account =pk)
+
+    if portfolio.sum_stock > 0:
+        if request.method == 'POST':
+            form = SellingForm(request.POST)
+            if form.is_valid():
+                # Perform calculations or update the portfolio with selling details
+                selling_price = form.cleaned_data['selling_price']
+                selling_date = form.cleaned_data['selling_date']
+                transaction_fee = (selling_price + portfolio.avg_price)*portfolio.sum_stock*account.transaction_fee
+                tax_fee  = selling_price *portfolio.sum_stock*account.tax
+                # interest_fee = 
+                profit = round((selling_price - portfolio.avg_price)*portfolio.sum_stock -transaction_fee-tax_fee  ,0)
+                print(profit)
+                return JsonResponse({'Lợi nhuận': profit})
+        else:
+            form = SellingForm()
+
+        return render(request, 'stockwarehouse/sell_stock.html', {'form': form, 'portfolio': portfolio})
+    else:
+        return render(request, 'stockwarehouse/no_sell_stock.html', {'portfolio': portfolio})
