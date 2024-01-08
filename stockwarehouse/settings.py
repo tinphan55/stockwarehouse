@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'infotrading',
     'dbbackup',
     'cpd',
+    'realstockaccount',
   
     
 ]
