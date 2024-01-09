@@ -12,6 +12,7 @@ from django.template import loader
 from django.urls import reverse
 from django.contrib.auth.forms import PasswordChangeForm
 from .forms import *
+from datetime import timedelta,datetime as dt
 
 
 def LoginUser(request):
@@ -160,24 +161,33 @@ def cal_trading_power_customer(request):
 def assumption_sell_stock(request,pk,port_pk):
     pk = int(request.user.username)
     account = get_object_or_404(Account, pk =pk)
-    portfolio = get_object_or_404(Portfolio, pk=port_pk, account =pk)
+    portfolio = get_object_or_404(Portfolio, pk=port_pk, account =pk, sum_stock__gt=0)
 
     if portfolio.sum_stock > 0:
         if request.method == 'POST':
             form = SellingForm(request.POST)
             if form.is_valid():
                 # Perform calculations or update the portfolio with selling details
+                
                 selling_price = form.cleaned_data['selling_price']
                 selling_date = form.cleaned_data['selling_date']
+                next_hold_number_days= (selling_date - dt.now().date()).days
                 transaction_fee = (selling_price + portfolio.avg_price)*portfolio.sum_stock*account.transaction_fee
                 tax_fee  = selling_price *portfolio.sum_stock*account.tax
-                # interest_fee = 
-                profit = round((selling_price - portfolio.avg_price)*portfolio.sum_stock -transaction_fee-tax_fee  ,0)
-                print(profit)
-                return JsonResponse({'Lợi nhuận': profit})
+                locked_interest_fee = account.total_loan_interest 
+                temporary_interest = account.interest_cash_balance*account.interest_fee*next_hold_number_days/360
+                total_interest = locked_interest_fee +temporary_interest
+                profit = round((selling_price - portfolio.avg_price)*portfolio.sum_stock -transaction_fee-tax_fee-total_interest  ,0)
+
+                return JsonResponse({
+                    'Lợi nhuận': '{:,.0f}'.format(profit),
+                    'Thuế':'{:,.0f}'.format(tax_fee),
+                    'Phí giao dịch': '{:,.0f}'.format(transaction_fee),
+                    'Lãi vay': '{:,.0f}'.format(total_interest),
+                    })
         else:
             form = SellingForm()
 
-        return render(request, 'stockwarehouse/sell_stock.html', {'form': form, 'portfolio': portfolio})
+        return render(request, 'stockwarehouse/sell_stock.html', {'form': form, 'portfolio': portfolio,'account':account})
     else:
         return render(request, 'stockwarehouse/no_sell_stock.html', {'portfolio': portfolio})
