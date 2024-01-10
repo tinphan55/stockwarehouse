@@ -171,7 +171,7 @@ def assumption_sell_stock(request,pk,port_pk):
                 
                 selling_price = form.cleaned_data['selling_price']
                 selling_date = form.cleaned_data['selling_date']
-                next_hold_number_days= (selling_date - dt.now().date()).days
+                next_hold_number_days= (selling_date - dt.now().date()).days +2 #do T2 nền phải 2 ngày sao mới về
                 transaction_fee = (selling_price + portfolio.avg_price)*portfolio.sum_stock*account.transaction_fee
                 tax_fee  = selling_price *portfolio.sum_stock*account.tax
                 locked_interest_fee = account.total_loan_interest 

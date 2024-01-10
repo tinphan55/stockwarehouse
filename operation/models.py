@@ -45,7 +45,9 @@ class Account (models.Model):
     cash_t1 = models.FloatField(default=0,verbose_name= 'Số dư tiền T1')
     cash_t2= models.FloatField(default=0,verbose_name= 'Số dư tiền T2')
     interest_cash_balance= models.FloatField(default=0,verbose_name= 'Số dư tiền tính lãi')
-    total_loan_interest= models.FloatField(default=0,verbose_name= 'Tổng lãi vay đã trả')
+    total_loan_interest= models.FloatField(default=0,verbose_name= 'Tổng lãi vay')
+    total_interest_paid= models.FloatField(default=0,verbose_name= 'Tổng lãi vay đã trả')
+    total_temporarily_interest =models.FloatField(default=0,verbose_name= 'Tổng lãi vay tạm tính')
     total_pl = models.FloatField(default=0,verbose_name= 'Tổng lời lỗ')
     class Meta:
          verbose_name = 'Tài khoản'
@@ -70,7 +72,8 @@ class Account (models.Model):
     
     def save(self, *args, **kwargs):
     # Your first save method code
-        self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_loan_interest
+        self.total_temporarily_interest = self.total_loan_interest + self.total_interest_paid
+        self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_temporarily_interest
         stock_mapping = {obj.stock: obj.initial_margin_requirement for obj in StockListMargin.objects.all()}
         port = Portfolio.objects.filter(account=self.pk, sum_stock__gt=0)
         sum_initial_margin = 0

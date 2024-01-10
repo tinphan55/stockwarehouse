@@ -14,8 +14,8 @@ class AccountAdmin(admin.ModelAdmin):
     model= Account
     # list_display = ['name','id','formatted_cash_balance','interest_cash_balance','market_value','nav','margin_ratio','status']
     # readonly_fields=['cash_balance','market_value','nav','margin_ratio','excess_equity','user_created','initial_margin_requirement','net_cash_flow','net_trading_value','status']
-    list_display = ['name', 'id', 'formatted_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','formatted_excess_equity','formatted_total_pl', 'status']
-    readonly_fields = ['cash_balance', 'market_value', 'nav', 'margin_ratio', 'excess_equity', 'user_created', 'initial_margin_requirement', 'net_cash_flow', 'net_trading_value', 'status','cash_t2','cash_t1','excess_equity', 'interest_cash_balance' , 'total_loan_interest', 'user_modified']
+    list_display = ['name', 'id', 'formatted_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','formatted_excess_equity','formatted_total_pl', 'status','interest_payments']
+    readonly_fields = ['cash_balance', 'market_value', 'nav', 'margin_ratio', 'excess_equity', 'user_created', 'initial_margin_requirement', 'net_cash_flow', 'net_trading_value', 'status','cash_t2','cash_t1','excess_equity', 'interest_cash_balance' , 'total_loan_interest','total_interest_paid','total_temporarily_interest', 'user_modified']
     search_fields = ['id','name']
     def save_model(self, request, obj, form, change):
         # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
@@ -24,6 +24,7 @@ class AccountAdmin(admin.ModelAdmin):
         else:
             obj.user_modified = request.user.username
         super().save_model(request, obj, form, change)
+    
 
 
     def formatted_number(self, value):
@@ -51,6 +52,31 @@ class AccountAdmin(admin.ModelAdmin):
     def formatted_total_pl(self, obj):
         return self.formatted_number(obj.total_pl)
     # Add other formatted_* methods for other numeric fields
+
+    actions = ['select_interest_payments']
+
+    def interest_payments(self, obj):
+        # Display a custom button in the admin list view
+        if obj.market_value == 0 and obj.nav < 10000 and obj.total_pl !=0:
+            return 'Thanh toán'
+        return '-'
+
+    interest_payments.short_description = 'Thanh toán lãi'
+
+    def select_interest_payments(self, request, queryset):
+         # Check if the user is a superuser
+        if request.user.is_superuser:
+            # Custom action to reset selected accounts
+            for account in queryset:
+                if account.market_value == 0 and account.nav < 10000 and account.total_pl !=0:
+                    account.interest_paid += account.total_temporarily_interest
+                    # Save the changes
+                    account.save()
+                self.message_user(request, f'Reset {queryset.count()} selected accounts.')
+        else:
+            self.message_user(request, 'You do not have permission to perform this action.', level='ERROR')
+
+    select_interest_payments.short_description = 'Thanh toán lãi'
 
     
     formatted_cash_balance.short_description = 'Số dư tiền'
