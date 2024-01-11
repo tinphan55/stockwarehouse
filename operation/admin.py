@@ -14,8 +14,8 @@ class AccountAdmin(admin.ModelAdmin):
     model= Account
     # list_display = ['name','id','formatted_cash_balance','interest_cash_balance','market_value','nav','margin_ratio','status']
     # readonly_fields=['cash_balance','market_value','nav','margin_ratio','excess_equity','user_created','initial_margin_requirement','net_cash_flow','net_trading_value','status']
-    list_display = ['name', 'id', 'formatted_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','formatted_excess_equity','formatted_total_pl', 'status','interest_payments']
-    readonly_fields = ['cash_balance', 'market_value', 'nav', 'margin_ratio', 'excess_equity', 'user_created', 'initial_margin_requirement', 'net_cash_flow', 'net_trading_value', 'status','cash_t2','cash_t1','excess_equity', 'interest_cash_balance' , 'total_loan_interest','total_interest_paid','total_temporarily_interest', 'user_modified']
+    list_display = ['name', 'id', 'formatted_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','formatted_excess_equity','formatted_total_temporarily_pl', 'status','interest_payments']
+    readonly_fields = ['cash_balance', 'market_value', 'nav', 'margin_ratio', 'excess_equity', 'user_created', 'initial_margin_requirement', 'net_cash_flow', 'net_trading_value', 'status','cash_t2','cash_t1','excess_equity', 'interest_cash_balance' , 'total_loan_interest','total_interest_paid','total_temporarily_interest','total_pl','total_closed_pl','total_temporarily_pl', 'user_modified']
     search_fields = ['id','name']
     def save_model(self, request, obj, form, change):
         # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
@@ -49,34 +49,67 @@ class AccountAdmin(admin.ModelAdmin):
         return self.formatted_number(obj.margin_ratio)
 
 
-    def formatted_total_pl(self, obj):
-        return self.formatted_number(obj.total_pl)
+    def formatted_total_temporarily_pl(self, obj):
+        return self.formatted_number(obj.total_temporarily_pl)
     # Add other formatted_* methods for other numeric fields
 
-    actions = ['select_interest_payments']
+    actions = ['select_account_settlement']
 
     def interest_payments(self, obj):
         # Display a custom button in the admin list view
-        if obj.market_value == 0 and obj.nav < 10000 and obj.total_pl !=0:
-            return 'Thanh toán'
+        if obj.market_value == 0 and obj.total_temporarily_interest !=0 :
+                return 'Tất toán'      
         return '-'
 
-    interest_payments.short_description = 'Thanh toán lãi'
+    interest_payments.short_description = 'Tất toán'
 
-    def select_interest_payments(self, request, queryset):
+    def select_account_settlement(self, request, queryset):
          # Check if the user is a superuser
         if request.user.is_superuser:
             # Custom action to reset selected accounts
             for account in queryset:
-                if account.market_value == 0 and account.nav < 10000 and account.total_pl !=0:
-                    account.interest_paid += account.total_temporarily_interest
+                if account.market_value == 0  and account.total_temporarily_interest !=0:
+                    amount =0
+                    if account.interest_cash_balance <=0:
+                        date=datetime.now().date()
+                        amount1 = account.interest_fee * account.interest_cash_balance/360
+                        if account.cash_t1 !=0:
+                            if account.interest_cash_balance+account.cash_t1 <0:
+                                amount_2 = account.interest_fee * (account.interest_cash_balance+account.cash_t1)/360    
+                            else:
+                                amount_2 = 0
+                        else:
+                            amount_2=amount1 
+                        amount = amount1 +    amount_2  
+                        print(amount_2) 
+                        description = f"TK {account.pk} tính lãi gộp tất toán"
+                        
+                        ExpenseStatement.objects.create(
+                            account=account,
+                            date=date,
+                            type = 'interest',
+                            amount = amount,
+                            description = description,
+                            interest_cash_balance = account.interest_cash_balance
+                            )
+                        account.total_loan_interest += amount
+                        account.save()
+                        
+                    account.total_interest_paid += account.total_temporarily_interest 
+                    account.total_closed_pl += account.total_temporarily_pl
+                    account.interest_cash_balance =account.interest_cash_balance + account.cash_t1 + account.cash_t2- account.total_temporarily_pl + account.total_temporarily_interest
+                    account.cash_t1 = 0
+                    account.cash_t2 = 0
+
                     # Save the changes
                     account.save()
-                self.message_user(request, f'Reset {queryset.count()} selected accounts.')
+                    self.message_user(request, f'Reset {queryset.count()} selected accounts.')
+                else:
+                    self.message_user(request, 'Tài khoản chưa đủ điều kiện để thanh toán lãi', level='ERROR')
         else:
             self.message_user(request, 'You do not have permission to perform this action.', level='ERROR')
 
-    select_interest_payments.short_description = 'Thanh toán lãi'
+    select_account_settlement.short_description = 'Tất toán tài khoản'
 
     
     formatted_cash_balance.short_description = 'Số dư tiền'
@@ -85,7 +118,7 @@ class AccountAdmin(admin.ModelAdmin):
     formatted_nav.short_description = 'Tài sản ròng'
     formatted_margin_ratio.short_description = 'Tỷ lệ kí quỹ'
     formatted_excess_equity.short_description = 'Dư kí quỹ'
-    formatted_total_pl.short_description = 'Tổng lãi lỗ'
+    formatted_total_temporarily_pl.short_description = 'Tổng lãi lỗ'
 
 
 admin.site.register(Account,AccountAdmin)

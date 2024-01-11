@@ -174,7 +174,7 @@ def assumption_sell_stock(request,pk,port_pk):
                 next_hold_number_days= (selling_date - dt.now().date()).days +2 #do T2 nền phải 2 ngày sao mới về
                 transaction_fee = -(selling_price + portfolio.avg_price)*portfolio.sum_stock*account.transaction_fee
                 tax_fee  = selling_price *portfolio.sum_stock*account.tax*-1
-                locked_interest_fee = account.total_loan_interest 
+                locked_interest_fee = account.total_temporarily_interest
                 temporary_interest = account.interest_cash_balance*account.interest_fee*next_hold_number_days/360
                 total_interest = locked_interest_fee +temporary_interest
                 profit = round((selling_price - portfolio.avg_price)*portfolio.sum_stock +transaction_fee+tax_fee+total_interest  ,0)

@@ -49,6 +49,8 @@ class Account (models.Model):
     total_interest_paid= models.FloatField(default=0,verbose_name= 'Tổng lãi vay đã trả')
     total_temporarily_interest =models.FloatField(default=0,verbose_name= 'Tổng lãi vay tạm tính')
     total_pl = models.FloatField(default=0,verbose_name= 'Tổng lời lỗ')
+    total_closed_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ đã chốt')
+    total_temporarily_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ tạm tính')
     class Meta:
          verbose_name = 'Tài khoản'
          verbose_name_plural = 'Tài khoản'
@@ -62,7 +64,7 @@ class Account (models.Model):
         value_force = round((maintenance_margin_ratio - self.margin_ratio)*self.market_value/100,0)
         value_force_str = '{:,.0f}'.format(value_force)
         status = ""
-        if self.cash_balance <0:
+        if abs(self.cash_balance) <1000 and value_force !=0:
             if check <= maintenance_margin_ratio and check >force_sell_margin_ratio:
                 status = f"CẢNH BÁO, số âm {value_force_str}"
             elif check <= force_sell_margin_ratio:
@@ -72,8 +74,8 @@ class Account (models.Model):
     
     def save(self, *args, **kwargs):
     # Your first save method code
-        self.total_temporarily_interest = self.total_loan_interest + self.total_interest_paid
-        self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_temporarily_interest
+        self.total_temporarily_interest = self.total_loan_interest - self.total_interest_paid
+        self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_loan_interest
         stock_mapping = {obj.stock: obj.initial_margin_requirement for obj in StockListMargin.objects.all()}
         port = Portfolio.objects.filter(account=self.pk, sum_stock__gt=0)
         sum_initial_margin = 0
@@ -91,6 +93,7 @@ class Account (models.Model):
         if self.market_value != 0:
             self.margin_ratio = abs(round((self.nav / self.market_value) * 100, 2))
         self.total_pl = self.nav - self.net_cash_flow
+        self.total_temporarily_pl = self.total_pl - self.total_closed_pl
         bot = Bot(token='5806464470:AAH9bLZxhx6xXDJ9rlPKkhaJ6lKpKRrZEfA')
         if self.status:
             noti = f"Tài khoản {self.pk}, tên {self.name} bị {self.status} "
@@ -546,16 +549,17 @@ def calculate_interest():
     if account:
         for instance in account:
             amount = instance.interest_fee * instance.interest_cash_balance/360
-            instance.total_loan_interest += amount
-            instance.save()
-            ExpenseStatement.objects.create(
-                account=instance,
-                date=datetime.now().date()-timedelta(days=1),
-                type = 'interest',
-                amount = amount,
-                description = instance.pk,
-                interest_cash_balance = instance.interest_cash_balance
-                )
+            if abs(amount)>10:
+                instance.total_loan_interest += amount
+                instance.save()
+                ExpenseStatement.objects.create(
+                    account=instance,
+                    date=datetime.now().date()-timedelta(days=1),
+                    type = 'interest',
+                    amount = amount,
+                    description = instance.pk,
+                    interest_cash_balance = instance.interest_cash_balance
+                    )
 
 def pay_money_back():
     account = Account.objects.all()
