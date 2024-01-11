@@ -16,15 +16,12 @@ from cpd.models import ClientPartnerInfo
 from django.contrib.auth.hashers import make_password
 from regulations.models import *
 
-maintenance_margin_ratio = 17
-force_sell_margin_ratio=13
 
-
-# maintenance_margin_ratio = OperationRegulations.objects.get(pk=4).parameters
-# force_sell_margin_ratio = OperationRegulations.objects.get(pk=5).parameters
-# transaction_fee= OperationRegulations.objects.get(pk=1).parameters
-# tax_fee = OperationRegulations.objects.get(pk=2).parameters
-# interest_fee=OperationRegulations.objects.get(pk=3).parameters
+maintenance_margin_ratio = OperationRegulations.objects.get(pk=4).parameters
+force_sell_margin_ratio = OperationRegulations.objects.get(pk=5).parameters
+transaction_fee= OperationRegulations.objects.get(pk=1).parameters
+tax_fee = OperationRegulations.objects.get(pk=2).parameters
+interest_fee=OperationRegulations.objects.get(pk=3).parameters
 
 
 
@@ -37,9 +34,9 @@ class Account (models.Model):
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
     description = models.TextField(max_length=255, blank=True, verbose_name= 'Mô tả')
     cpd = models.ForeignKey(ClientPartnerInfo,null=True, blank = True,on_delete=models.CASCADE, verbose_name= 'Người giới thiệu' )
-    interest_fee = models.FloatField(default=0.16,verbose_name= 'Lãi suất')
-    transaction_fee = models.FloatField(default=0.0015, verbose_name= 'Phí giao dịch')
-    tax = models.FloatField(default=0.001, verbose_name= 'Thuế')
+    interest_fee = models.FloatField(default=interest_fee,verbose_name= 'Lãi suất')
+    transaction_fee = models.FloatField(default=transaction_fee, verbose_name= 'Phí giao dịch')
+    tax = models.FloatField(default=tax_fee, verbose_name= 'Thuế')
     # bot = models.ForeignKey(BotTelegram,on_delete=models.CASCADE, verbose_name= 'Bot' )
     net_cash_flow= models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng')
     net_trading_value= models.FloatField(default=0,verbose_name= 'Giao dịch ròng')
