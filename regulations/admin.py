@@ -6,14 +6,14 @@ from .models import *
 
 class OperationRegulationsAdmin(admin.ModelAdmin):
     model  = OperationRegulations
-    list_display = ['name', 'formatted_arameters','description', 'user_created', 'user_modified', 'created_at']
+    list_display = ['name', 'parameters','description', 'user_created', 'user_modified', 'created_at']
     readonly_fields = ['user_created', 'user_modified']
     search_fields = ['name',]
 
-    def formatted_arameters(self, obj):
-        return '{:,.5f}'.format(obj.parameters)
+    # def formatted_arameters(self, obj):
+    #     return '{:,.5f}'.format(obj.parameters)
 
-    formatted_arameters.short_description = 'Thông số'
+    # formatted_arameters.short_description = 'Thông số'
     
     def save_model(self, request, obj, form, change):
         if not change:  # Kiểm tra xem có phải là tạo mới hay không

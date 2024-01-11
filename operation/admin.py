@@ -12,9 +12,14 @@ from django.core.exceptions import ValidationError
 
 class AccountAdmin(admin.ModelAdmin):
     model= Account
-    # list_display = ['name','id','formatted_cash_balance','interest_cash_balance','market_value','nav','margin_ratio','status']
-    # readonly_fields=['cash_balance','market_value','nav','margin_ratio','excess_equity','user_created','initial_margin_requirement','net_cash_flow','net_trading_value','status']
     list_display = ['name', 'id', 'formatted_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','formatted_excess_equity','formatted_total_temporarily_pl', 'status','interest_payments']
+    fieldsets = [
+        ('Thông tin cơ bản', {'fields': ['name','cpd','user_created','description']}),
+        ('Biểu phí tài khoản', {'fields': ['interest_fee', 'transaction_fee', 'tax','credit_limit']}),
+        ('Trạng thái tài khoản', {'fields': ['cash_balance', 'interest_cash_balance','net_cash_flow','net_trading_value','market_value','nav','initial_margin_requirement','margin_ratio','excess_equity','cash_t1','cash_t2',]}),
+        ('Thông tin lãi', {'fields': ['total_loan_interest','total_interest_paid','total_temporarily_interest']}),
+        ('Hiệu quả đầu tư', {'fields': ['total_pl','total_closed_pl','total_temporarily_pl']}),
+    ]
     readonly_fields = ['cash_balance', 'market_value', 'nav', 'margin_ratio', 'excess_equity', 'user_created', 'initial_margin_requirement', 'net_cash_flow', 'net_trading_value', 'status','cash_t2','cash_t1','excess_equity', 'interest_cash_balance' , 'total_loan_interest','total_interest_paid','total_temporarily_interest','total_pl','total_closed_pl','total_temporarily_pl', 'user_modified']
     search_fields = ['id','name']
     def save_model(self, request, obj, form, change):
@@ -122,6 +127,40 @@ class AccountAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Account,AccountAdmin)
+
+class MaxTradingPowerAccountAdmin(admin.ModelAdmin):
+    model = MaxTradingPowerAccount
+    list_display = ['name', 'id','list_stock_2_8','list_stock_3_7']
+    search_fields = ['name','id']
+    readonly_fields = ['name', 'id','cpd','user_created','description','total_pl','total_closed_pl','total_temporarily_pl']
+    fieldsets = [
+        ('Thông tin cơ bản', {'fields': ['name','cpd','user_created','description']}),
+        ('Hiệu quả đầu tư', {'fields': ['total_pl','total_closed_pl','total_temporarily_pl']}),
+    ]
+    def list_stock_2_8(self, obj):
+        pre_max_value = abs(obj.excess_equity / (20/100))
+        credit_limit = obj.credit_limit
+        max_value =min(pre_max_value,credit_limit)     
+        return '{:,.0f}'.format(max_value)
+    list_stock_2_8.short_description = 'Nhóm mã 2:8'
+
+    def list_stock_3_7(self, obj):
+        pre_max_value = abs(obj.excess_equity / (30/100))
+        credit_limit = obj.credit_limit
+        max_value =min(pre_max_value,credit_limit)     
+        return '{:,.0f}'.format(max_value)
+    list_stock_3_7.short_description = 'Nhóm mã 3:7'
+
+    def has_add_permission(self, request):
+        # Return False to disable the "Add" button
+        return False
+    
+    
+
+
+
+admin.site.register(MaxTradingPowerAccount,MaxTradingPowerAccountAdmin)
+
 
 class StockListMarginAdmin(admin.ModelAdmin):
     model= StockListMargin

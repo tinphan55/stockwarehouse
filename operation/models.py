@@ -19,9 +19,27 @@ from regulations.models import *
 
 maintenance_margin_ratio = OperationRegulations.objects.get(pk=4).parameters
 force_sell_margin_ratio = OperationRegulations.objects.get(pk=5).parameters
-transaction_fee= OperationRegulations.objects.get(pk=1).parameters
-tax_fee = OperationRegulations.objects.get(pk=2).parameters
-interest_fee=OperationRegulations.objects.get(pk=3).parameters
+
+def get_default_parameters(pk):
+    try:
+        return OperationRegulations.objects.get(pk=pk).parameters
+    except OperationRegulations.DoesNotExist:
+        # Trả về giá trị mặc định nếu không tìm thấy đối tượng
+        return 0.0  # hoặc giá trị mặc định của bạn
+
+def get_interest_fee_default():
+    return get_default_parameters(pk=3)
+
+def get_transaction_fee_default():
+    return get_default_parameters(pk=1)
+
+def get_tax_fee_default():
+    return get_default_parameters(pk=2)
+
+def get_credit_limit_default():
+    return get_default_parameters(pk=6)
+
+
 
 
 
@@ -34,9 +52,9 @@ class Account (models.Model):
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
     description = models.TextField(max_length=255, blank=True, verbose_name= 'Mô tả')
     cpd = models.ForeignKey(ClientPartnerInfo,null=True, blank = True,on_delete=models.CASCADE, verbose_name= 'Người giới thiệu' )
-    interest_fee = models.FloatField(default=interest_fee,verbose_name= 'Lãi suất')
-    transaction_fee = models.FloatField(default=transaction_fee, verbose_name= 'Phí giao dịch')
-    tax = models.FloatField(default=tax_fee, verbose_name= 'Thuế')
+    interest_fee = models.FloatField(default=get_interest_fee_default, verbose_name='Lãi suất')
+    transaction_fee = models.FloatField(default=get_transaction_fee_default, verbose_name='Phí giao dịch')
+    tax = models.FloatField(default=get_tax_fee_default, verbose_name='Thuế')
     # bot = models.ForeignKey(BotTelegram,on_delete=models.CASCADE, verbose_name= 'Bot' )
     net_cash_flow= models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng')
     net_trading_value= models.FloatField(default=0,verbose_name= 'Giao dịch ròng')
@@ -57,6 +75,7 @@ class Account (models.Model):
     total_pl = models.FloatField(default=0,verbose_name= 'Tổng lời lỗ')
     total_closed_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ đã chốt')
     total_temporarily_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ tạm tính')
+    credit_limit = models.FloatField(default=get_credit_limit_default, verbose_name='Hạn mức mua')
     class Meta:
          verbose_name = 'Tài khoản'
          verbose_name_plural = 'Tài khoản'
@@ -123,7 +142,15 @@ class Account (models.Model):
             group, created = Group.objects.get_or_create(name='customer')
             user.groups.add(group)
 
-   
+class MaxTradingPowerAccount(Account):
+    class Meta:
+        proxy = True
+        verbose_name = 'Quản lí sức mua'
+        verbose_name_plural = 'Quản lí sức mua'
+    def get_queryset(self):
+        return super().get_queryset().filter(nav__gt=0)
+    def __str__(self):
+        return str(self.name)
 
 class StockListMargin(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
