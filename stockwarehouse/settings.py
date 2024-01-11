@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'dbbackup',
     'cpd',
     'realstockaccount',
+    'regulations',
   
     
 ]
@@ -68,7 +69,8 @@ MIDDLEWARE = [
     'django_auto_logout.middleware.auto_logout',
 ]
 
-INTERNAL_IPS = ['127.0.0.1', 'localhost']
+INTERNAL_IPS = ['127.0.0.1', 'localhost', '10.100.66.4']
+
 
 ROOT_URLCONF = 'stockwarehouse.urls'
 

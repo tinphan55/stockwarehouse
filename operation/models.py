@@ -14,11 +14,20 @@ from telegram import Bot
 from django.db.models import Q
 from cpd.models import ClientPartnerInfo
 from django.contrib.auth.hashers import make_password
-
-
+from regulations.models import *
 
 maintenance_margin_ratio = 17
-force_sell_margin_ratio = 13
+force_sell_margin_ratio=13
+
+
+# maintenance_margin_ratio = OperationRegulations.objects.get(pk=4).parameters
+# force_sell_margin_ratio = OperationRegulations.objects.get(pk=5).parameters
+# transaction_fee= OperationRegulations.objects.get(pk=1).parameters
+# tax_fee = OperationRegulations.objects.get(pk=2).parameters
+# interest_fee=OperationRegulations.objects.get(pk=3).parameters
+
+
+
 
 
 # Create your models here.

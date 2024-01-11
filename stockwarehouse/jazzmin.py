@@ -79,7 +79,7 @@ JAZZMIN_SETTINGS = {
     "hide_models": [],
 
     # List of apps (and/or models) to base side menu ordering off of (does not need to contain all apps/models)
-    "order_with_respect_to": [ "Operation","realstockaccount","infotrading","cpd"],
+    "order_with_respect_to": [ "Operation","realstockaccount","infotrading","cpd","regulations"],
 
     # Custom links to append to app groups, keyed on app name
     # "custom_links": {
@@ -109,6 +109,7 @@ JAZZMIN_SETTINGS = {
         "infotrading.DividendManage":"fas fa-magic",
         "infotrading.StockPriceFilter":"fas fa-check-circle",
         "realstockaccount.RealCashTransfer": "fas fa-money-bill-alt",
+        "regulations.OperationRegulations": "fas fa-tools",
         
     },
     # Icons that are used when one is not manually specified
