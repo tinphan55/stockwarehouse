@@ -135,8 +135,12 @@ class MaxTradingPowerAccountAdmin(admin.ModelAdmin):
     readonly_fields = ['name', 'id','cpd','user_created','description','total_pl','total_closed_pl','total_temporarily_pl']
     fieldsets = [
         ('Thông tin cơ bản', {'fields': ['name','cpd','user_created','description']}),
-        ('Hiệu quả đầu tư', {'fields': ['total_pl','total_closed_pl','total_temporarily_pl']}),
-    ]
+        ('Hiệu quả đầu tư', {'fields': ['total_pl','total_closed_pl','total_temporarily_pl']}),]
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.filter(nav__gt=0)
+    
     def list_stock_2_8(self, obj):
         max_value = 0
         if obj.excess_equity >0:

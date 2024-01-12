@@ -105,11 +105,13 @@ JAZZMIN_SETTINGS = {
         "operation.Account": "fas fa-star",
         "operation.Account": "fas fa-vials",
         "operation.ExpenseStatement":"fas fa-receipt",
+        "operation.MaxTradingPowerAccount":"fas fa-battery-full",
         "infotrading.DateNotTrading":"far fa-calendar-check",
         "infotrading.DividendManage":"fas fa-magic",
         "infotrading.StockPriceFilter":"fas fa-check-circle",
         "realstockaccount.RealCashTransfer": "fas fa-money-bill-alt",
         "regulations.OperationRegulations": "fas fa-tools",
+        
         
     },
     # Icons that are used when one is not manually specified

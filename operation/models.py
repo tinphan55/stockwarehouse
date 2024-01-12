@@ -55,7 +55,6 @@ class Account (models.Model):
     interest_fee = models.FloatField(default=get_interest_fee_default, verbose_name='Lãi suất')
     transaction_fee = models.FloatField(default=get_transaction_fee_default, verbose_name='Phí giao dịch')
     tax = models.FloatField(default=get_tax_fee_default, verbose_name='Thuế')
-    # bot = models.ForeignKey(BotTelegram,on_delete=models.CASCADE, verbose_name= 'Bot' )
     net_cash_flow= models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng')
     net_trading_value= models.FloatField(default=0,verbose_name= 'Giao dịch ròng')
     cash_balance  = models.FloatField(default=0,verbose_name= 'Số dư tiền')
@@ -76,6 +75,7 @@ class Account (models.Model):
     total_closed_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ đã chốt')
     total_temporarily_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ tạm tính')
     credit_limit = models.FloatField(default=get_credit_limit_default, verbose_name='Hạn mức mua')
+
     class Meta:
          verbose_name = 'Tài khoản'
          verbose_name_plural = 'Tài khoản'
@@ -147,6 +147,7 @@ class MaxTradingPowerAccount(Account):
         proxy = True
         verbose_name = 'Quản lí sức mua'
         verbose_name_plural = 'Quản lí sức mua'
+        
     def get_queryset(self):
         return super().get_queryset().filter(nav__gt=0)
     def __str__(self):
