@@ -138,16 +138,20 @@ class MaxTradingPowerAccountAdmin(admin.ModelAdmin):
         ('Hiệu quả đầu tư', {'fields': ['total_pl','total_closed_pl','total_temporarily_pl']}),
     ]
     def list_stock_2_8(self, obj):
-        pre_max_value = abs(obj.excess_equity / (20/100))
-        credit_limit = obj.credit_limit
-        max_value =min(pre_max_value,credit_limit)     
+        max_value = 0
+        if obj.excess_equity >0:
+            pre_max_value = obj.excess_equity / (20/100)
+            credit_limit = obj.credit_limit
+            max_value =min(pre_max_value,credit_limit)     
         return '{:,.0f}'.format(max_value)
     list_stock_2_8.short_description = 'Nhóm mã 2:8'
 
     def list_stock_3_7(self, obj):
-        pre_max_value = abs(obj.excess_equity / (30/100))
-        credit_limit = obj.credit_limit
-        max_value =min(pre_max_value,credit_limit)     
+        max_value = 0
+        if obj.excess_equity >0:
+            pre_max_value = obj.excess_equity / (30/100)
+            credit_limit = obj.credit_limit
+            max_value =min(pre_max_value,credit_limit)     
         return '{:,.0f}'.format(max_value)
     list_stock_3_7.short_description = 'Nhóm mã 3:7'
 
