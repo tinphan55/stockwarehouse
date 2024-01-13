@@ -38,7 +38,7 @@ def warehouse(request):
             margin = StockListMargin.objects.filter(stock=ticker).first()
             max_value = 0
             if account.excess_equity > 0 and margin:
-                pre_max_value = abs(account.excess_equity / (margin.initial_margin_requirement/100))
+                pre_max_value = account.excess_equity / (margin.initial_margin_requirement/100)
                 credit_limit = account.credit_limit
                 max_value =min(pre_max_value,credit_limit)
                 

@@ -5,10 +5,21 @@ from django.contrib import messages
 from django.utils import timezone
 from django import forms
 from django.core.exceptions import ValidationError
+from realstockaccount.models import *
 
 # Register your models here.
 
 
+
+def real_min_power(date):
+        
+        value = RealTradingPower.objects.filter(date = date).first()
+        return value.min_amount
+    
+def real_max_power(date):
+        
+        value = RealTradingPower.objects.filter(date = date).first()
+        return value.max_amount
 
 class AccountAdmin(admin.ModelAdmin):
     model= Account
@@ -130,7 +141,7 @@ admin.site.register(Account,AccountAdmin)
 
 class MaxTradingPowerAccountAdmin(admin.ModelAdmin):
     model = MaxTradingPowerAccount
-    list_display = ['name', 'id','list_stock_2_8','list_stock_3_7']
+    list_display = ['name', 'id','list_stock_2_8','list_stock_3_7','real_min_power','real_max_power']
     search_fields = ['name','id']
     readonly_fields = ['name', 'id','cpd','user_created','description','total_pl','total_closed_pl','total_temporarily_pl']
     fieldsets = [
@@ -141,12 +152,14 @@ class MaxTradingPowerAccountAdmin(admin.ModelAdmin):
         queryset = super().get_queryset(request)
         return queryset.filter(nav__gt=0)
     
+
+    
     def list_stock_2_8(self, obj):
         max_value = 0
         if obj.excess_equity >0:
             pre_max_value = obj.excess_equity / (20/100)
             credit_limit = obj.credit_limit
-            max_value =min(pre_max_value,credit_limit)     
+            max_value =min(pre_max_value,credit_limit,real_max_power(self, obj))     
         return '{:,.0f}'.format(max_value)
     list_stock_2_8.short_description = 'Nhóm mã 2:8'
 
@@ -158,6 +171,8 @@ class MaxTradingPowerAccountAdmin(admin.ModelAdmin):
             max_value =min(pre_max_value,credit_limit)     
         return '{:,.0f}'.format(max_value)
     list_stock_3_7.short_description = 'Nhóm mã 3:7'
+
+    
 
     def has_add_permission(self, request):
         # Return False to disable the "Add" button
