@@ -52,9 +52,11 @@ class Account (models.Model):
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
     description = models.TextField(max_length=255, blank=True, verbose_name= 'Mô tả')
     cpd = models.ForeignKey(ClientPartnerInfo,null=True, blank = True,on_delete=models.CASCADE, verbose_name= 'Người giới thiệu' )
+    #biểu phí dịch vụ
     interest_fee = models.FloatField(default=get_interest_fee_default, verbose_name='Lãi suất')
     transaction_fee = models.FloatField(default=get_transaction_fee_default, verbose_name='Phí giao dịch')
     tax = models.FloatField(default=get_tax_fee_default, verbose_name='Thuế')
+    # Phục vụ tính tổng cash_balace:
     net_cash_flow= models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng')
     net_trading_value= models.FloatField(default=0,verbose_name= 'Giao dịch ròng')
     cash_balance  = models.FloatField(default=0,verbose_name= 'Số dư tiền')
@@ -65,8 +67,11 @@ class Account (models.Model):
     excess_equity= models.FloatField(default=0,verbose_name= 'Dư kí quỹ')
     user_created = models.ForeignKey(User,on_delete=models.CASCADE,related_name='user',null=True, blank= True,verbose_name="Người tạo")
     user_modified = models.CharField(max_length=150, blank=True, null=True,verbose_name="Người chỉnh sửa")
+    #Phục vụ tính số dư tiền tính lãi vay: interest_cash_balance = net_cash_flow + total_buy_trading_value  + casht0
+    total_buy_trading_value= models.FloatField(default=0,verbose_name= 'Tổng giá trị mua')
     cash_t1 = models.FloatField(default=0,verbose_name= 'Số dư tiền T1')
     cash_t2= models.FloatField(default=0,verbose_name= 'Số dư tiền T2')
+    cash_t0= models.FloatField(default=0,verbose_name= 'Số dư tiền bán đã về')
     interest_cash_balance= models.FloatField(default=0,verbose_name= 'Số dư tiền tính lãi')
     total_loan_interest= models.FloatField(default=0,verbose_name= 'Tổng lãi vay')
     total_interest_paid= models.FloatField(default=0,verbose_name= 'Tổng lãi vay đã trả')
@@ -101,6 +106,7 @@ class Account (models.Model):
     # Your first save method code
         self.total_temporarily_interest = self.total_loan_interest - self.total_interest_paid
         self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_loan_interest
+        self.interest_cash_balance =  self.cash_t0 + self.total_buy_trading_value
         stock_mapping = {obj.stock: obj.initial_margin_requirement for obj in StockListMargin.objects.all()}
         port = Portfolio.objects.filter(account=self.pk, sum_stock__gt=0)
         sum_initial_margin = 0
@@ -232,10 +238,14 @@ class Transaction (models.Model):
                    
         if self.position == 'sell':
             port = Portfolio.objects.filter(account = self.account, stock =self.stock).first()
-            max_qty_sell = port.on_hold
-            if self.qty > max_qty_sell:
-                raise ValidationError({'qty': f'Không đủ cổ phiếu bán, tổng cổ phiếu khả dụng là {max_qty_sell}'})
-        
+            stock_hold  = port.on_hold
+            sell_pending = Transaction.objects.filter(pk=self.pk).aggregate(Sum('qty'))['qty__sum'] or 0
+            max_sellable_qty =stock_hold  + sell_pending
+            if self.qty > max_sellable_qty:
+                    raise ValidationError({'qty': f'Không đủ cổ phiếu bán, tổng cổ phiếu khả dụng là {max_sellable_qty}'})        
+                
+
+         
              
         
         
@@ -250,9 +260,9 @@ class Transaction (models.Model):
             self.net_total_value = self.total_value-self.transaction_fee-self.tax
         
         super(Transaction, self).save(*args, **kwargs)
-        
-     
 
+
+        
  
     
 class ExpenseStatement(models.Model):
@@ -381,12 +391,7 @@ def get_stock_market_price(stock):
 
 
 
-@receiver(post_delete, sender=Transaction)
-def delete_expense_statement(sender, instance, **kwargs):
-    expense = ExpenseStatement.objects.filter(description=instance.pk)
-    # porfolio = Portfolio.objects.filter(account=instance.account, stock =instance.stock).first()
-    if expense:
-        expense.delete()
+
    
 
 # cập nhật giá danh mục => cập nhật giá trị tk chứng khoán
@@ -403,13 +408,13 @@ def update_market_price_port(sender, instance, created, **kwargs):
 
 
             
-# tách hàm
+# Các hàm cập nhập cho account và port
 
 def created_transaction(instance, portfolio, account):
     if instance.position == 'buy':
             #điều chỉnh account
-            account.net_trading_value += instance.net_total_value
-            account.interest_cash_balance += instance.net_total_value
+            account.net_trading_value += instance.net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
+            account.total_buy_trading_value+= instance.net_total_value #Dẫn tới thay đổi interest_cash_balance 
             if portfolio:
                 # điều chỉnh danh mục
                     portfolio.receiving_t2 = portfolio.receiving_t2 + instance.qty 
@@ -420,12 +425,12 @@ def created_transaction(instance, portfolio, account):
                     account= instance.account,
                     receiving_t2 = instance.qty ,)
     elif instance.position == 'sell':
-        #điều chỉnh account
-        account.net_trading_value += instance.net_total_value
-        account.cash_t2 += instance.net_total_value 
         # điều chỉnh danh mục
         portfolio.on_hold = portfolio.on_hold -instance.qty
-          
+        #điều chỉnh account
+        account.net_trading_value += instance.net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
+        account.cash_t2 += instance.net_total_value #Dẫn tới thay đổi cash_t0 trong tương lai và thay đổi interest_cash_balance 
+        
         # tạo sao kê thuế
         ExpenseStatement.objects.create(
                 account=instance.account,
@@ -441,8 +446,7 @@ def created_transaction(instance, portfolio, account):
                 
 
             
-def update_portfolio_transaction(instance, portfolio, account):
-    transaction_items = Transaction.objects.filter(account=account)
+def update_portfolio_transaction(instance,transaction_items, portfolio):
     #sửa danh mục
     stock_transaction = transaction_items.filter(stock = instance.stock)
     sum_sell = sum(item.qty for item in stock_transaction if item.position =='sell')
@@ -451,8 +455,7 @@ def update_portfolio_transaction(instance, portfolio, account):
     if portfolio:
         receiving_t2 =0
         receiving_t1=0
-        on_hold =0
-               
+        on_hold =0       
         for item in item_buy:
                     if difine_date_receive_stock_buy(item.date) == 0:
                         receiving_t2 += item.qty                           
@@ -466,12 +469,13 @@ def update_portfolio_transaction(instance, portfolio, account):
         portfolio.on_hold = on_hold
         
         
-
+# thay đổi sổ lệnh sẽ thay đổi trực tiếp cash_t0 và total_buy_trading_value, net_trading_value
 def update_account_transaction(account, transaction_items):
     item_all_sell = transaction_items.filter( position = 'sell')
     cash_t2 = 0
     cash_t1 = 0
-    cash_t0= sum(i.net_total_value for i in transaction_items if i.position =='buy')
+    cash_t0 =0
+    total_value_buy= sum(i.net_total_value for i in transaction_items if i.position =='buy')
     for item in item_all_sell:
         if difine_date_receive_stock_buy(item.date) == 0:
             cash_t2 += item.net_total_value 
@@ -481,7 +485,8 @@ def update_account_transaction(account, transaction_items):
             cash_t0 += item.net_total_value 
     account.cash_t2 = cash_t2
     account.cash_t1 = cash_t1
-    account.interest_cash_balance = cash_t0 
+    account.cash_t0 = cash_t0
+    account.total_buy_trading_value = total_value_buy
     account.net_trading_value = sum(item.net_total_value for item in transaction_items)
     
 
@@ -499,6 +504,72 @@ def update_or_created_expense_transaction(instance, description_type):
         }
     )
 
+#chỉ chạy nếu chỉnh tiền/sổ lệnh của ngày trước đó
+def delete_and_recreate_interest_expense(account): 
+    date_previous = account.created_at.date()
+    transaction_items_merge_date =Transaction.objects.filter(account=account).values('position', 'date').annotate(total_value=Sum('net_total_value')).order_by('date')
+      #nếu thay đổi nạp tiền
+    list_data = []
+    total_buy_value = 0
+    cash_t2  =0
+    cash_t1=0
+    cash_t0=0
+    if transaction_items_merge_date:
+        for item in transaction_items_merge_date:
+            dict_data ={}
+            #chu kì thanh toán tiền về cho ngày mới
+            if item['date'] > date_previous and (cash_t2 > 0 or cash_t1 > 0):
+                    cash_t0 += cash_t1
+                    cash_t1 = 0
+                    cash_t1 += cash_t2
+                    cash_t2 = 0
+            if item['position'] == 'buy':
+                total_buy_value += item['total_value']
+            else:
+                cash_t2 += item['total_value']
+            dict_data['date'] = item['date']
+            dict_data['interest_cash_balance'] =  cash_t0 +total_buy_value
+            dict_data['interest'] = round(dict_data['interest_cash_balance']*account.interest_fee/360,0)
+            list_data.append(dict_data)
+            date_previous = item['date']   
+    start_date = list_data[0]['date']
+    end_date = datetime.now().date() -  timedelta(days=1)
+    date_range = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
+    for date in date_range:
+        if date not in [item['date'] for item in list_data]:
+            # Lấy giá trị từ ngày liền trước đó
+            previous_day = date - timedelta(days=1)
+            previous_value = next(item for item in reversed(list_data) if item['date'] == previous_day)
+            new_record = {
+                'date': date,
+                'interest_cash_balance': previous_value['interest_cash_balance'],
+                'interest': previous_value['interest']
+            }
+            list_data.append(new_record)
+    list_data.sort(key=lambda x: x['date'])
+    expense = ExpenseStatement.objects.filter(account = account, type ='interest')
+    expense.delete()
+    for item in list_data:
+        ExpenseStatement.objects.create(
+            description=account.pk,
+            type='interest',
+            account=account,
+            date=item['date'],
+            amount=item['interest'],
+            interest_cash_balance=item['interest_cash_balance']
+        )
+    return list_data, date_range
+
+            
+
+
+
+
+    
+
+
+
+
 @receiver([post_save, post_delete], sender=Transaction)
 @receiver([post_save, post_delete], sender=CashTransfer)
 def save_field_account(sender, instance, **kwargs):
@@ -511,8 +582,7 @@ def save_field_account(sender, instance, **kwargs):
             account.net_cash_flow = sum(item.amount for item in cash_items)
         else:
             account.net_cash_flow +=  instance.amount
-        account.save()
-
+        
     elif sender == Transaction:
         portfolio = Portfolio.objects.filter(stock =instance.stock, account= instance.account).first()
         transaction_items = Transaction.objects.filter(account=account)
@@ -523,19 +593,26 @@ def save_field_account(sender, instance, **kwargs):
                 update_or_created_expense_transaction(instance,'tax' )
             # sửa sao kê lãi
             # sửa danh mục
-            update_portfolio_transaction(instance, portfolio, account)     
+            update_portfolio_transaction(instance,transaction_items, portfolio)
+            
             # sửa account
             update_account_transaction( account, transaction_items)
-            account.save()
-            
+           
         else:
             created_transaction(instance, portfolio, account)
-            if portfolio:
-                portfolio.save()
-            account.save()
             update_or_created_expense_transaction(instance,'transaction_fee' )
+        if portfolio:
+            portfolio.save()   
+    account.save()
+        
+          
             
-            
+@receiver(post_delete, sender=Transaction)
+def delete_expense_statement(sender, instance, **kwargs):
+    expense = ExpenseStatement.objects.filter(description=instance.pk)
+    # porfolio = Portfolio.objects.filter(account=instance.account, stock =instance.stock).first()
+    if expense:
+        expense.delete()      
         
     
 

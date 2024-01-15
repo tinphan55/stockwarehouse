@@ -109,8 +109,10 @@ JAZZMIN_SETTINGS = {
         "infotrading.DateNotTrading":"far fa-calendar-check",
         "infotrading.DividendManage":"fas fa-magic",
         "infotrading.StockPriceFilter":"fas fa-check-circle",
-        "realstockaccount.RealCashTransfer": "fas fa-money-bill-alt",
+        "realstockaccount.RealStockAccountCashTransfer": "fas fa-money-bill-alt",
+        "realstockaccount.RealBankCashTransfer": "fas fa-money-bill-wave",
         "regulations.OperationRegulations": "fas fa-tools",
+        "realstockaccount.RealTradingPower":"fas fa-wallet"
         
         
     },

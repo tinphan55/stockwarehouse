@@ -6,32 +6,46 @@ from django.utils import timezone
 from django import forms
 from django.core.exceptions import ValidationError
 from realstockaccount.models import *
+from django.core.exceptions import PermissionDenied
+from django.urls import reverse
+from django.utils.html import format_html
+from django.http import HttpResponseRedirect
+
 
 # Register your models here.
 
 
 
-def real_min_power(date):
-        
-        value = RealTradingPower.objects.filter(date = date).first()
-        return value.min_amount
+def real_min_power(date): 
+    value = RealTradingPower.objects.filter(date = date).first()
+    if value:
+        value_trading  =value.min_amount
+    else:
+        value_trading = 0
+    return value_trading
     
-def real_max_power(date):
-        
-        value = RealTradingPower.objects.filter(date = date).first()
-        return value.max_amount
-
+def real_max_power(date):   
+    value = RealTradingPower.objects.filter(date = date).first()
+    if value:
+        value_trading  =value.max_amount
+    else:
+        value_trading = 0
+    return value_trading
 class AccountAdmin(admin.ModelAdmin):
     model= Account
     list_display = ['name', 'id', 'formatted_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','formatted_excess_equity','formatted_total_temporarily_pl', 'status','interest_payments']
     fieldsets = [
         ('Thông tin cơ bản', {'fields': ['name','cpd','user_created','description']}),
         ('Biểu phí tài khoản', {'fields': ['interest_fee', 'transaction_fee', 'tax','credit_limit']}),
-        ('Trạng thái tài khoản', {'fields': ['cash_balance', 'interest_cash_balance','net_cash_flow','net_trading_value','market_value','nav','initial_margin_requirement','margin_ratio','excess_equity','cash_t1','cash_t2',]}),
+        ('Trạng thái tài khoản', {'fields': ['cash_balance', 'interest_cash_balance','net_cash_flow','net_trading_value','market_value','nav','initial_margin_requirement','margin_ratio','excess_equity',]}),
         ('Thông tin lãi', {'fields': ['total_loan_interest','total_interest_paid','total_temporarily_interest']}),
         ('Hiệu quả đầu tư', {'fields': ['total_pl','total_closed_pl','total_temporarily_pl']}),
+        ('Thành phần số dư tiền tính lãi', {'fields': ['cash_t0','cash_t1','cash_t2','total_buy_trading_value']}),
     ]
-    readonly_fields = ['cash_balance', 'market_value', 'nav', 'margin_ratio', 'excess_equity', 'user_created', 'initial_margin_requirement', 'net_cash_flow', 'net_trading_value', 'status','cash_t2','cash_t1','excess_equity', 'interest_cash_balance' , 'total_loan_interest','total_interest_paid','total_temporarily_interest','total_pl','total_closed_pl','total_temporarily_pl', 'user_modified']
+    readonly_fields = ['cash_balance', 'market_value', 'nav', 'margin_ratio', 'excess_equity', 'user_created', 'initial_margin_requirement', 'net_cash_flow', 'net_trading_value', 'status','cash_t2','cash_t1',
+                       'excess_equity', 'interest_cash_balance' , 'total_loan_interest','total_interest_paid','total_temporarily_interest','total_pl','total_closed_pl','total_temporarily_pl', 'user_modified',
+                       'cash_t0','total_buy_trading_value'
+                       ]
     search_fields = ['id','name']
     def save_model(self, request, obj, form, change):
         # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
@@ -141,7 +155,7 @@ admin.site.register(Account,AccountAdmin)
 
 class MaxTradingPowerAccountAdmin(admin.ModelAdmin):
     model = MaxTradingPowerAccount
-    list_display = ['name', 'id','list_stock_2_8','list_stock_3_7','real_min_power','real_max_power']
+    list_display = ['name', 'id','list_stock_2_8','list_stock_3_7']#,'real_min_power','real_max_power']
     search_fields = ['name','id']
     readonly_fields = ['name', 'id','cpd','user_created','description','total_pl','total_closed_pl','total_temporarily_pl']
     fieldsets = [
@@ -159,7 +173,7 @@ class MaxTradingPowerAccountAdmin(admin.ModelAdmin):
         if obj.excess_equity >0:
             pre_max_value = obj.excess_equity / (20/100)
             credit_limit = obj.credit_limit
-            max_value =min(pre_max_value,credit_limit,real_max_power(self, obj))     
+            max_value =min(pre_max_value,credit_limit,real_max_power(datetime.now().date()))     
         return '{:,.0f}'.format(max_value)
     list_stock_2_8.short_description = 'Nhóm mã 2:8'
 
@@ -168,7 +182,7 @@ class MaxTradingPowerAccountAdmin(admin.ModelAdmin):
         if obj.excess_equity >0:
             pre_max_value = obj.excess_equity / (30/100)
             credit_limit = obj.credit_limit
-            max_value =min(pre_max_value,credit_limit)     
+            max_value =min(pre_max_value,credit_limit,real_min_power(datetime.now().date()))     
         return '{:,.0f}'.format(max_value)
     list_stock_3_7.short_description = 'Nhóm mã 3:7'
 
@@ -203,25 +217,22 @@ class StockListMarginAdmin(admin.ModelAdmin):
 admin.site.register(StockListMargin,StockListMarginAdmin)
 
 
+
 class TransactionForm(forms.ModelForm):
     class Meta:
         model = Transaction
         fields = '__all__'
-
-    def clean(self):
-        cleaned_data = super().clean()
-        change = self.instance.pk is not None  # Kiểm tra xem có phải là sửa đổi không
-
-        today = timezone.now().date()
-
-        # Kiểm tra quyền
-        if change and self.instance.created_at.date() != today:
-            raise ValidationError("Bạn không có quyền sửa đổi các bản ghi được tạo ngày trước đó.")
-
-        return cleaned_data
+    
+    # def clean(self):
+    #     cleaned_data = super().clean()
+    #     change = self.instance.pk is not None  # Kiểm tra xem có phải là sửa đổi không
+    #     today = timezone.now().date()
+    #     # Kiểm tra quyền
+    #     if change and self.instance.created_at.date() != today:
+    #             raise ValidationError("Bạn không có quyền sửa đổi các bản ghi được tạo ngày trước đó.")
+    #     return cleaned_data
     
     
-
 class TransactionAdmin(admin.ModelAdmin):
     form = TransactionForm
     list_display_links = ['stock',]
@@ -233,9 +244,26 @@ class TransactionAdmin(admin.ModelAdmin):
         # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
         if not change:  # Kiểm tra xem có phải là tạo mới hay không
             obj.user_created = request.user
+            super().save_model(request, obj, form, change)
         else:
+            today = timezone.now().date()
             obj.user_modified = request.user.username
-        super().save_model(request, obj, form, change)
+            if obj.created_at.date() != today:
+                if not request.user.is_superuser:
+                    raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi.")
+                else:
+                    # Thêm dòng cảnh báo cho siêu người dùng
+                    messages.warning(request, "Sao kê phí lãi vay đã được cập nhật.")
+                    super().save_model(request, obj, form, change)
+                    delete_and_recreate_interest_expense(obj.account)
+            else:
+                super().save_model(request, obj, form, change)
+    
+    
+
+                
+    
+
 
 
     def formatted_number(self, value):
@@ -308,6 +336,10 @@ class PortfolioAdmin(admin.ModelAdmin):
     formatted_receiving_t2.short_description = 'Chờ về T+2'
     formatted_profit.short_description = 'Lợi nhuận'
     formatted_sum_stock.short_description = 'Tổng cổ phiếu'
+
+    def has_add_permission(self, request):
+        # Return False to disable the "Add" button
+        return False
     
 admin.site.register(Portfolio,PortfolioAdmin)
 
@@ -315,11 +347,17 @@ class ExpenseStatementAdmin(admin.ModelAdmin):
     model = ExpenseStatement
     list_display = ['account', 'date', 'type', 'formatted_amount', 'description']
     search_fields = ['account__id','account__name']
+    list_filter = ['type']
 
     def formatted_amount(self, obj):
         return '{:,.0f}'.format(obj.amount)
+    
 
     formatted_amount.short_description = 'Số tiền'
+
+    def has_add_permission(self, request):
+        # Return False to disable the "Add" button
+        return False
 
 admin.site.register(ExpenseStatement, ExpenseStatementAdmin)
 

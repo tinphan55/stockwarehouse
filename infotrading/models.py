@@ -16,6 +16,9 @@ class StockPriceFilter(models.Model):
     close = models.FloatField()
     volume =models.FloatField()
     date_time = models.DateTimeField(null=True, blank=True)
+    class Meta:
+         verbose_name = 'Giá thị trường'
+         verbose_name_plural = 'Giá thị trường'
     def __str__(self):
         return str(self.ticker) + str(self.date)
     
@@ -26,6 +29,9 @@ class DateNotTrading(models.Model):
     description = models.TextField(max_length=255, blank=True)
     def __str__(self):
         return str(self.date) 
+    class Meta:
+         verbose_name = 'Ngày lễ không giao dịch'
+         verbose_name_plural = 'Ngày lễ không giao dịch'
     
 class DividendManage(models.Model):
     DIVIDEND_CHOICES = [
@@ -45,6 +51,9 @@ class DividendManage(models.Model):
     price_option = models.FloatField(default=0)
     stock_option = models.FloatField(default=0)
     
+    class Meta:
+         verbose_name = 'Quản lí cổ tức'
+         verbose_name_plural = 'Quản lí cổ tức'
     def __str__(self):
         return str(self.ticker) +str("_")+ str(self.date_apply)
 
