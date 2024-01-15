@@ -366,17 +366,17 @@ class CashTransferForm(forms.ModelForm):
         model = CashTransfer
         fields = '__all__'
 
-    def clean(self):
-        cleaned_data = super().clean()
-        change = self.instance.pk is not None  # Kiểm tra xem có phải là sửa đổi không
+    # def clean(self):
+    #     cleaned_data = super().clean()
+    #     change = self.instance.pk is not None  # Kiểm tra xem có phải là sửa đổi không
 
-        today = timezone.now().date()
+    #     today = timezone.now().date()
 
-        # Kiểm tra quyền
-        if change and self.instance.created_at.date() != today:
-            raise ValidationError("Bạn không có quyền sửa đổi các bản ghi được tạo ngày trước đó.")
+    #     # Kiểm tra quyền
+    #     if change and self.instance.created_at.date() != today:
+    #         raise ValidationError("Bạn không có quyền sửa đổi các bản ghi được tạo ngày trước đó.")
 
-        return cleaned_data
+    #     return cleaned_data
 
 class CashTransferAdmin(admin.ModelAdmin):
     form  = CashTransferForm
@@ -389,14 +389,33 @@ class CashTransferAdmin(admin.ModelAdmin):
 
     formatted_amount.short_description = 'Số tiền'
     
+    # def save_model(self, request, obj, form, change):
+    #     if not change:  # Kiểm tra xem có phải là tạo mới hay không
+    #         obj.user_created = request.user
+    #      # Check if the record is being edited
+    #     else:
+    #         obj.user_modified = request.user.username
+                
+    #     super().save_model(request, obj, form, change)
+    
     def save_model(self, request, obj, form, change):
+        # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
         if not change:  # Kiểm tra xem có phải là tạo mới hay không
             obj.user_created = request.user
-         # Check if the record is being edited
+            super().save_model(request, obj, form, change)
         else:
+            today = timezone.now().date()
             obj.user_modified = request.user.username
-                
-        super().save_model(request, obj, form, change)
+            if obj.created_at.date() != today:
+                if not request.user.is_superuser:
+                    raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi.")
+                else:
+                    # Thêm dòng cảnh báo cho siêu người dùng
+                    messages.warning(request, "Số dư tiền và tài sản đã được cập nhật lại")
+                    super().save_model(request, obj, form, change)
+                    
+            else:
+                super().save_model(request, obj, form, change)
 
         
 
