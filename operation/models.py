@@ -94,12 +94,12 @@ class Account (models.Model):
         value_force = round((maintenance_margin_ratio - self.margin_ratio)*self.market_value/100,0)
         value_force_str = '{:,.0f}'.format(value_force)
         status = ""
+        port = Portfolio.objects.filter(account_id = self.pk).first()
+        price_force_sell = round(-self.cash_balance/( 0.87* port.sum_stock),0)
         if abs(self.cash_balance) >1000 and value_force !=0:
             if check <= maintenance_margin_ratio and check >force_sell_margin_ratio:
-                status = f"CẢNH BÁO, số âm {value_force_str}"
+                status = f"CẢNH BÁO, số âm {value_force_str}, bán nếu giá {port.stock} giảm về {'{:,.0f}'.format(price_force_sell)}"
             elif check <= force_sell_margin_ratio:
-                port = Portfolio.objects.filter(account_id = self.pk).first()
-                price_force_sell = round(-self.cash_balance/( 0.87* port.sum_stock),0)
                 status = f"BÁN GIẢI CHẤP {'{:,.0f}'.format(value_force*5)}, bán nếu giá {port.stock} giảm về {'{:,.0f}'.format(price_force_sell)}"
             return status
    
