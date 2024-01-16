@@ -33,6 +33,7 @@ def real_max_power(date):
     return value_trading
 class AccountAdmin(admin.ModelAdmin):
     model= Account
+    ordering = ['-nav']
     list_display = ['name', 'id', 'formatted_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','formatted_excess_equity','formatted_total_temporarily_pl', 'status','interest_payments']
     fieldsets = [
         ('Thông tin cơ bản', {'fields': ['name','cpd','user_created','description']}),

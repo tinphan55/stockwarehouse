@@ -98,7 +98,9 @@ class Account (models.Model):
             if check <= maintenance_margin_ratio and check >force_sell_margin_ratio:
                 status = f"CẢNH BÁO, số âm {value_force_str}"
             elif check <= force_sell_margin_ratio:
-                status = f"BÁN GIẢI CHẤP {'{:,.0f}'.format(value_force*5)}"
+                port = Portfolio.objects.filter(account_id = self.pk).first()
+                price_force_sell = round(-self.cash_balance/( 0.87* port.sum_stock),0)
+                status = f"BÁN GIẢI CHẤP {'{:,.0f}'.format(value_force*5)}, bán nếu giá {port.stock} giảm về {'{:,.0f}'.format(price_force_sell)}"
             return status
    
     
