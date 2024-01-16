@@ -276,9 +276,9 @@
                 {% if transaction %}
                     {% for item in transaction %}
                         <tr>
-                            <td>{{ item.date }}</td>
+                            <td>{{ item.date|date:"d/m/Y" }}</td>
                             <td>{{ item.stock }}</td>
-                            <td>{{ item.position }}</td>
+                            <td>{{ item.get_position_display }}</td>
                             <td>{{ item.price|format_currency_0 }}</td>
                             <td>{{ item.qty|format_currency_0 }}</td>
                             <td>{{ item.transaction_fee|format_currency_0 }}</td>
@@ -309,7 +309,7 @@
                 {% if cash %}
                     {% for item in cash %}
                         <tr>
-                            <td>{{ item.date }}</td>
+                            <td>{{ item.date|date:"d/m/Y" }}</td>
                             <td>
                                 {% if item.amount > 0 %}
                                     Nạp tiền
@@ -341,19 +341,19 @@
                     <th>Diễn giải</th>
                 </tr>
                 {% if expense %}
-                    {% for item in expense %}
-                        <tr>
-                            <td>{{ item.date }}</td>
-                            <td>{{ item.type }}</td>
-                            <td>{{ item.amount|format_currency_0 }}</td>
-                            <td>{{ item.description }}</td>
-                        </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="4"><em>Chưa có dữ liệu</em></td>
-                    </tr>
-                {% endif %}
+    {% for item in expense %}
+        <tr>
+            <td>{{ item.date|date:"d/m/Y" }}</td>
+            <td>{{ item.get_type_display }}</td>
+            <td>{{ item.amount|format_currency_0 }}</td>
+            <td>{{ item.description }}</td>
+        </tr>
+    {% endfor %}
+{% else %}
+    <tr>
+        <td colspan="4"><em>Chưa có dữ liệu</em></td>
+    </tr>
+{% endif %}
 
                 <!-- Thêm các dòng cho sao kê phí khác tùy ý -->
             </table>
