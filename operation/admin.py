@@ -34,16 +34,16 @@ def real_max_power(date):
 class AccountAdmin(admin.ModelAdmin):
     model= Account
     ordering = ['-nav']
-    list_display = ['name', 'id', 'formatted_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','formatted_excess_equity','formatted_total_temporarily_pl', 'status','interest_payments']
+    list_display = ['name', 'id', 'formatted_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','formatted_excess_equity','formatted_total_temporarily_pl', 'custom_status_display','interest_payments']
     fieldsets = [
         ('Thông tin cơ bản', {'fields': ['name','cpd','user_created','description']}),
         ('Biểu phí tài khoản', {'fields': ['interest_fee', 'transaction_fee', 'tax','credit_limit']}),
-        ('Trạng thái tài khoản', {'fields': ['cash_balance', 'interest_cash_balance','net_cash_flow','net_trading_value','market_value','nav','initial_margin_requirement','margin_ratio','excess_equity',]}),
+        ('Trạng thái tài khoản', {'fields': ['cash_balance', 'interest_cash_balance','net_cash_flow','net_trading_value','market_value','nav','initial_margin_requirement','margin_ratio','excess_equity','custom_status_display']}),
         ('Thông tin lãi', {'fields': ['total_loan_interest','total_interest_paid','total_temporarily_interest']}),
         ('Hiệu quả đầu tư', {'fields': ['total_pl','total_closed_pl','total_temporarily_pl']}),
         ('Thành phần số dư tiền tính lãi', {'fields': ['cash_t0','cash_t1','cash_t2','total_buy_trading_value']}),
     ]
-    readonly_fields = ['cash_balance', 'market_value', 'nav', 'margin_ratio', 'excess_equity', 'user_created', 'initial_margin_requirement', 'net_cash_flow', 'net_trading_value', 'status','cash_t2','cash_t1',
+    readonly_fields = ['cash_balance', 'market_value', 'nav', 'margin_ratio', 'excess_equity', 'user_created', 'initial_margin_requirement', 'net_cash_flow', 'net_trading_value', 'custom_status_display','cash_t2','cash_t1',
                        'excess_equity', 'interest_cash_balance' , 'total_loan_interest','total_interest_paid','total_temporarily_interest','total_pl','total_closed_pl','total_temporarily_pl', 'user_modified',
                        'cash_t0','total_buy_trading_value'
                        ]
@@ -89,10 +89,10 @@ class AccountAdmin(admin.ModelAdmin):
     actions = ['select_account_settlement']
 
     def interest_payments(self, obj):
-        # Display a custom button in the admin list view
-        if obj.market_value == 0 and obj.total_temporarily_interest !=0 :
-                return 'Tất toán'      
-        return '-'
+       # Display a custom button in the admin list view with arrow formatting
+        color = 'green' if obj.market_value == 0 and obj.total_temporarily_interest != 0 else 'gray'
+        background_color = '#77cd8b' if color == 'green' else 'white'
+        return format_html('<div style="background-color: {0}; border: 1px solid {1}; padding: 5px; border-radius: 5px;">{2}</div>', background_color, color, 'Active' if color == 'green' else 'Inactive')
 
     interest_payments.short_description = 'Tất toán'
 
@@ -152,6 +152,14 @@ class AccountAdmin(admin.ModelAdmin):
     formatted_margin_ratio.short_description = 'Tỷ lệ kí quỹ'
     formatted_excess_equity.short_description = 'Dư kí quỹ'
     formatted_total_temporarily_pl.short_description = 'Tổng lãi lỗ'
+
+    def custom_status_display(self, obj):
+        if obj.status:
+            # Thêm HTML cho màu sắc dựa trên điều kiện
+            color = 'red' if 'giải chấp' in obj.status.lower() else 'green'
+            return format_html('<span style="color: {};">{}</span>', color, obj.status)
+
+    custom_status_display.short_description = 'Trạng thái'
 
 
 admin.site.register(Account,AccountAdmin)
