@@ -326,9 +326,9 @@ class Portfolio (models.Model):
         
     
 
-def difine_date_receive_stock_buy(check_date):
+def difine_date_receive_stock_buy(check_date, date_milestone):
     t=0
-    while t <= 2 and check_date < datetime.now().date():  
+    while t <= 2 and check_date < date_milestone:  
         check_date = check_date + timedelta(days=1)
         weekday = check_date.weekday() 
         check_in_dates =  DateNotTrading.objects.filter(date=check_date).exists()
@@ -455,11 +455,12 @@ def update_portfolio_transaction(instance,transaction_items, portfolio):
     if portfolio:
         receiving_t2 =0
         receiving_t1=0
-        on_hold =0       
+        on_hold =0 
+        today  = datetime.now().date()      
         for item in item_buy:
-                    if difine_date_receive_stock_buy(item.date) == 0:
+                    if difine_date_receive_stock_buy(item.date, today) == 0:
                         receiving_t2 += item.qty                           
-                    elif difine_date_receive_stock_buy(item.date) == 1:
+                    elif difine_date_receive_stock_buy(item.date, today) == 1:
                         receiving_t1 += item.qty                             
                     else:
                         on_hold += item.qty- sum_sell
@@ -476,10 +477,11 @@ def update_account_transaction(account, transaction_items):
     cash_t1 = 0
     cash_t0 =0
     total_value_buy= sum(i.net_total_value for i in transaction_items if i.position =='buy')
+    today  = datetime.now().date()     
     for item in item_all_sell:
-        if difine_date_receive_stock_buy(item.date) == 0:
+        if difine_date_receive_stock_buy(item.date,today) == 0:
             cash_t2 += item.net_total_value 
-        elif difine_date_receive_stock_buy(item.date) == 1:
+        elif difine_date_receive_stock_buy(item.date, today) == 1:
             cash_t1+= item.net_total_value 
         else:
             cash_t0 += item.net_total_value 
@@ -519,10 +521,15 @@ def delete_and_recreate_interest_expense(account):
             dict_data ={}
             #chu kì thanh toán tiền về cho ngày mới
             if item['date'] > date_previous and (cash_t2 > 0 or cash_t1 > 0):
-                    cash_t0 += cash_t1
-                    cash_t1 = 0
-                    cash_t1 += cash_t2
-                    cash_t2 = 0
+                    if difine_date_receive_stock_buy(date_previous, item['date']) == 1:
+                        cash_t0 += cash_t1
+                        cash_t1 = 0
+                        cash_t1 += cash_t2
+                        cash_t2 = 0
+                    elif difine_date_receive_stock_buy(date_previous, item['date']) >= 2:
+                        cash_t0+= cash_t1 + cash_t2
+                        cash_t1=0
+                        cash_t2=0
             if item['position'] == 'buy':
                 total_buy_value += item['total_value']
             else:
@@ -550,22 +557,18 @@ def delete_and_recreate_interest_expense(account):
     expense = ExpenseStatement.objects.filter(account = account, type ='interest')
     expense.delete()
     for item in list_data:
-        ExpenseStatement.objects.create(
-            description=account.pk,
-            type='interest',
-            account=account,
-            date=item['date'],
-            amount=item['interest'],
-            interest_cash_balance=item['interest_cash_balance']
-        )
+        if item['interest'] > 0:
+            ExpenseStatement.objects.create(
+                description=account.pk,
+                type='interest',
+                account=account,
+                date=item['date'],
+                amount=item['interest'],
+                interest_cash_balance=item['interest_cash_balance']
+            )
     return list_data, date_range
 
             
-
-
-
-
-    
 
 
 

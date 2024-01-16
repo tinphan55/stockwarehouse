@@ -47,6 +47,8 @@ class AccountAdmin(admin.ModelAdmin):
                        'cash_t0','total_buy_trading_value'
                        ]
     search_fields = ['id','name']
+    list_filter = ['name',]
+    
     def save_model(self, request, obj, form, change):
         # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
         if not change:  # Kiểm tra xem có phải là tạo mới hay không
@@ -239,7 +241,7 @@ class TransactionAdmin(admin.ModelAdmin):
     list_display = ['account','date','stock','position','formatted_price','formatted_qty','formatted_net_total_value','created_at','user_created','formatted_transaction_fee','formatted_tax']
     readonly_fields = ['user_created','user_modified','transaction_fee','tax','total_value','net_total_value']
     search_fields = ['account__id','account__name','stock__stock']
-    
+    list_filter = ['account__name',]
     def save_model(self, request, obj, form, change):
         # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
         if not change:  # Kiểm tra xem có phải là tạo mới hay không
@@ -299,6 +301,7 @@ class PortfolioAdmin(admin.ModelAdmin):
     list_display = ['account', 'stock', 'formatted_market_price', 'formatted_avg_price', 'formatted_on_hold', 'formatted_receiving_t1', 'formatted_receiving_t2', 'formatted_profit', 'percent_profit', 'formatted_sum_stock']
     readonly_fields = ['account','stock','market_price','avg_price','on_hold','receiving_t1','receiving_t2','profit','percent_profit', 'sum_stock', 'market_value']
     search_fields = ['stock','account__id','account__name']
+    list_filter = ['account__name',]
     def get_queryset(self, request):
         # Chỉ trả về các bản ghi có sum_stock > 0
         return super().get_queryset(request).filter(sum_stock__gt=0)
@@ -383,7 +386,7 @@ class CashTransferAdmin(admin.ModelAdmin):
     list_display = ['account', 'date', 'formatted_amount', 'user_created', 'user_modified', 'created_at']
     readonly_fields = ['user_created', 'user_modified']
     search_fields = ['account__id','account__name']
-
+    list_filter = ['account__name',]
     def formatted_amount(self, obj):
         return '{:,.0f}'.format(obj.amount)
 
