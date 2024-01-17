@@ -52,6 +52,32 @@ def customer_view(request, pk):
     else:
         return HttpResponse("<h1>Permission denied<h1>")
 
+@login_required(login_url="/loginuser/")
+def customer_view1(request, pk):
+    account = get_object_or_404(Account, pk=pk)
+    port = Portfolio.objects.filter(account=account, sum_stock__gt=0)
+    transaction = Transaction.objects.filter(account=account).order_by('-date')
+    cash = CashTransfer.objects.filter(account=account).order_by('-date')
+    expense = ExpenseStatement.objects.filter(
+        account=account).order_by('-date')
+    list_margin = StockListMargin.objects.all()
+
+    context = {
+        'account': account,
+        'port': port,
+        'transaction': transaction,
+        'cash': cash,
+        'expense': expense,
+        'list_margin': list_margin,
+
+    }
+
+    if request.user.username == str(pk):
+        template = loader.get_template('stockwarehouse/customer_home1.html')
+        return HttpResponse(template.render(context, request))
+    else:
+        return HttpResponse("<h1>Permission denied<h1>")
+
 
 # def clicklogin(request):
 #     if request.method!="POST":

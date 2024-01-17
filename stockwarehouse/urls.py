@@ -25,6 +25,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('operation.urls')),
     path('customer/<int:pk>', customer_view, name='customer_detail'),
+    path('customer1/<int:pk>', customer_view1, name='customer_detail1'),
     path('loginuser/', LoginUser, name="loginuser"),
     path('logout/', LogoutUser, name="logout"),
     path('clicklogin', clicklogin, name="clicklogin"),
@@ -37,6 +38,8 @@ urlpatterns = [
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.STATIC_URL,
+                      document_root=settings.STATIC_ROOT)
 if settings.DEBUG:
 
     urlpatterns += [
