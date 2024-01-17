@@ -89,10 +89,11 @@ class AccountAdmin(admin.ModelAdmin):
     actions = ['select_account_settlement']
 
     def interest_payments(self, obj):
-       # Display a custom button in the admin list view with arrow formatting
+        # Display a custom button in the admin list view with arrow formatting
+        icon = 'fa-check' if obj.market_value == 0 and obj.total_temporarily_interest != 0 else 'fa-times'
         color = 'green' if obj.market_value == 0 and obj.total_temporarily_interest != 0 else 'gray'
         background_color = '#77cd8b' if color == 'green' else 'white'
-        return format_html('<div style="background-color: {0}; border: 1px solid {1}; padding: 5px; border-radius: 5px;">{2}</div>', background_color, color, 'Active' if color == 'green' else 'Inactive')
+        return format_html('<div style="text-align: center; width: 25px; margin: 0 auto; background-color: {0}; border: 1px solid {1}; padding: 5px; border-radius: 5px;"><i class="fas {2}" style="color: {3}; font-size: 12px;"></i></div>', background_color, color, icon, color)
 
     interest_payments.short_description = 'Tất toán'
 
@@ -158,7 +159,9 @@ class AccountAdmin(admin.ModelAdmin):
         if obj.status:
             # Thêm HTML cho màu sắc dựa trên điều kiện
             color = 'red' if 'giải chấp' in obj.status.lower() else 'green'
-            return format_html('<span style="color: {};">{}</span>', color, obj.status)
+            # Thêm <br> để xuống dòng
+            return format_html('<span style="color: {};">{}</span><br>', color, obj.status)
+        return format_html('<span></span>')  # Trả về một span trống nếu status không tồn tại
 
     custom_status_display.short_description = 'Trạng thái'
 
@@ -265,9 +268,9 @@ class TransactionAdmin(admin.ModelAdmin):
                     raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi.")
                 else:
                     # Thêm dòng cảnh báo cho siêu người dùng
-                    messages.warning(request, "Sao kê phí lãi vay đã được cập nhật.")
                     super().save_model(request, obj, form, change)
                     delete_and_recreate_interest_expense(obj.account)
+                    messages.warning(request, "Sao kê phí lãi vay đã được cập nhật.")
             else:
                 super().save_model(request, obj, form, change)
     

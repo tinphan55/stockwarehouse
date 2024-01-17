@@ -99,9 +99,10 @@ class Account (models.Model):
             price_force_sell = round(-self.cash_balance/( 0.87* port.sum_stock),0)
             if abs(self.cash_balance) >1000 and value_force !=0:
                 if check <= maintenance_margin_ratio and check >force_sell_margin_ratio:
-                    status = f"CẢNH BÁO, số âm {value_force_str}, giá bán force sell {port.stock}: {'{:,.0f}'.format(price_force_sell)}"
+                    status = f"CẢNH BÁO, số âm {value_force_str}, giá bán {port.stock}: {'{:,.0f}'.format(price_force_sell)}"
                 elif check <= force_sell_margin_ratio:
-                    status = f"BÁN GIẢI CHẤP {'{:,.0f}'.format(value_force*5)}, giá bán force sell {port.stock}: {'{:,.0f}'.format(price_force_sell)}"
+                    status = f"GIẢI CHẤP {'{:,.0f}'.format(value_force*5)}, giá bán {port.stock}:\n{'{:,.0f}'.format(price_force_sell)}"
+
                 return status
    
     
@@ -200,8 +201,8 @@ class CashTransfer(models.Model):
 
 class Transaction (models.Model):
     POSITION_CHOICES = [
-        ('buy', 'Buy'),
-        ('sell', 'Sell'),
+        ('buy', 'Mua'),
+        ('sell', 'Bán'),
     ]
     account = models.ForeignKey(Account,on_delete=models.CASCADE, null=False, blank=False, verbose_name = 'Tài khoản' )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
@@ -270,9 +271,9 @@ class Transaction (models.Model):
     
 class ExpenseStatement(models.Model):
     POSITION_CHOICES = [
-        ('interest', 'interest'),
-        ('transaction_fee', 'transaction_fee'),
-        ('tax', 'tax'),
+        ('interest', 'Lãi vay'),
+        ('transaction_fee', 'Phí giao dịch'),
+        ('tax', 'Thuế bán'),
     ]
     account = models.ForeignKey(Account,on_delete=models.CASCADE, null=False, blank=False, verbose_name = 'Tài khoản' )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
@@ -461,12 +462,14 @@ def update_portfolio_transaction(instance,transaction_items, portfolio):
         on_hold =0 
         today  = datetime.now().date()      
         for item in item_buy:
-                    if difine_date_receive_stock_buy(item.date, today) == 0:
+            if difine_date_receive_stock_buy(item.date, today) == 0:
                         receiving_t2 += item.qty                           
-                    elif difine_date_receive_stock_buy(item.date, today) == 1:
+            elif difine_date_receive_stock_buy(item.date, today) == 1:
                         receiving_t1 += item.qty                             
-                    else:
-                        on_hold += item.qty- sum_sell
+            else:
+                        on_hold += item.qty
+
+        on_hold = on_hold - sum_sell
                                            
         portfolio.receiving_t2 = receiving_t2
         portfolio.receiving_t1 = receiving_t1
@@ -560,7 +563,7 @@ def delete_and_recreate_interest_expense(account):
     expense = ExpenseStatement.objects.filter(account = account, type ='interest')
     expense.delete()
     for item in list_data:
-        if item['interest'] > 0:
+        if item['interest'] != 0:
             ExpenseStatement.objects.create(
                 description=account.pk,
                 type='interest',

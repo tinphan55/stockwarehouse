@@ -29,10 +29,11 @@ def LoginUser(request):
 def customer_view(request, pk):
     account = get_object_or_404(Account, pk=pk)
     port = Portfolio.objects.filter(account=account, sum_stock__gt=0)
-    transaction = Transaction.objects.filter(account=account)
-    cash = CashTransfer.objects.filter(account=account)
-    expense = ExpenseStatement.objects.filter(account=account)
+    transaction = Transaction.objects.filter(account=account).order_by('-date')
+    cash = CashTransfer.objects.filter(account=account).order_by('-date')
+    expense = ExpenseStatement.objects.filter(account=account).order_by('-date')
     list_margin = StockListMargin.objects.all()
+    
 
     context = {
         'account': account,
@@ -41,6 +42,7 @@ def customer_view(request, pk):
         'cash': cash,
         'expense': expense,
         'list_margin': list_margin,
+       
     }
 
     if request.user.username == str(pk):
