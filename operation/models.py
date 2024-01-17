@@ -17,8 +17,10 @@ from django.contrib.auth.hashers import make_password
 from regulations.models import *
 
 
-maintenance_margin_ratio = OperationRegulations.objects.get(pk=4).parameters
-force_sell_margin_ratio = OperationRegulations.objects.get(pk=5).parameters
+maintenance_margin_ratio = 0.0
+force_sell_margin_ratio = 0.0
+# maintenance_margin_ratio = OperationRegulations.objects.get(pk=4).parameters
+# force_sell_margin_ratio = OperationRegulations.objects.get(pk=5).parameters
 
 def get_default_parameters(pk):
     try:
@@ -28,17 +30,18 @@ def get_default_parameters(pk):
         return 0.0  # hoặc giá trị mặc định của bạn
 
 def get_interest_fee_default():
-    return get_default_parameters(pk=3)
-
+    # return get_default_parameters(pk=3)
+    return 0.0
 def get_transaction_fee_default():
-    return get_default_parameters(pk=1)
-
+    # return get_default_parameters(pk=1)
+    return 0.0
 def get_tax_fee_default():
-    return get_default_parameters(pk=2)
+    # return get_default_parameters(pk=2)
+    return 0.0
 
 def get_credit_limit_default():
-    return get_default_parameters(pk=6)
-
+    # return get_default_parameters(pk=6)
+    return 0.0
 
 
 

@@ -16,8 +16,6 @@ from .jazzmin import *
 from datetime import timedelta, datetime as dt
 
 
-
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -53,8 +51,8 @@ INSTALLED_APPS = [
     'cpd',
     'realstockaccount',
     'regulations',
-  
-    
+
+
 ]
 
 MIDDLEWARE = [
@@ -65,7 +63,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware', 
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django_auto_logout.middleware.auto_logout',
 ]
 
@@ -92,7 +90,8 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
-            'builtins': ['stockwarehouse.custom_filters'],  # Thay 'your_app_name' bằng tên ứng dụng của bạn
+            # Thay 'your_app_name' bằng tên ứng dụng của bạn
+            'builtins': ['stockwarehouse.custom_filters'],
         },
     },
 ]
@@ -104,42 +103,44 @@ WSGI_APPLICATION = 'stockwarehouse.wsgi.application'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 
+DATABASES_LIST = [
+    #     {
+    # #server
+    #       'default': {
+    #          'ENGINE': 'django.db.backends.postgresql',
+    #          'NAME': 'ecotrading',
+    #          'USER': 'postgres',
+    #          'PASSWORD': 'Ecotr@ding2023',
+    #          'HOST': 'localhost',
+    #          'PORT': '5468',
+    #      }
+    #  },
+    # localhost
 
-DATABASES_LIST = [{
-#server
-      'default': {
-         'ENGINE': 'django.db.backends.postgresql',
-         'NAME': 'ecotrading',                      
-         'USER': 'admin',
-         'PASSWORD': 'Ecotr@ding2023',
-         'HOST': 'localhost',
-         'PORT': '',
-     }
- }, 
-#localhost
 
 
+    {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'ecotrading',
+            'USER': 'postgres',
+            'PASSWORD': 'Ecotr@ding2023',
+            'HOST': 'localhost',
+            'PORT': '5468',
+        }
+    },
+    # {
+    #      'default': {
+    #         'ENGINE': 'django.db.backends.postgresql',
+    #         'NAME': 'postgres',
+    #         'USER': 'postgres',
+    #         'PASSWORD': 'Ecotrading2023',
+    #         'HOST': 'localhost',
+    #         'PORT': '5468',
+    #     }
+    # }
 
-{
-     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ecotrading',                      
-        'USER': 'postgres',
-        'PASSWORD': 'Ecotrading2023',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
-},
-{
-     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',                      
-        'USER': 'postgres',
-        'PASSWORD': 'Ecotrading2024',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
-}]
+]
 DATABASES = DATABASES_LIST[0]
 
 # Password validation
@@ -177,9 +178,9 @@ USE_L10N = False
 
 USE_TZ = False
 
-DATE_FORMAT = ( ( 'd-m-Y' ))
-DATE_INPUT_FORMATS = ( ('%d-%m-%Y'),)
-DATETIME_FORMAT = (( 'd-m-Y H:i' ))
+DATE_FORMAT = (('d-m-Y'))
+DATE_INPUT_FORMATS = (('%d-%m-%Y'),)
+DATETIME_FORMAT = (('d-m-Y H:i'))
 DATETIME_INPUT_FORMATS = (('%d-%m-%Y %H:%i'),)
 
 
@@ -206,24 +207,25 @@ DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
 DBBACKUP_CLEANUP_KEEP = True
 DBBACKUP_CLEANUP_KEEP_NUMBER = 3  # Số lượng bản sao lưu giữ lại
 DBBACKUP_STORAGE_OPTIONS = {
-    'location': '/root/web2/backup/', 
+    'location': '/root/web2/backup/',
 }
 
 
-
-def custom_backup_filename(databasename, servername, extension,datetime, content_type):
-    formatted_datetime = dt.now().strftime('%Y-%m-%d') 
+def custom_backup_filename(databasename, servername, extension, datetime, content_type):
+    formatted_datetime = dt.now().strftime('%Y-%m-%d')
     return f"{formatted_datetime}.{extension}"
+
 
 DBBACKUP_FILENAME_TEMPLATE = custom_backup_filename
 
 CRONJOBS = [
-    ('0 1 * * *', 'stockwarehouse.schedule.schedule_morning'),# chạy lúc 7 giờ sáng
-    ('0 */2 2-8 * 1-5', 'stockwarehouse.schedule.get_info_stock_price_filter'),# chạy từ 9 đến 15h, cách 2 giờ chạy 1 lần
-    ('30 4 * * 1-5', 'stockwarehouse.schedule.schedule_mid_trading_date'),# chạy lúc 11h30 sáng
+    ('0 1 * * *', 'stockwarehouse.schedule.schedule_morning'),  # chạy lúc 7 giờ sáng
+    # chạy từ 9 đến 15h, cách 2 giờ chạy 1 lần
+    ('0 */2 2-8 * 1-5', 'stockwarehouse.schedule.get_info_stock_price_filter'),
+    # chạy lúc 11h30 sáng
+    ('30 4 * * 1-5', 'stockwarehouse.schedule.schedule_mid_trading_date'),
     # ('15 8 * * 1-5', 'stockwarehouse.schedule.schedule_after_trading_date'),# chạy lúc 14h45 trưa
-    ('10-25/15 2-7 * * 1-5', 'stockwarehouse.schedule.get_info_stock_price_stock_68'),# từ 2:10 đến 7:25 mỗi ngày cách nhau 15p
+    # từ 2:10 đến 7:25 mỗi ngày cách nhau 15p
+    ('10-25/15 2-7 * * 1-5', 'stockwarehouse.schedule.get_info_stock_price_stock_68'),
 
 ]
-
-
