@@ -130,17 +130,18 @@ class AccountAdmin(admin.ModelAdmin):
                         
                     account.total_interest_paid += account.total_temporarily_interest 
                     account.total_closed_pl += account.total_temporarily_pl
-                    account.interest_cash_balance =account.interest_cash_balance + account.cash_t1 + account.cash_t2- account.total_temporarily_pl + account.total_temporarily_interest
+                    account.cash_t0 = account.cash_t0 + account.cash_t1 + account.cash_t2
+                    # account.interest_cash_balance =account.cash_t0 - account.total_temporarily_pl + account.total_temporarily_interest
                     account.cash_t1 = 0
                     account.cash_t2 = 0
 
                     # Save the changes
                     account.save()
-                    self.message_user(request, f'Reset {queryset.count()} selected accounts.')
+                    self.message_user(request, f'Đã tất toán {queryset.count()} tài khoản đã chọn.')
                 else:
                     self.message_user(request, 'Tài khoản chưa đủ điều kiện để thanh toán lãi', level='ERROR')
         else:
-            self.message_user(request, 'You do not have permission to perform this action.', level='ERROR')
+            self.message_user(request, 'Bạn chưa có quyền thực hiện nghiệp vụ này.', level='ERROR')
 
     select_account_settlement.short_description = 'Tất toán tài khoản'
 
@@ -182,8 +183,8 @@ class MaxTradingPowerAccountAdmin(admin.ModelAdmin):
     def list_stock_2_8(self, obj):
         max_value = 0
         if obj.excess_equity >0:
-            pre_max_value = obj.excess_equity / (20/100)
-            credit_limit = obj.credit_limit
+            pre_max_value = obj.excess_equity / (20/100) 
+            credit_limit = obj.credit_limit - obj.market_value
             max_value =min(pre_max_value,credit_limit,real_max_power(datetime.now().date()))     
         return '{:,.0f}'.format(max_value)
     list_stock_2_8.short_description = 'Nhóm mã 2:8'
@@ -191,8 +192,8 @@ class MaxTradingPowerAccountAdmin(admin.ModelAdmin):
     def list_stock_3_7(self, obj):
         max_value = 0
         if obj.excess_equity >0:
-            pre_max_value = obj.excess_equity / (30/100)
-            credit_limit = obj.credit_limit
+            pre_max_value = obj.excess_equity / (30/100) 
+            credit_limit = obj.credit_limit - obj.market_value
             max_value =min(pre_max_value,credit_limit,real_min_power(datetime.now().date()))     
         return '{:,.0f}'.format(max_value)
     list_stock_3_7.short_description = 'Nhóm mã 3:7'
@@ -359,7 +360,8 @@ class ExpenseStatementAdmin(admin.ModelAdmin):
     model = ExpenseStatement
     list_display = ['account', 'date', 'type', 'formatted_amount', 'description']
     search_fields = ['account__id','account__name']
-    list_filter = ['type']
+    list_filter = ['account__name','type']
+
 
     def formatted_amount(self, obj):
         return '{:,.0f}'.format(obj.amount)
