@@ -110,7 +110,7 @@ class Account (models.Model):
     # Your first save method code
         self.total_temporarily_interest = self.total_loan_interest - self.total_interest_paid
         self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_loan_interest
-        self.interest_cash_balance =  self.cash_t0 + self.total_buy_trading_value  +self.total_closed_pl
+        self.interest_cash_balance =  self.cash_t0 + self.total_buy_trading_value  - self.total_closed_pl - self.total_interest_paid
         stock_mapping = {obj.stock: obj.initial_margin_requirement for obj in StockListMargin.objects.all()}
         port = Portfolio.objects.filter(account=self.pk, sum_stock__gt=0)
         sum_initial_margin = 0
