@@ -3,9 +3,9 @@ JAZZMIN_SETTINGS = {
     # title of the window (Will default to current_admin_site.site_title if absent or None)
     "site_title": "Kho Eco",
       # Title on the login screen (19 chars max) (defaults to current_admin_site.site_header if absent or None)
-    "site_header": "Ecotrading",
+    "site_header": "Kho Eco",
      # Title on the brand (19 chars max) (defaults to current_admin_site.site_header if absent or None)
-    "site_brand": "Ecotrading",
+    "site_brand": "Kho Eco",
 
     # Logo to use for login form in dark themes (defaults to login_logo)
     "login_logo_dark": None,
@@ -19,7 +19,7 @@ JAZZMIN_SETTINGS = {
 
 
     # Welcome text on the login screen
-    "welcome_sign": "Welcome to ECO TEAM",
+    "welcome_sign": "Welcome to Kho ECO",
 
     # Copyright on the footer
     "copyright": "Ecoteam",
