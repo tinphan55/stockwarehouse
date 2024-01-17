@@ -1,7 +1,7 @@
 
 JAZZMIN_SETTINGS = {
     # title of the window (Will default to current_admin_site.site_title if absent or None)
-    "site_title": "Kho Cổ Phiếu",
+    "site_title": "Kho Eco",
       # Title on the login screen (19 chars max) (defaults to current_admin_site.site_header if absent or None)
     "site_header": "Ecotrading",
      # Title on the brand (19 chars max) (defaults to current_admin_site.site_header if absent or None)
@@ -44,7 +44,7 @@ JAZZMIN_SETTINGS = {
         # external url that opens in a new window (Permissions can be added)
         # {"name": "Tính khối lượng", "url": "http://ecotrading.com.vn/calculator-qty", "new_window": True},
         # {"name": "Lọc cổ phiếu", "url":"http://ecotrading.com.vn/get_signal/", "new_window": True},
-        {"name": "Tính khối lượng mua", "url":"http://khocophieu.pro/warehouse", "new_window": True},
+        {"name": "Tính khối lượng mua", "url":"http://ecotrading.com.vn/warehouse", "new_window": True},
         # model admin to link to (Permissions checked against model)
         # {"model": "order.Cart"},
 
@@ -59,7 +59,7 @@ JAZZMIN_SETTINGS = {
     # Additional links to include in the user menu on the top right ("app" url type is not allowed)
     "usermenu_links": [
        # {"name": "Support", "url": "https://github.com/farridav/django-jazzmin/issues", "new_window": True},
-        #{"model": "auth.user"}
+        {"model": "auth.user"}
     ],
 
     #############
@@ -124,14 +124,14 @@ JAZZMIN_SETTINGS = {
     # Related Modal #
     #################
     # Use modals instead of popups
-    "related_modal_active": False,
+    "related_modal_active": True,
 
     #############
     # UI Tweaks #
     #############
     # Relative paths to custom CSS/JS scripts (must be present in static files)
-    "custom_css": None,
-    "custom_js": None,
+    "custom_css": True,
+    "custom_js": True,
     # Whether to link font from fonts.googleapis.com (use custom_css to supply font otherwise)
     "use_google_fonts_cdn": True,
     # Whether to show the UI customizer on the sidebar
