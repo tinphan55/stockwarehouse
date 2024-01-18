@@ -404,63 +404,49 @@
                                     </thead>
                                     <tbody>
                                         {% if port %}
-                                        {% for item in port %}
-                                        <tr>
-                                            <td class="border-bottom-0">
-                                                <p class="mb-0 fw-normal">
-                                                    {{ forloop.counter }}</p>
-                                            </td>
-                                            <td class="border-bottom-0">
-                                                <p class="mb-0 fw-normal">
-                                                    {{ item.stock }}</p>
-                                            </td>
-                                            <td class="border-bottom-0">
-                                                <p class="mb-0 fw-normal">
-                                                    {{
-                                                    item.market_price|format_currency_0
-                                                    }}</p>
-                                            </td>
-                                            <td class="border-bottom-0">
-                                                <p class="mb-0 fw-normal">
-                                                    {{
-                                                    item.avg_price|format_currency_0
-                                                    }}</p>
-                                            </td>
-                                            <td class="border-bottom-0">
-                                                <p class="mb-0 fw-normal">
-                                                    {{
-                                                    item.on_hold|format_currency_0
-                                                    }}</p>
-                                            </td>
-                                            <td class="border-bottom-0">
-                                                <p class="mb-0 fw-normal">
-                                                    {{
-                                                    item.receiving_t1|format_currency_0
-                                                    }}</p>
-                                            </td>
-                                            <td class="border-bottom-0">
-                                                <p class="mb-0 fw-normal">
-                                                    {{
-                                                    item.receiving_t2|format_currency_0
-                                                    }}</p>
-                                            </td>
-                                            <td class="border-bottom-0">
-                                                <p class="mb-0 fw-normal">
-                                                    {{
-                                                    item.profit|format_currency_0
-                                                    }}</p>
-                                            </td>
-                                            <td class="border-bottom-0">
-                                                <p class="mb-0 fw-normal">
-                                                    {{
-                                                    item.percent_profit|format_currency_2}}%
-                                                </p>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-
-
-
+                                            {% for item in port %}
+                                            <tr>
+                                                
+                                                <td class="border-bottom-0">
+                                                    <p class="mb-0 fw-normal">
+                                                        {{ forloop.counter }}</p>
+                                                </td>
+                                                <td class="border-bottom-0">
+                                                    <p class="mb-0 fw-normal">
+                                                        {{item.stock}}</p>
+                                                </td>
+                                                <td class="border-bottom-0">
+                                                    <p class="mb-0 fw-normal">
+                                                        {{item.market_price|format_currency_0}}</p>
+                                                </td>
+                                                <td class="border-bottom-0">
+                                                    <p class="mb-0 fw-normal">
+                                                        {{item.avg_price|format_currency_0}}</p>
+                                                </td>
+                                                <td class="border-bottom-0">
+                                                    <p class="mb-0 fw-normal">
+                                                        {{item.on_hold|format_currency_0}}</p>
+                                                </td>
+                                                <td class="border-bottom-0">
+                                                    <p class="mb-0 fw-normal">
+                                                        {{item.receiving_t1|format_currency_0}}
+                                                    </p>
+                                                </td>
+                                                <td class="border-bottom-0">
+                                                    <p class="mb-0 fw-normal">
+                                                        {{item.receiving_t2|format_currency_0}}</p>
+                                                </td>
+                                                <td class="border-bottom-0">
+                                                    <p class="mb-0 fw-normal">
+                                                        {{item.profit|format_currency_0}}</p>
+                                                </td>
+                                                <td class="border-bottom-0">
+                                                    <p class="mb-0 fw-normal">
+                                                        {{item.percent_profit|format_currency_2}}%
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
 
                                         {% else %}
                                         <tr>
@@ -539,38 +525,27 @@
                                             </td>
                                             <td class="border-bottom-0">
                                                 <p class="mb-0 fw-normal">
-                                                    {{ item.get_position_display
-                                                    }}</p>
+                                                    {{ item.get_position_display}}</p>
                                             </td>
                                             <td class="border-bottom-0">
                                                 <p class="mb-0 fw-normal">
-                                                    {{
-                                                    item.price|format_currency_0
-                                                    }}</p>
+                                                    {{item.price|format_currency_0}}</p>
                                             </td>
                                             <td class="border-bottom-0">
                                                 <p class="mb-0 fw-normal">
-                                                    {{
-                                                    item.qty|format_currency_0
-                                                    }}</p>
+                                                    {{item.qty|format_currency_0}}</p>
                                             </td>
                                             <td class="border-bottom-0">
                                                 <p class="mb-0 fw-normal">
-                                                    {{
-                                                    item.transaction_fee|format_currency_0
-                                                    }}</p>
+                                                    {{item.transaction_fee|format_currency_0}}</p>
                                             </td>
                                             <td class="border-bottom-0">
                                                 <p class="mb-0 fw-normal">
-                                                    {{
-                                                    item.tax|format_currency_0
-                                                    }}</p>
+                                                    {{item.tax|format_currency_0}}</p>
                                             </td>
                                             <td class="border-bottom-0">
                                                 <p class="mb-0 fw-normal">
-                                                    {{
-                                                    item.total_value|format_currency_0
-                                                    }}</p>
+                                                    {{item.total_value|format_currency_0}}</p>
                                             </td>
 
                                         </tr>
@@ -581,8 +556,7 @@
 
                                         {% else %}
                                         <tr>
-                                            <td colspan="9"><em>Chưa có dữ
-                                                    liệu</em></td>
+                                            <td colspan="9"><em>Chưa có dữ liệu</em></td>
                                         </tr>
                                         {% endif %}
                                     </tbody>
@@ -646,9 +620,7 @@
                                             </td>
                                             <td class="border-bottom-0">
                                                 <p class="mb-0 fw-normal">
-                                                    {{
-                                                    item.amount|format_currency_0
-                                                    }}</p>
+                                                    {{item.amount|format_currency_0}}</p>
                                             </td>
                                             <td class="border-bottom-0">
                                                 <p class="mb-0 fw-normal">
@@ -725,9 +697,7 @@
                                             </td>
                                             <td class="border-bottom-0">
                                                 <p class="mb-0 fw-normal">
-                                                    {{
-                                                    item.amount|format_currency_0
-                                                    }}</p>
+                                                    {{item.amount|format_currency_0}}</p>
                                             </td>
                                             <td class="border-bottom-0">
                                                 <p class="mb-0 fw-normal">
