@@ -1,11 +1,11 @@
 
 JAZZMIN_SETTINGS = {
     # title of the window (Will default to current_admin_site.site_title if absent or None)
-    "site_title": "Kho Eco",
+    "site_title": "Eco Trading",
       # Title on the login screen (19 chars max) (defaults to current_admin_site.site_header if absent or None)
-    "site_header": "Kho Eco",
+    "site_header": "Eco Trading",
      # Title on the brand (19 chars max) (defaults to current_admin_site.site_header if absent or None)
-    "site_brand": "Kho Eco",
+    "site_brand": "Eco Trading",
 
     # Logo to use for login form in dark themes (defaults to login_logo)
     "login_logo_dark": None,
@@ -19,7 +19,7 @@ JAZZMIN_SETTINGS = {
 
 
     # Welcome text on the login screen
-    "welcome_sign": "Welcome to Kho ECO",
+    "welcome_sign": "Welcome to Eco Trading",
 
     # Copyright on the footer
     "copyright": "Ecoteam",
@@ -124,18 +124,19 @@ JAZZMIN_SETTINGS = {
     # Related Modal #
     #################
     # Use modals instead of popups
-    "related_modal_active": True,
+    "related_modal_active": False,
 
     #############
     # UI Tweaks #
     #############
     # Relative paths to custom CSS/JS scripts (must be present in static files)
-    "custom_css": True,
-    "custom_js": True,
+    #bất true sẽ gây lỗi
+    "custom_css": False,
+    "custom_js": False,
     # Whether to link font from fonts.googleapis.com (use custom_css to supply font otherwise)
     "use_google_fonts_cdn": True,
     # Whether to show the UI customizer on the sidebar
-    "show_ui_builder": True,
+    "show_ui_builder": False,
 
     ###############
     # Change view #

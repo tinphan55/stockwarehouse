@@ -14,8 +14,8 @@ class RealStockAccountCashTransfer(models.Model):
     user_modified = models.CharField(max_length=150, blank=True, null=True,
                              verbose_name="Người chỉnh sửa")
     class Meta:
-         verbose_name = 'Sao kê tiền TKCK thật'
-         verbose_name_plural = 'Sao kê tiền TKCK thật'
+         verbose_name = 'Sao kê tiền TKCK'
+         verbose_name_plural = 'Sao kê tiền TKCK'
     
     def __str__(self):
         return str(self.amount) 
@@ -31,8 +31,8 @@ class RealBankCashTransfer(models.Model):
     user_modified = models.CharField(max_length=150, blank=True, null=True,
                              verbose_name="Người chỉnh sửa")
     class Meta:
-         verbose_name = 'Sao kê tiền TKNH thật'
-         verbose_name_plural =  'Sao kê tiền TKNH thật'
+         verbose_name = 'Sao kê tiền TKNH'
+         verbose_name_plural =  'Sao kê tiền TKNH'
     
     def __str__(self):
         return str(self.amount) 
@@ -49,8 +49,8 @@ class RealTradingPower(models.Model):
     user_modified = models.CharField(max_length=150, blank=True, null=True,
                              verbose_name="Người chỉnh sửa")
     class Meta:
-         verbose_name = 'Sức mua tài khoản thật'
-         verbose_name_plural = 'Sức mua tài khoản thật'
+         verbose_name = 'Sức mua tài khoản'
+         verbose_name_plural = 'Sức mua tài khoản'
     
     def __str__(self):
         return str(self.date) 
