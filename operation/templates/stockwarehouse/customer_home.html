@@ -446,8 +446,17 @@
                                                     </p>
                                                 </td>
                                             </tr>
-                                            {% endfor %}
 
+                                            <td colspan="9">
+                                                <a href="{% url 'assumption_sell_stock' pk=account.id port_pk=item.id %}">Tính toán giả định</a>
+                
+                                                <br>
+                                                <span style="font-size: 80%; color: #555;">
+                                                    Chú thích: Để tính toán lợi nhuận giả định theo giá bán tùy chỉnh
+                                                </span>
+                                            </td>
+                                            {% endfor %}
+                                            
                                         {% else %}
                                         <tr>
                                             <td colspan="9"><em>Chưa có dữ

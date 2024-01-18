@@ -102,42 +102,8 @@ class AccountAdmin(admin.ModelAdmin):
         if request.user.is_superuser:
             # Custom action to reset selected accounts
             for account in queryset:
-                if account.market_value == 0  and account.total_temporarily_interest !=0:
-                    amount =0
-                    if account.interest_cash_balance <=0:
-                        date=datetime.now().date()
-                        amount1 = account.interest_fee * account.interest_cash_balance/360
-                        if account.cash_t1 !=0:
-                            if account.interest_cash_balance+account.cash_t1 <0:
-                                amount_2 = account.interest_fee * (account.interest_cash_balance+account.cash_t1)/360    
-                            else:
-                                amount_2 = 0
-                        else:
-                            amount_2=amount1 
-                        amount = amount1 +    amount_2  
-                        print(amount_2) 
-                        description = f"TK {account.pk} tính lãi gộp tất toán"
-                        
-                        ExpenseStatement.objects.create(
-                            account=account,
-                            date=date,
-                            type = 'interest',
-                            amount = amount,
-                            description = description,
-                            interest_cash_balance = account.interest_cash_balance
-                            )
-                        account.total_loan_interest += amount
-                        account.save()
-                        
-                    account.total_interest_paid += account.total_temporarily_interest 
-                    account.total_closed_pl += account.total_temporarily_pl
-                    account.cash_t0 = account.cash_t0 + account.cash_t1 + account.cash_t2
-                    # account.interest_cash_balance =account.cash_t0 - account.total_temporarily_pl + account.total_temporarily_interest
-                    account.cash_t1 = 0
-                    account.cash_t2 = 0
-
-                    # Save the changes
-                    account.save()
+                status = setle_milestone_account(account)
+                if status == True:
                     self.message_user(request, f'Đã tất toán {queryset.count()} tài khoản đã chọn.')
                 else:
                     self.message_user(request, 'Tài khoản chưa đủ điều kiện để thanh toán lãi', level='ERROR')
@@ -167,6 +133,12 @@ class AccountAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Account,AccountAdmin)
+
+
+class AccountMilestoneAdmin(admin.ModelAdmin):
+    model = AccountMilestone
+
+admin.site.register(AccountMilestone,AccountMilestoneAdmin)
 
 class MaxTradingPowerAccountAdmin(admin.ModelAdmin):
     model = MaxTradingPowerAccount

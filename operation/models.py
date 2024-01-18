@@ -80,7 +80,7 @@ class Account (models.Model):
     total_closed_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ đã chốt')
     total_temporarily_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ tạm tính')
     credit_limit = models.FloatField(default=get_credit_limit_default, verbose_name='Hạn mức mua')
-
+    milestone_date_lated = models.DateTimeField(null =True, blank =True, verbose_name = 'Ngày tất toán gần nhất')
     class Meta:
          verbose_name = 'Tài khoản'
          verbose_name_plural = 'Tài khoản'
@@ -108,9 +108,9 @@ class Account (models.Model):
     
     def save(self, *args, **kwargs):
     # Your first save method code
-        self.total_temporarily_interest = self.total_loan_interest - self.total_interest_paid
+        self.total_loan_interest = self.total_temporarily_interest + self.total_interest_paid
         self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_loan_interest
-        self.interest_cash_balance =  self.cash_t0 + self.total_buy_trading_value   + self.total_interest_paid - self.total_closed_pl
+        self.interest_cash_balance =  self.cash_t0 + self.total_buy_trading_value + self.total_interest_paid  - self.total_closed_pl
         stock_mapping = {obj.stock: obj.initial_margin_requirement for obj in StockListMargin.objects.all()}
         port = Portfolio.objects.filter(account=self.pk, sum_stock__gt=0)
         sum_initial_margin = 0
@@ -166,7 +166,6 @@ class AccountMilestone(models.Model):
     net_cash_flow= models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng')
     cash_balance  = models.FloatField(default=0,verbose_name= 'Số dư tiền')
     nav = models.FloatField(default=0,verbose_name= 'Tài sản ròng')
-    margin_ratio = models.FloatField(default=0,verbose_name= 'Tỷ lệ margin')
     excess_equity= models.FloatField(default=0,verbose_name= 'Dư kí quỹ')
     #Phục vụ tính số dư tiền tính lãi vay: interest_cash_balance = net_cash_flow + total_buy_trading_value  + casht0
     pre_interest_cash_balance= models.FloatField(default=0,verbose_name= 'Số dư tiền tính lãi')
@@ -179,7 +178,7 @@ class AccountMilestone(models.Model):
          verbose_name_plural = 'Mốc Tài khoản'
 
     def __str__(self):
-        return str(self.account) + str(self.milestone)
+        return str(self.account) +str('_Lần_')+ str(self.milestone)
 
 class MaxTradingPowerAccount(Account):
     class Meta:
@@ -348,7 +347,7 @@ class Portfolio (models.Model):
         self.percent_profit = 0
         if self.sum_stock >0:
             self.market_price = round(get_stock_market_price(str(self.stock)),0)
-            self.avg_price = round(cal_avg_price(self.account.pk,self.stock)*1000,0)
+            self.avg_price = round(cal_avg_price(self.account.pk,self.stock,self.account.milestone_date_lated )*1000,0)
             self.profit = round((self.market_price - self.avg_price)*self.sum_stock,0)
             self.percent_profit = round((self.market_price/self.avg_price-1)*100,2)
             self.market_value = self.market_price*self.sum_stock
@@ -371,8 +370,8 @@ def difine_date_receive_stock_buy(check_date, date_milestone):
             t += 1
     return t
 
-def cal_avg_price(pk,stock):
-    item = Transaction.objects.filter(account_id=pk, stock__stock = stock ) 
+def cal_avg_price(account_pk,stock, date_time):
+    item = Transaction.objects.filter(account_id=account_pk, stock__stock = stock, created_at__gt =date_time) 
     total_buy = sum(i.qty for i in item if i.position =='buy' )
     total_sell =sum(i.qty for i in item if i.position =='sell' )
     total_value = sum(i.total_value for i in item if i.position =='buy' )
@@ -660,14 +659,21 @@ def delete_expense_statement(sender, instance, **kwargs):
 def save_field_account(sender, instance, **kwargs):
     created = kwargs.get('created', False)
     account = instance.account 
-    interests = ExpenseStatement.objects.filter(account= account , type ='interest')
-    if not created and interests :
-        sum_interest =0
-        for item in interests:
-            sum_interest +=item.amount
-        account.total_loan_interest = sum_interest
-        account.save()
-                
+    # tìm mileston gần nhất
+    milestone_account = AccountMilestone.objects.filter(created_at__lt = instance.date).order_by('-created_at').first()
+    if milestone_account:
+        pass
+    else:
+        interests = ExpenseStatement.objects.filter(account= account , type ='interest' )
+        
+        if interests :
+            if not created:
+                sum_interest = sum( item.amount for item in interests)
+                account.total_temporarily_interest = sum_interest
+            else:
+                account.total_temporarily_interest += instance.amount
+            account.save()
+                    
 
     
         
@@ -699,8 +705,6 @@ def calculate_interest():
         for instance in account:
             amount = instance.interest_fee * instance.interest_cash_balance/360
             if abs(amount)>10:
-                instance.total_loan_interest += amount
-                instance.save()
                 ExpenseStatement.objects.create(
                     account=instance,
                     date=datetime.now().date()-timedelta(days=1),
@@ -812,8 +816,10 @@ def check_dividend():
 
 
 
-def new_func(account, ):
+def setle_milestone_account(account ):
+    status = False
     if account.market_value == 0  and account.total_temporarily_interest !=0 and account.interest_cash_balance <=0:
+        status = True
         amount =0
         date=datetime.now().date()
         amount1 = account.interest_fee * account.interest_cash_balance/360
@@ -836,16 +842,11 @@ def new_func(account, ):
                 interest_cash_balance = account.interest_cash_balance
                 )
         
-        
         # Tạo account_milestones 
         # account.total_interest_paid += account.total_temporarily_interest 
         # account.total_closed_pl += account.total_temporarily_pl
-        lated_setle  = AccountMilestone.objects.filter(account = account).order_by('created_at').first()
-        if lated_setle:
-            number = lated_setle.pk +1
-        else:
-            number =1
-
+        number = len(AccountMilestone.objects.filter(account=account)) +1
+    
         a = AccountMilestone.objects.create(
             account=account,
             milestone = number,
@@ -853,22 +854,24 @@ def new_func(account, ):
             transaction_fee = account.transaction_fee,
             tax = account.tax,
             net_cash_flow = account.net_cash_flow,
-            cash_balance = account.cash_balace,
+            cash_balance = account.cash_balance,
             nav = account.nav,
-            margin_ratio = account.margin_ratio,
             excess_equity = account.excess_equity,
             pre_interest_cash_balance = account.interest_cash_balance  ,
-            interest_paid  = account.total_temporarily_interest + amount,
+            interest_paid  = account.total_temporarily_interest,
             closed_pl    = account.total_temporarily_pl   )
         
-        account.total_loan_interest += amount
         account.cash_t0 = account.cash_t0 + account.cash_t1 + account.cash_t2
         account.cash_t1 = 0
         account.cash_t2 = 0
         account.total_interest_paid += a.interest_paid
-        account.total_closed_pl += a.losed_pl
+        
+        account.total_temporarily_interest = 0
+        account.total_closed_pl += a.closed_pl
+        account.milestone_date_lated = a.created_at
         account.save()
-    return account, a
+
+    return  status
 
 
                 
