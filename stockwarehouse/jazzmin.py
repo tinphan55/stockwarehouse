@@ -130,10 +130,6 @@ JAZZMIN_SETTINGS = {
     # UI Tweaks #
     #############
     # Relative paths to custom CSS/JS scripts (must be present in static files)
-<<<<<<< HEAD
-=======
-    #bất true sẽ gây lỗi
->>>>>>> 1b2f40d20c4b043f7c6d1ec089f008588f43c9a1
     "custom_css": False,
     "custom_js": False,
     # Whether to link font from fonts.googleapis.com (use custom_css to supply font otherwise)

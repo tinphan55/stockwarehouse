@@ -347,7 +347,11 @@ class Portfolio (models.Model):
         self.percent_profit = 0
         if self.sum_stock >0:
             self.market_price = round(get_stock_market_price(str(self.stock)),0)
-            self.avg_price = round(cal_avg_price(self.account.pk,self.stock,self.account.milestone_date_lated )*1000,0)
+            if self.account.milestone_date_lated:
+                date_cal = self.account.milestone_date_lated
+            else:
+                date_cal = self.account.created_at
+            self.avg_price = round(cal_avg_price(self.account.pk,self.stock,date_cal )*1000,0)
             self.profit = round((self.market_price - self.avg_price)*self.sum_stock,0)
             self.percent_profit = round((self.market_price/self.avg_price-1)*100,2)
             self.market_value = self.market_price*self.sum_stock
@@ -478,7 +482,7 @@ def created_transaction(instance, portfolio, account):
                 
 
             
-def update_portfolio_transaction(instance,transaction_items, portfolio):
+def update_portfolio_transaction(instance,transaction_items, portfolio,date_mileston):
     #sửa danh mục
     stock_transaction = transaction_items.filter(stock = instance.stock)
     sum_sell = sum(item.qty for item in stock_transaction if item.position =='sell')
@@ -505,7 +509,7 @@ def update_portfolio_transaction(instance,transaction_items, portfolio):
         
         
 # thay đổi sổ lệnh sẽ thay đổi trực tiếp cash_t0 và total_buy_trading_value, net_trading_value
-def update_account_transaction(account, transaction_items):
+def update_account_transaction(account, transaction_items,date_mileston):
     item_all_sell = transaction_items.filter( position = 'sell')
     cash_t2 = 0
     cash_t1 = 0
@@ -543,7 +547,7 @@ def update_or_created_expense_transaction(instance, description_type):
 #chỉ chạy nếu chỉnh tiền/sổ lệnh của ngày trước đó
 def delete_and_recreate_interest_expense(account): 
     date_previous = account.created_at.date()
-    transaction_items_merge_date =Transaction.objects.filter(account=account).values('position', 'date').annotate(total_value=Sum('net_total_value')).order_by('date')
+    transaction_items_merge_date =Transaction.objects.filter(account=account,).values('position', 'date').annotate(total_value=Sum('net_total_value')).order_by('date')
       #nếu thay đổi nạp tiền
     list_data = []
     total_buy_value = 0
@@ -612,17 +616,22 @@ def delete_and_recreate_interest_expense(account):
 def save_field_account(sender, instance, **kwargs):
     created = kwargs.get('created', False)
     account = instance.account
+    milestone_account = AccountMilestone.objects.filter(created_at__lt = instance.created_at).order_by('-created_at').first()
+    if milestone_account:
+            date_mileston = milestone_account.created_at
+    else:
+            date_mileston = account.created_at
     
     if sender == CashTransfer:
         if not created:
-            cash_items = CashTransfer.objects.filter(account=account)
+            cash_items = CashTransfer.objects.filter(account=account,created_at__gt = date_mileston)
             account.net_cash_flow = sum(item.amount for item in cash_items)
         else:
             account.net_cash_flow +=  instance.amount
         
     elif sender == Transaction:
         portfolio = Portfolio.objects.filter(stock =instance.stock, account= instance.account).first()
-        transaction_items = Transaction.objects.filter(account=account)
+        transaction_items = Transaction.objects.filter(account=account,created_at__gt = date_mileston)
         if not created:
             # sửa sao kê phí và thuế
             update_or_created_expense_transaction(instance,'transaction_fee' )
@@ -660,20 +669,21 @@ def save_field_account(sender, instance, **kwargs):
     created = kwargs.get('created', False)
     account = instance.account 
     # tìm mileston gần nhất
-    milestone_account = AccountMilestone.objects.filter(created_at__lt = instance.date).order_by('-created_at').first()
+    milestone_account = AccountMilestone.objects.filter(created_at__lt = instance.created_at).order_by('-created_at').first()
     if milestone_account:
-        pass
+        date_mileston = milestone_account.created_at
     else:
-        interests = ExpenseStatement.objects.filter(account= account , type ='interest' )
-        
-        if interests :
-            if not created:
-                sum_interest = sum( item.amount for item in interests)
-                account.total_temporarily_interest = sum_interest
-            else:
-                account.total_temporarily_interest += instance.amount
-            account.save()
-                    
+        date_mileston = account.created_at
+    interests = ExpenseStatement.objects.filter(account= account , type ='interest' )
+    if created and interests:
+        account.total_temporarily_interest += instance.amount
+    
+    elif not created and interests:
+        interests_period = interests.filter(created_at__gt = date_mileston)
+        sum_interest = sum( item.amount for item in interests_period)
+        account.total_temporarily_interest = sum_interest
+        account.save()
+                        
 
     
         
@@ -872,6 +882,8 @@ def setle_milestone_account(account ):
         account.save()
 
     return  status
+
+
 
 
                 

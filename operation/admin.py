@@ -31,6 +31,7 @@ def real_max_power(date):
     else:
         value_trading = 0
     return value_trading
+
 class AccountAdmin(admin.ModelAdmin):
     model= Account
     ordering = ['-nav']

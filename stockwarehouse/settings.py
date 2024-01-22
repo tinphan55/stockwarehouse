@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
-
+# Eco@warehouse2024
 import os
 from pathlib import Path
 from .jazzmin import *
@@ -140,7 +140,7 @@ DATABASES_LIST = [{
         'PORT': '5432',
     }
 }]
-DATABASES = DATABASES_LIST[0]
+DATABASES = DATABASES_LIST[1]
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -211,7 +211,7 @@ DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
 DBBACKUP_CLEANUP_KEEP = True
 DBBACKUP_CLEANUP_KEEP_NUMBER = 3  # Số lượng bản sao lưu giữ lại
 DBBACKUP_STORAGE_OPTIONS = {
-    'location': '/root/web2/backup/', 
+    'location': '/root/eco_warehouse/backup/', 
 }
 
 
