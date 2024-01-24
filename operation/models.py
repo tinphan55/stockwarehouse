@@ -570,7 +570,7 @@ def delete_and_recreate_interest_expense(account):
         dict_data['interest'] = round(dict_data['interest_cash_balance']*account.interest_fee/360,0)
         list_data.append(dict_data)
 
-    date_range = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
+    date_range = [start_date + timedelta(days=x) for x in range(((end_date-  timedelta(days=1)) - start_date).days + 1)]
     for date in date_range:
         if date not in [item['date'] for item in list_data]:
             # Lấy giá trị từ ngày liền trước đó
