@@ -249,7 +249,7 @@ class TransactionAdmin(admin.ModelAdmin):
                     else:
                         # Thêm dòng cảnh báo cho siêu người dùng
                         super().save_model(request, obj, form, change)
-                        delete_and_recreate_interest_expense(obj.account,milestone_account.created_at)
+                        delete_and_recreate_interest_expense(obj.account)
                         messages.warning(request, "Sao kê phí lãi vay đã được cập nhật.")
                 else:
                     super().save_model(request, obj, form, change)
