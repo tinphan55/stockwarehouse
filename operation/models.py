@@ -518,9 +518,9 @@ def update_or_created_expense_transaction(instance, description_type):
     )
 
 #chỉ chạy nếu chỉnh tiền/sổ lệnh của ngày trước đó
-def delete_and_recreate_interest_expense(account, start_date): 
+def delete_and_recreate_interest_expense(account): 
     date_previous = account.created_at.date()
-    transaction_items_merge_date =Transaction.objects.filter(account=account,date__gt =start_date).values('position', 'date').annotate(total_value=Sum('net_total_value')).order_by('date')
+    transaction_items_merge_date =Transaction.objects.filter(account=account,).values('position', 'date').annotate(total_value=Sum('net_total_value')).order_by('date')
       #nếu thay đổi nạp tiền
     list_data = []
     total_buy_value = 0

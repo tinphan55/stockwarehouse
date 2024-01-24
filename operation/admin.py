@@ -139,9 +139,40 @@ admin.site.register(Account,AccountAdmin)
 class AccountMilestoneAdmin(admin.ModelAdmin):
     model = AccountMilestone
     search_fields = ['account__name','account__id']
-    list_display = ['account','created_at','milestone','net_cash_flow','net_trading_value','total_buy_trading_value','interest_paid','closed_pl']
+    list_display = ['account','created_at','milestone','formatted_net_cash_flow','formatted_net_trading_value','formatted_total_buy_trading_value','formatted_interest_paid','formatted_closed_pl']
     list_filter = ['account__name',]
-    readonly_fields = ['account','created_at','milestone','net_cash_flow','net_trading_value','total_buy_trading_value','interest_paid','closed_pl']
+    readonly_fields = ['account','created_at','milestone','formatted_net_cash_flow','formatted_net_trading_value','formatted_total_buy_trading_value','formatted_interest_paid','formatted_closed_pl']
+
+    def has_add_permission(self, request):
+        # Return False to disable the "Add" button
+        return False
+    
+    def formatted_number(self, value):
+        # Format number with commas as thousand separators and no decimal places
+        return '{:,.0f}'.format(value)
+
+    def formatted_net_cash_flow(self, obj):
+        return self.formatted_number(obj.net_cash_flow)
+    
+    def formatted_net_trading_value(self, obj):
+        return self.formatted_number(obj.net_trading_value)
+
+    def formatted_total_buy_trading_value(self, obj):
+        return self.formatted_number(obj.total_buy_trading_value)
+
+    def formatted_interest_paid(self, obj):
+        return self.formatted_number(obj.interest_paid)
+    
+    def formatted_closed_pl(self, obj):
+        return self.formatted_number(obj.closed_pl)
+    
+    formatted_net_cash_flow.short_description = 'Nạp rút tiền ròng'
+    formatted_net_trading_value.short_description = 'Giao dịch ròng'
+    formatted_total_buy_trading_value.short_description = 'Tổng giá trị mua'
+    formatted_interest_paid.short_description = 'Tổng lãi vay đã trả'
+    formatted_closed_pl.short_description = 'Tổng lời lỗ đã chốt'
+    
+    
 admin.site.register(AccountMilestone,AccountMilestoneAdmin)
 
 class MaxTradingPowerAccountAdmin(admin.ModelAdmin):
