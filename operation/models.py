@@ -560,9 +560,16 @@ def delete_and_recreate_interest_expense(account):
                 if list_data[-1]['date'] != dict_data['date']:
                     list_data.append(dict_data)
             count +=1
-            date_previous = item['date']   
-    start_date = list_data[0]['date']
+            date_previous = item['date']
+#check tai ngay hien tai -1 day
     end_date = datetime.now().date() -  timedelta(days=1)
+    start_date = list_data[0]['date']
+    if end_date > list_data[-1]['date']:
+        dict_data['date'] = end_date
+        dict_data['interest_cash_balance'] =  account.total_buy_trading_value + account.cash_t0
+        dict_data['interest'] = round(dict_data['interest_cash_balance']*account.interest_fee/360,0)
+        list_data.append(dict_data)
+
     date_range = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
     for date in date_range:
         if date not in [item['date'] for item in list_data]:
