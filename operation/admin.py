@@ -262,28 +262,27 @@ class TransactionAdmin(admin.ModelAdmin):
     readonly_fields = ['user_created','user_modified','transaction_fee','tax','total_value','net_total_value']
     search_fields = ['account__id','account__name','stock__stock']
     list_filter = ['account__name',]
-    def save_model(self, request, obj, form, change):
-        # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
-        if not change:  # Kiểm tra xem có phải là tạo mới hay không
-            obj.user_created = request.user
-            super().save_model(request, obj, form, change)
-        else:
-            today = timezone.now().date()
-            obj.user_modified = request.user.username
-            milestone_account = AccountMilestone.objects.filter(account =obj.account).order_by('-created_at').first()
-            # if milestone_account and obj.created_at < milestone_account.created_at:
-            #     raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi trong giai đoạn đã được tất toán.")
-            if milestone_account:
-                if obj.created_at.date() != today:
-                    if not request.user.is_superuser:
-                        raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi.")
-                    else:
-                        # Thêm dòng cảnh báo cho siêu người dùng
-                        super().save_model(request, obj, form, change)
-                        delete_and_recreate_interest_expense(obj.account)
-                        messages.warning(request, "Sao kê phí lãi vay đã được cập nhật.")
-                else:
-                    super().save_model(request, obj, form, change)
+    # def save_model(self, request, obj, form, change):
+    #     # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
+    #     if not change:  # Kiểm tra xem có phải là tạo mới hay không
+    #         obj.user_created = request.user
+    #         super().save_model(request, obj, form, change)
+    #     else:
+    #         today = timezone.now().date()
+    #         obj.user_modified = request.user.username
+    #         milestone_account = AccountMilestone.objects.filter(account =obj.account).order_by('-created_at').first()
+    #         if milestone_account and obj.created_at < milestone_account.created_at:
+    #             raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi trong giai đoạn đã được tất toán.")
+    #             if obj.created_at.date() != today:
+    #                 if not request.user.is_superuser:
+    #                     raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi.")
+    #                 else:
+    #                     # Thêm dòng cảnh báo cho siêu người dùng
+    #                     super().save_model(request, obj, form, change)
+    #                     delete_and_recreate_interest_expense(obj.account)
+    #                     messages.warning(request, "Sao kê phí lãi vay đã được cập nhật.")
+    #             else:
+    #                 super().save_model(request, obj, form, change)
     
     
 
