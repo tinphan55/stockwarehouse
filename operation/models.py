@@ -378,17 +378,25 @@ def difine_date_receive_stock_buy(check_date, date_milestone):
             t += 1
     return t
 
-
+from queue import LifoQueue
+account = Account.objects.get(pk=13)
+stock ='HAG'
+date_time = account.created_at
 
 def cal_avg_price(account,stock, date_time): 
     item_transactions = Transaction.objects.filter(account=account, stock__stock = stock, created_at__gt =date_time).order_by('date','created_at')
+    fifo = FIFO([])
     for item in item_transactions:
+    # Kiểm tra xem giao dịch có phải là mua hay bán
         if item.position == 'buy':
-            fifo = FIFO([Entry(item.qty, item.price)])
+            # Nếu là giao dịch mua, thêm một Entry mới với quantity dương vào FIFO
+            entry = Entry(item.qty, item.price)
         else:
-            fifo = FIFO([Entry(-item.qty, item.price)])
+            # Nếu là giao dịch bán, thêm một Entry mới với quantity âm vào FIFO
+            entry = Entry(-item.qty, item.price)
+        # Thêm entry vào FIFO
+        fifo._push(entry) if entry.buy else fifo._fill(entry)
     return fifo.avgcost
-
 
 
 
