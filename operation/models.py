@@ -378,10 +378,8 @@ def difine_date_receive_stock_buy(check_date, date_milestone):
             t += 1
     return t
 
-from queue import LifoQueue
-account = Account.objects.get(pk=13)
-stock ='HAG'
-date_time = account.created_at
+
+
 
 def cal_avg_price(account,stock, date_time): 
     item_transactions = Transaction.objects.filter(account=account, stock__stock = stock, created_at__gt =date_time).order_by('date','created_at')
