@@ -394,6 +394,9 @@ def cal_avg_price(account,stock, date_time):
             entry = Entry(-item.qty, item.price)
         # Thêm entry vào FIFO
         fifo._push(entry) if entry.buy else fifo._fill(entry)
+        
+        # fifo.trace in ra từng giao dịch bán
+        # fifo.profit_and_loss tính lời lỗ
     return fifo.avgcost
 
 
