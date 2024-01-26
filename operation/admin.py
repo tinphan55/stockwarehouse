@@ -273,7 +273,7 @@ class TransactionAdmin(admin.ModelAdmin):
             milestone_account = AccountMilestone.objects.filter(account =obj.account).order_by('-created_at').first()
             # if milestone_account and obj.created_at < milestone_account.created_at:
             #     raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi trong giai đoạn đã được tất toán.")
-            else:
+            if milestone_account:
                 if obj.created_at.date() != today:
                     if not request.user.is_superuser:
                         raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi.")
