@@ -715,11 +715,13 @@ def pay_money_back():
     account = Account.objects.all()
     if account:
         for instance in account:
-        # chuyển tiền dồn lên 1 ngày
+        # chuy?n ti?n d?n lên 1 ngày
             instance.interest_cash_balance += instance.cash_t1
+            instance.cash_t0 += instance.cash_t1
             instance.cash_t1= instance.cash_t2
             instance.cash_t2 =0
             instance.save()
+
 
 def atternoon_check():
     port = Portfolio.objects.filter(sum_stock__gt=0)
