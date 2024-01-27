@@ -689,12 +689,12 @@ def process_cash_flow(cash_t0, cash_t1, cash_t2):
     return cash_t0, cash_t1, cash_t2
 
 def add_list_interest(account,list_data,cash_t0 ,total_buy_value,date_interest):
-
+    interest_cash_balance = cash_t0 + total_buy_value
     if interest_cash_balance >0:
         interest_cash_balance=0
         interest = 0
     else: 
-        interest_cash_balance = cash_t0 + total_buy_value
+        interest_cash_balance = interest_cash_balance
         interest = round(interest_cash_balance * account.interest_fee / 360, 0)
 
     dict_data = {
