@@ -742,20 +742,18 @@ def delete_and_recreate_interest_expense2(account):
                     next_day = define_date_receive_cash(next_day, 1)[0]
                     if next_day == next_item_date:
                         break
-        
-    # Tạo một danh sách chứa tất cả các ngày từ ngày đầu tiên đến ngày cuối
-    all_dates = [list_data[0]['date'] + timedelta(days=i) for i in range((list_data[-1]['date'] - list_data[0]['date']).days + 1)]
-
-    # Tạo một danh sách mới chứa các phần tử đã có và điền giá trị bằng giá trị trước đó nếu thiếu
-    new_data = []
-    for d in all_dates:
-        existing_entry = next((item for item in list_data if item['date'] == d), None)
-        if existing_entry:
-            new_data.append(existing_entry)
-        else:
-            previous_entry = new_data[-1]
-            new_entry = {'date': d, 'interest_cash_balance': previous_entry['interest_cash_balance'], 'interest': previous_entry['interest']}
-            new_data.append(new_entry)
+        # Tạo một danh sách chứa tất cả các ngày từ ngày đầu tiên đến ngày cuối
+        all_dates = [list_data[0]['date'] + timedelta(days=i) for i in range((list_data[-1]['date'] - list_data[0]['date']).days + 1)]
+        # Tạo một danh sách mới chứa các phần tử đã có và điền giá trị bằng giá trị trước đó nếu thiếu
+        new_data = []
+        for d in all_dates:
+            existing_entry = next((item for item in list_data if item['date'] == d), None)
+            if existing_entry:
+                new_data.append(existing_entry)
+            else:
+                previous_entry = new_data[-1]
+                new_entry = {'date': d, 'interest_cash_balance': previous_entry['interest_cash_balance'], 'interest': previous_entry['interest']}
+                new_data.append(new_entry)
     return list_data,new_data
 
 
