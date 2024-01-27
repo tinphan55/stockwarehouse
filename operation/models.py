@@ -687,7 +687,16 @@ def process_cash_flow(cash_t0, cash_t1, cash_t2):
     cash_t1 += cash_t2
     cash_t2 = 0
 
-    return cash_t0, cash_t1, cash_t2
+def add_list_interest(account,list_data,cash_t0 ,total_buy_value,date_interest):
+    interest_cash_balance = cash_t0 + total_buy_value
+    if interest_cash_balance <0:
+        dict_data = {
+            'date': date_interest,
+            'interest_cash_balance': interest_cash_balance,
+            'interest': round(interest_cash_balance * account.interest_fee / 360, 0)
+            }
+        list_data.append(dict_data)
+    return list_data
 
 from operation.models import*
 # account =Account.objects.get(pk=9)
@@ -723,29 +732,30 @@ def delete_and_recreate_interest_expense2(account):
                     total_buy_value += item['total_value']
             else:
                     cash_t2 += item['total_value']
-            interest_cash_balance = cash_t0 + total_buy_value
-            dict_data = {
-                        'date': item['date'],
-                        'interest_cash_balance': interest_cash_balance,
-                        'interest': round(interest_cash_balance * account.interest_fee / 360, 0)
-                        }
-            list_data.append(dict_data)
+            add_list_interest(account,list_data,cash_t0 ,total_buy_value,item['date'])
             while next_day <= next_item_date:
                     print(f"Chạy while:today_{item['date']}, next_day_{next_day},next_item_date_{next_item_date} ")
                     date_while_loop = next_day
                     cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
-                    interest_cash_balance = cash_t0 + total_buy_value
-                    dict_data = {
-                        'date': date_while_loop,
-                        'interest_cash_balance': interest_cash_balance,
-                        'interest': round(interest_cash_balance * account.interest_fee / 360, 0)
-                        }
-                    list_data.append(dict_data)
-                    
+                    add_list_interest(account,list_data,cash_t0 ,total_buy_value,date_while_loop)
                     next_day = define_date_receive_cash(next_day, 1)[0]
                     if next_day == next_item_date:
                         break
-    return list_data
+        
+    # Tạo một danh sách chứa tất cả các ngày từ ngày đầu tiên đến ngày cuối
+    all_dates = [list_data[0]['date'] + timedelta(days=i) for i in range((list_data[-1]['date'] - list_data[0]['date']).days + 1)]
+
+    # Tạo một danh sách mới chứa các phần tử đã có và điền giá trị bằng giá trị trước đó nếu thiếu
+    new_data = []
+    for d in all_dates:
+        existing_entry = next((item for item in list_data if item['date'] == d), None)
+        if existing_entry:
+            new_data.append(existing_entry)
+        else:
+            previous_entry = new_data[-1]
+            new_entry = {'date': d, 'interest_cash_balance': previous_entry['interest_cash_balance'], 'interest': previous_entry['interest']}
+            new_data.append(new_entry)
+    return new_data
 
 
 @receiver([post_save, post_delete], sender=AccountMilestone)
