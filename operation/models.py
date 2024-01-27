@@ -629,20 +629,17 @@ def delete_and_recreate_interest_expense(account):
             #     cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
 
             if item['position']== 'buy':
-                    print()
                     total_buy_value += item['total_value']
-                    print(f"Mua ngày {item['date']} giá trị {total_buy_value}  ")
+                   
             else:
                     cash_t2 += item['total_value']
-                    print(f"Bán ngày {item['date']} giá trị {cash_t2}  ")
-            print(total_buy_value, cash_t0)
-            add_list_interest(account,list_data,cash_t0 ,total_buy_value,item['date'])
-            
+                   
+            add_list_interest(account,list_data,cash_t0 ,total_buy_value,item['date'])  
 
             while next_day <= next_item_date:
                 date_while_loop = next_day
                 cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
-                print(f"chạy thanh toán ngày {date_while_loop} {cash_t0, cash_t1, cash_t2}")
+                
                 add_list_interest(account,list_data,cash_t0 ,total_buy_value,date_while_loop)
                 next_day = define_date_receive_cash(next_day, 1)[0]
                 if next_day > next_item_date:
@@ -660,23 +657,20 @@ def delete_and_recreate_interest_expense(account):
                 new_entry = {'date': d, 'interest_cash_balance': previous_entry['interest_cash_balance'], 'interest': previous_entry['interest']}
                 new_data.append(new_entry)
     new_data.sort(key=lambda x: x['date'])
-    # expense = ExpenseStatement.objects.filter(account = account, type ='interest')
-    # expense.delete()
-    # for item in new_data:
-    #     if item['interest'] != 0:
-    #         ExpenseStatement.objects.create(
-    #             description=f"Số dư tính lãi {"{:,.0f}".format(item['interest_cash_balance'])}",
-    #             type='interest',
-    #             account=account,
-    #             date=item['date'],
-    #             amount=item['interest'],
-    #             interest_cash_balance=item['interest_cash_balance']
-    #         )
+    expense = ExpenseStatement.objects.filter(account = account, type ='interest')
+    expense.delete()
+    for item in new_data:
+        if item['interest'] != 0:
+            ExpenseStatement.objects.create(
+                description=f"Số dư tính lãi {"{:,.0f}".format(item['interest_cash_balance'])}",
+                type='interest',
+                account=account,
+                date=item['date'],
+                amount=item['interest'],
+                interest_cash_balance=item['interest_cash_balance']
+        )
         
     return new_data
-
-
-  
 
 
 @receiver([post_save, post_delete], sender=AccountMilestone)
