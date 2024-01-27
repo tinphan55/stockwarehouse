@@ -499,7 +499,7 @@ def created_transaction(instance, portfolio, account):
                 date=instance.date,
                 type = 'tax',
                 amount = instance.tax*-1,
-                description = instance.pk
+                description = f"Thuế phát sinh bán với lệnh bán {instance.stock} số lượng {instance.qty} và giá {instance.price } "
                 )
     
     
@@ -561,7 +561,7 @@ def update_account_transaction(account, transaction_items):
 
 def update_or_created_expense_transaction(instance, description_type):
     ExpenseStatement.objects.update_or_create(
-        description=instance.pk,
+        description = f"PGD phát sinh với lệnh {instance.position} {instance.stock} số lượng {instance.qty} và giá {instance.price } ",
         type=description_type,
         defaults={
             'account': instance.account,
@@ -571,112 +571,112 @@ def update_or_created_expense_transaction(instance, description_type):
     )
 
 #chỉ chạy nếu chỉnh tiền/sổ lệnh của ngày trước đó
-def delete_and_recreate_interest_expense(account):
-    end_date = datetime.now().date() -  timedelta(days=1)
-    milestone_account = AccountMilestone.objects.filter(account =account).order_by('-created_at').first()
-    if milestone_account:
-            date_previous = milestone_account.created_at.date()
-    else:
-            date_previous = account.created_at.date()
+# def delete_and_recreate_interest_expense(account):
+#     end_date = datetime.now().date() -  timedelta(days=1)
+#     milestone_account = AccountMilestone.objects.filter(account =account).order_by('-created_at').first()
+#     if milestone_account:
+#             date_previous = milestone_account.created_at.date()
+#     else:
+#             date_previous = account.created_at.date()
 
-    transaction_items_merge_date =Transaction.objects.filter(
-            account=account,
-            date__gt =date_previous).values('position', 'date').annotate(total_value=Sum('net_total_value')).order_by('date')
-    #nếu thay đổi nạp tiền
-    list_data = []
-    total_buy_value = 0
-    cash_t2  =0
-    cash_t1=0
-    cash_t0=0
-    count =0
-    if transaction_items_merge_date:
-        for index, item in enumerate(transaction_items_merge_date):
-            dict_data ={}
-            #chu kì thanh toán tiền về cho ngày mới
-            if item['date'] > date_previous.date() and (cash_t2 > 0 or cash_t1 > 0):
-                    if define_t_plus(date_previous, item['date']) == 1:
-                        cash_t0 += cash_t1
-                        cash_t1 = 0
-                        cash_t1 += cash_t2
-                        cash_t2 = 0
-                    elif define_t_plus(date_previous, item['date']) >= 2:
-                        cash_t0+= cash_t1 + cash_t2
-                        cash_t1=0
-                        cash_t2=0
-            if item['position'] == 'buy':
-                total_buy_value += item['total_value']
-            else:
-                cash_t2 += item['total_value']
-            dict_data['date'] = item['date']
-            dict_data['interest_cash_balance'] =  cash_t0 +total_buy_value
-            dict_data['interest'] = round(dict_data['interest_cash_balance']*account.interest_fee/360,0)
-            list_data.append(dict_data)
-            date_previous = item['date']
-            if index == len(transaction_items_merge_date) - 1:
-                # Nếu đang ở phần tử cuối cùng, thêm dòng in báo
-                dict_data ={}
-                next_day =define_date_receive_cash(list_data[-1]['date'], 1)
-                if next_day[0] <= end_date:
-                    dict_data ={}
-                    cash_t0 += cash_t1
-                    cash_t1 = 0
-                    cash_t1 += cash_t2
-                    cash_t2 = 0
-                    dict_data['date'] = next_day[0]
-                    dict_data['interest_cash_balance'] =  cash_t0 +total_buy_value
-                    dict_data['interest'] = round(dict_data['interest_cash_balance']*account.interest_fee/360,0)
-                    list_data.append(dict_data)
-                    next_day =define_date_receive_cash(next_day[0], 1)
-                    if next_day[0] <= end_date:
-                        dict_data ={}
-                        cash_t0 += cash_t1
-                        cash_t1 = 0
-                        cash_t1 += cash_t2
-                        cash_t2 = 0
-                        dict_data['date'] = next_day[0]
-                        dict_data['interest_cash_balance'] =  cash_t0 +total_buy_value
-                        dict_data['interest'] = round(dict_data['interest_cash_balance']*account.interest_fee/360,0)
-                        list_data.append(dict_data)
+#     transaction_items_merge_date =Transaction.objects.filter(
+#             account=account,
+#             date__gt =date_previous).values('position', 'date').annotate(total_value=Sum('net_total_value')).order_by('date')
+#     #nếu thay đổi nạp tiền
+#     list_data = []
+#     total_buy_value = 0
+#     cash_t2  =0
+#     cash_t1=0
+#     cash_t0=0
+#     count =0
+#     if transaction_items_merge_date:
+#         for index, item in enumerate(transaction_items_merge_date):
+#             dict_data ={}
+#             #chu kì thanh toán tiền về cho ngày mới
+#             if item['date'] > date_previous.date() and (cash_t2 > 0 or cash_t1 > 0):
+#                     if define_t_plus(date_previous, item['date']) == 1:
+#                         cash_t0 += cash_t1
+#                         cash_t1 = 0
+#                         cash_t1 += cash_t2
+#                         cash_t2 = 0
+#                     elif define_t_plus(date_previous, item['date']) >= 2:
+#                         cash_t0+= cash_t1 + cash_t2
+#                         cash_t1=0
+#                         cash_t2=0
+#             if item['position'] == 'buy':
+#                 total_buy_value += item['total_value']
+#             else:
+#                 cash_t2 += item['total_value']
+#             dict_data['date'] = item['date']
+#             dict_data['interest_cash_balance'] =  cash_t0 +total_buy_value
+#             dict_data['interest'] = round(dict_data['interest_cash_balance']*account.interest_fee/360,0)
+#             list_data.append(dict_data)
+#             date_previous = item['date']
+#             if index == len(transaction_items_merge_date) - 1:
+#                 # Nếu đang ở phần tử cuối cùng, thêm dòng in báo
+#                 dict_data ={}
+#                 next_day =define_date_receive_cash(list_data[-1]['date'], 1)
+#                 if next_day[0] <= end_date:
+#                     dict_data ={}
+#                     cash_t0 += cash_t1
+#                     cash_t1 = 0
+#                     cash_t1 += cash_t2
+#                     cash_t2 = 0
+#                     dict_data['date'] = next_day[0]
+#                     dict_data['interest_cash_balance'] =  cash_t0 +total_buy_value
+#                     dict_data['interest'] = round(dict_data['interest_cash_balance']*account.interest_fee/360,0)
+#                     list_data.append(dict_data)
+#                     next_day =define_date_receive_cash(next_day[0], 1)
+#                     if next_day[0] <= end_date:
+#                         dict_data ={}
+#                         cash_t0 += cash_t1
+#                         cash_t1 = 0
+#                         cash_t1 += cash_t2
+#                         cash_t2 = 0
+#                         dict_data['date'] = next_day[0]
+#                         dict_data['interest_cash_balance'] =  cash_t0 +total_buy_value
+#                         dict_data['interest'] = round(dict_data['interest_cash_balance']*account.interest_fee/360,0)
+#                         list_data.append(dict_data)
                 
 
 
-    #check tai ngay tiền về để ngưng tính lãi
-    end_date = datetime.now().date() -  timedelta(days=1)
-    if list_data:
-        start_date = list_data[0]['date']
-        date_cash_t0 = define_date_receive_cash(list_data[-1]['date'], 2)[0]
-    if end_date > list_data[-1]['date']:
-        dict_data['date'] = end_date
-        dict_data['interest_cash_balance'] =  account.total_buy_trading_value + account.cash_t0
-        dict_data['interest'] = round(dict_data['interest_cash_balance']*account.interest_fee/360,0)
-        list_data.append(dict_data)
+#     #check tai ngay tiền về để ngưng tính lãi
+#     end_date = datetime.now().date() -  timedelta(days=1)
+#     if list_data:
+#         start_date = list_data[0]['date']
+#         date_cash_t0 = define_date_receive_cash(list_data[-1]['date'], 2)[0]
+#     if end_date > list_data[-1]['date']:
+#         dict_data['date'] = end_date
+#         dict_data['interest_cash_balance'] =  account.total_buy_trading_value + account.cash_t0
+#         dict_data['interest'] = round(dict_data['interest_cash_balance']*account.interest_fee/360,0)
+#         list_data.append(dict_data)
 
-    # date_range = [start_date + timedelta(days=x) for x in range(((end_date-  timedelta(days=1)) - start_date).days + 1)]
-    # for date in date_range:
-    #     if date not in [item['date'] for item in list_data]:
-    #         # Lấy giá trị từ ngày liền trước đó
-    #         previous_day = date - timedelta(days=1)
-    #         previous_value = next(item for item in reversed(list_data) if item['date'] == previous_day)
-    #         new_record = {
-    #             'date': date,
-    #             'interest_cash_balance': previous_value['interest_cash_balance'],
-    #             'interest': previous_value['interest']
-    #         }
-    #         list_data.append(new_record)
-    # list_data.sort(key=lambda x: x['date'])
-    # expense = ExpenseStatement.objects.filter(account = account, type ='interest')
-    # expense.delete()
-    # for item in list_data:
-    #     if item['interest'] != 0:
-    #         ExpenseStatement.objects.create(
-    #             description=account.pk,
-    #             type='interest',
-    #             account=account,
-    #             date=item['date'],
-    #             amount=item['interest'],
-    #             interest_cash_balance=item['interest_cash_balance']
-    #         )
-    return list_data
+#     # date_range = [start_date + timedelta(days=x) for x in range(((end_date-  timedelta(days=1)) - start_date).days + 1)]
+#     # for date in date_range:
+#     #     if date not in [item['date'] for item in list_data]:
+#     #         # Lấy giá trị từ ngày liền trước đó
+#     #         previous_day = date - timedelta(days=1)
+#     #         previous_value = next(item for item in reversed(list_data) if item['date'] == previous_day)
+#     #         new_record = {
+#     #             'date': date,
+#     #             'interest_cash_balance': previous_value['interest_cash_balance'],
+#     #             'interest': previous_value['interest']
+#     #         }
+#     #         list_data.append(new_record)
+#     # list_data.sort(key=lambda x: x['date'])
+#     # expense = ExpenseStatement.objects.filter(account = account, type ='interest')
+#     # expense.delete()
+#     # for item in list_data:
+#     #     if item['interest'] != 0:
+#     #         ExpenseStatement.objects.create(
+#     #             description=account.pk,
+#     #             type='interest',
+#     #             account=account,
+#     #             date=item['date'],
+#     #             amount=item['interest'],
+#     #             interest_cash_balance=item['interest_cash_balance']
+#     #         )
+#     return list_data
 
             
 
@@ -688,27 +688,28 @@ def process_cash_flow(cash_t0, cash_t1, cash_t2):
     cash_t2 = 0
     return cash_t0, cash_t1, cash_t2
 
-def add_list_interest(account,list_data,cash_t0 ,total_buy_value,date_interest):
-    interest_cash_balance = cash_t0 + total_buy_value
-    if interest_cash_balance >0:
-        interest_cash_balance=0
-        interest = 0
-    else: 
-        interest_cash_balance = interest_cash_balance
-        interest = round(interest_cash_balance * account.interest_fee / 360, 0)
-
-    dict_data = {
-        'date': date_interest,
-        'interest_cash_balance': interest_cash_balance,
-        'interest': interest
+def add_list_interest(account, list_data, cash_t0, total_buy_value, date_interest):
+    # Kiểm tra xem date_interest đã tồn tại trong list_data hay chưa
+    existing_data = next((item for item in list_data if item['date'] == date_interest), None)
+    interest_cash_balance = cash_t0 + total_buy_value if cash_t0 + total_buy_value <= 0 else 0
+    interest = round(interest_cash_balance * account.interest_fee / 360, 0)
+    # Nếu date_interest đã tồn tại
+    if existing_data:
+        existing_data['interest_cash_balance'] = interest_cash_balance
+        existing_data['interest'] = interest
+    else:
+        dict_data = {
+            'date': date_interest,
+            'interest_cash_balance': interest_cash_balance,
+            'interest': interest
         }
-    list_data.append(dict_data)
+        list_data.append(dict_data)
     return list_data
 
 from operation.models import*
 # account =Account.objects.get(pk=9)
 
-def delete_and_recreate_interest_expense2(account):
+def delete_and_recreate_interest_expense(account):
     end_date = datetime.now().date() - timedelta(days=1)
     milestone_account = AccountMilestone.objects.filter(account=account).order_by('-created_at').first()
     if milestone_account:
@@ -731,7 +732,7 @@ def delete_and_recreate_interest_expense2(account):
                 # Nếu đến cuối list, thì thay thế ngày tiếp theo bằng ngày hôm nay
                 next_item_date = end_date
             next_day = define_date_receive_cash(item['date'], 1)[0]
-            print(f"today_{item['date']}, next_day_{next_day},next_item_date_{next_item_date} ")
+    
             if cash_t1 !=0 or cash_t2!=0:
                 cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
             if item['position']== 'buy':
@@ -740,7 +741,6 @@ def delete_and_recreate_interest_expense2(account):
                     cash_t2 += item['total_value']
             add_list_interest(account,list_data,cash_t0 ,total_buy_value,item['date'])
             while next_day <= next_item_date:
-                print(f"Chạy while:today_{item['date']}, next_day_{next_day},next_item_date_{next_item_date} ")
                 date_while_loop = next_day
                 cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
                 add_list_interest(account,list_data,cash_t0 ,total_buy_value,date_while_loop)
@@ -759,7 +759,22 @@ def delete_and_recreate_interest_expense2(account):
                 previous_entry = new_data[-1]
                 new_entry = {'date': d, 'interest_cash_balance': previous_entry['interest_cash_balance'], 'interest': previous_entry['interest']}
                 new_data.append(new_entry)
-    return list_data,new_data
+    new_data.sort(key=lambda x: x['date'])
+    expense = ExpenseStatement.objects.filter(account = account, type ='interest')
+    expense.delete()
+    for item in new_data:
+        if item['interest'] != 0:
+            ExpenseStatement.objects.create(
+                description=f"Số dư tính lãi {"{:,.0f}".format(item['interest_cash_balance'])}",
+                type='interest',
+                account=account,
+                date=item['date'],
+                amount=item['interest'],
+                interest_cash_balance=item['interest_cash_balance']
+            )
+        
+    return new_data
+
 
 
 @receiver([post_save, post_delete], sender=AccountMilestone)
@@ -880,7 +895,7 @@ def calculate_interest():
                     date=datetime.now().date()-timedelta(days=1),
                     type = 'interest',
                     amount = amount,
-                    description = instance.pk,
+                    description=f"Số dư tính lãi {"{:,.0f}".format(instance.interest_cash_balance)}",
                     interest_cash_balance = instance.interest_cash_balance
                     )
 
