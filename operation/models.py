@@ -720,18 +720,17 @@ def delete_and_recreate_interest_expense2(account):
                 if cash_t1 !=0 or cash_t2!=0:
                     print(f"Chạy while:today_{item['date']}, next_day_{next_day},next_item_date_{next_item_date} ")
                     cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
-                    print(cash_t0, cash_t1, cash_t2)
                     interest_cash_balance = cash_t0 + total_buy_value
-                    print(interest_cash_balance)
                 if item['position']:
                     date_item =  item['date'],
-                    print(date_item)
+                    print(f"Co giao dich{date_item}")
                     if item['position']== 'buy':
                         total_buy_value += item['total_value']
                     else:
                         cash_t2 += item['total_value']
                 else:
-                    date_item = next_day
+                    date_item = date_while_loop
+                    print(f"Khong giao dich{date_item}")
                     print(date_item)
                 interest_cash_balance = cash_t0 + total_buy_value
                 dict_data = {
@@ -740,6 +739,7 @@ def delete_and_recreate_interest_expense2(account):
                     'interest': round(interest_cash_balance * account.interest_fee / 360, 0)
                     }
                 list_data.append(dict_data)
+                date_while_loop = next_day
                 next_day = define_date_receive_cash(next_day, 1)[0]
                 if next_day > next_item_date:
                     break
