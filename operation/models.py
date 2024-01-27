@@ -593,7 +593,7 @@ def delete_and_recreate_interest_expense(account):
         for index, item in enumerate(transaction_items_merge_date):
             dict_data ={}
             #chu kì thanh toán tiền về cho ngày mới
-            if item['date'] > date_previous and (cash_t2 > 0 or cash_t1 > 0):
+            if item['date'] > date_previous.date() and (cash_t2 > 0 or cash_t1 > 0):
                     if define_t_plus(date_previous, item['date']) == 1:
                         cash_t0 += cash_t1
                         cash_t1 = 0
@@ -712,12 +712,12 @@ def delete_and_recreate_interest_expense2(account):
     end_date = datetime.now().date() - timedelta(days=1)
     milestone_account = AccountMilestone.objects.filter(account=account).order_by('-created_at').first()
     if milestone_account:
-        date_previous = milestone_account.created_at.date()
+        date_previous = milestone_account.created_at
     else:
-        date_previous = account.created_at.date()
+        date_previous = account.created_at
     transaction_items_merge_date = Transaction.objects.filter(
         account=account,
-        date__gt=date_previous
+        created_at__gt=date_previous
     ).values('position', 'date').annotate(total_value=Sum('net_total_value')).order_by('date')
     list_data = []
     total_buy_value = 0
