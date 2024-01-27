@@ -681,12 +681,14 @@ def delete_and_recreate_interest_expense(account):
             
 
 
-def process_cash_flow(cash_t0, cash_t1, cash_t2):
+def process_cash_flow(cash_t0, cash_t1, cash_t2,total_buy_value):
+    interest_cash_balance= cash_t0 + total_buy_value,
     cash_t0 += cash_t1
     cash_t1 = 0
     cash_t1 += cash_t2
     cash_t2 = 0
-    return cash_t0, cash_t1, cash_t2
+
+    return interest_cash_balance,cash_t0, cash_t1, cash_t2
 
 def delete_and_recreate_interest_expense2(account):
     end_date = datetime.now().date() - timedelta(days=1)
@@ -702,38 +704,50 @@ def delete_and_recreate_interest_expense2(account):
     list_data = []
     total_buy_value = 0
     cash_t2, cash_t1, cash_t0 = 0, 0, 0
+
     for index, item in enumerate(transaction_items_merge_date):
-        print(item['date'])
-        if item['date'] > date_previous and (cash_t2 > 0 or cash_t1 > 0):
-            if define_t_plus(date_previous, item['date']) == 1:
-                cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
-            elif define_t_plus(date_previous, item['date']) >= 2:
-                cash_t0+= cash_t1 + cash_t2
-                cash_t1, cash_t2 = 0
-        if item['position'] == 'buy':
-            total_buy_value += item['total_value']
+        # Kiểm tra xem có ngày tiếp theo hay không
+        if index < len(transaction_items_merge_date) - 1:
+            next_item_date = transaction_items_merge_date[index + 1]
         else:
-            cash_t2 += item['total_value']
-        dict_data = {
-            'date': item['date'],
-            'interest_cash_balance': cash_t0 + total_buy_value,
-            'interest': round((cash_t0 + total_buy_value) * account.interest_fee / 360, 0)
-        }
-        list_data.append(dict_data)
-        date_previous = item['date']
-        if index == len(transaction_items_merge_date) - 1:
-            print(index)
-            next_day = define_date_receive_cash(list_data[-1]['date'], 1)[0]
-            while next_day <= end_date:
-                print(next_day)
-                cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
+            # Nếu đến cuối list, thì thay thế ngày tiếp theo bằng ngày hôm nay
+            next_item_date = end_date
+        next_day = define_date_receive_cash(item['date'], 1)[0]
+        print(f"next_day - {next_day},next_item_date_{next_item_date} ")
+        if item['date'] <= next_day:
+            if item['date'] > date_previous and (cash_t2 > 0 or cash_t1 > 0):
+                if define_t_plus(date_previous, item['date']) == 1:
+                    interest_cash_balance,cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2,total_buy_value)
+                elif define_t_plus(date_previous, item['date']) >= 2:
+                    cash_t0+= cash_t1 + cash_t2
+                    cash_t1, cash_t2 = 0,0
+                    
+            if item['position'] == 'buy':
+                total_buy_value += item['total_value']
+            else:
+                cash_t2 += item['total_value']
+            interest_cash_balance = cash_t0 + total_buy_value
+            dict_data = {
+                'date': item['date'],
+                'interest_cash_balance': interest_cash_balance,
+                'interest': round(interest_cash_balance * account.interest_fee / 360, 0)
+            }
+            list_data.append(dict_data)
+            date_previous = item['date']
+            
+        else:
+            while next_day < next_item_date:
+                print(f"next_day - {next_day},next_item_date_{next_item_date} ")
+                interest_cash_balance, cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2,total_buy_value)
                 dict_data = {
                     'date': next_day,
-                    'interest_cash_balance': cash_t0 + total_buy_value,
-                    'interest': round((cash_t0 + total_buy_value) * account.interest_fee / 360, 0)
+                    'interest_cash_balance': interest_cash_balance,
+                    'interest': round(interest_cash_balance * account.interest_fee / 360, 0)
                 }
                 list_data.append(dict_data)
                 next_day = define_date_receive_cash(next_day, 1)
+                if next_day == next_item_date:
+                    break
     return list_data
 
 
