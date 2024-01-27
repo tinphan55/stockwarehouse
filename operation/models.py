@@ -645,7 +645,7 @@ def delete_and_recreate_interest_expense(account):
                 print(f"chạy thanh toán ngày {date_while_loop} {cash_t0, cash_t1, cash_t2}")
                 add_list_interest(account,list_data,cash_t0 ,total_buy_value,date_while_loop)
                 next_day = define_date_receive_cash(next_day, 1)[0]
-                if next_day == next_item_date:
+                if next_day > next_item_date:
                     break
         # Tạo một danh sách chứa tất cả các ngày từ ngày đầu tiên đến ngày cuối
         all_dates = [list_data[0]['date'] + timedelta(days=i) for i in range((list_data[-1]['date'] - list_data[0]['date']).days + 1)]
@@ -675,6 +675,8 @@ def delete_and_recreate_interest_expense(account):
         
     return new_data
 
+
+  
 
 
 @receiver([post_save, post_delete], sender=AccountMilestone)
