@@ -724,16 +724,18 @@ def delete_and_recreate_interest_expense2(account):
                     interest_cash_balance = cash_t0 + total_buy_value
                     print(interest_cash_balance)
                     if item['position']:
-                        date =  item['date'],
+                        date_item =  item['date'],
+                        print(date_item)
                         if item['position']== 'buy':
                             total_buy_value += item['total_value']
                         else:
                             cash_t2 += item['total_value']
                     else:
-                        date = next_day
+                        date_item = next_day
+                        print(date_item)
                 interest_cash_balance = cash_t0 + total_buy_value
                 dict_data = {
-                    'date': date,
+                    'date': date_item,
                     'interest_cash_balance': interest_cash_balance,
                     'interest': round(interest_cash_balance * account.interest_fee / 360, 0)
                     }
