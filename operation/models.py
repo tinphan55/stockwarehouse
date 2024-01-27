@@ -681,14 +681,13 @@ def delete_and_recreate_interest_expense(account):
             
 
 
-def process_cash_flow(cash_t0, cash_t1, cash_t2,total_buy_value):
-    interest_cash_balance= cash_t0 + total_buy_value,
+def process_cash_flow(cash_t0, cash_t1, cash_t2):
     cash_t0 += cash_t1
     cash_t1 = 0
     cash_t1 += cash_t2
     cash_t2 = 0
 
-    return interest_cash_balance,cash_t0, cash_t1, cash_t2
+    return cash_t0, cash_t1, cash_t2
 
 from operation.models import*
 account =Account.objects.get(pk=9)
@@ -718,13 +717,13 @@ def delete_and_recreate_interest_expense2(account):
         next_day = define_date_receive_cash(item['date'], 1)[0]
         print(f"today_{item['date']}, next_day_{next_day},next_item_date_{next_item_date} ")
         if next_item_date <= next_day:
-            if item['date'] > date_previous and (cash_t2 > 0 or cash_t1 > 0):
-                if define_t_plus(date_previous, item['date']) == 1:
-                    interest_cash_balance,cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2,total_buy_value)
-                elif define_t_plus(date_previous, item['date']) >= 2:
-                    print('test kịch bản có không')
-                    cash_t0+= cash_t1 + cash_t2
-                    cash_t1, cash_t2 = 0,0
+            # if item['date'] > date_previous and (cash_t2 > 0 or cash_t1 > 0):
+            #     if define_t_plus(date_previous, item['date']) == 1:
+            #         interest_cash_balance,cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2,total_buy_value)
+            #     elif define_t_plus(date_previous, item['date']) >= 2:
+            #         print('test kịch bản có không')
+            #         cash_t0+= cash_t1 + cash_t2
+            #         cash_t1, cash_t2 = 0,0
                     
             if item['position'] == 'buy':
                 total_buy_value += item['total_value']
@@ -740,9 +739,10 @@ def delete_and_recreate_interest_expense2(account):
             date_previous = item['date']
             
         else:
-            while next_day < next_item_date:
-                print(f"today_{item['date']}, next_day_{next_day},next_item_date_{next_item_date} ")
-                interest_cash_balance, cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2,total_buy_value)
+            while next_day <= next_item_date:
+                print(f"Chạy while:today_{item['date']}, next_day_{next_day},next_item_date_{next_item_date} ")
+                cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
+                interest_cash_balance = cash_t0 + total_buy_value
                 dict_data = {
                     'date': next_day,
                     'interest_cash_balance': interest_cash_balance,
@@ -750,7 +750,7 @@ def delete_and_recreate_interest_expense2(account):
                 }
                 list_data.append(dict_data)
                 next_day = define_date_receive_cash(next_day, 1)
-                if next_day == next_item_date:
+                if next_day > next_item_date:
                     break
     return list_data
 
