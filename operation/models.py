@@ -756,7 +756,7 @@ def delete_and_recreate_interest_expense2(account):
             previous_entry = new_data[-1]
             new_entry = {'date': d, 'interest_cash_balance': previous_entry['interest_cash_balance'], 'interest': previous_entry['interest']}
             new_data.append(new_entry)
-    return new_data
+    return list_data,new_data
 
 
 @receiver([post_save, post_delete], sender=AccountMilestone)
