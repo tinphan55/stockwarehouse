@@ -706,43 +706,45 @@ def delete_and_recreate_interest_expense2(account):
     list_data = []
     total_buy_value = 0
     cash_t2, cash_t1, cash_t0 = 0, 0, 0
-
-    for index, item in enumerate(transaction_items_merge_date):
-        # Kiểm tra xem có ngày tiếp theo hay không
-        if index < len(transaction_items_merge_date) - 1:
-            next_item_date = transaction_items_merge_date[index + 1]['date']
-        else:
-            # Nếu đến cuối list, thì thay thế ngày tiếp theo bằng ngày hôm nay
-            next_item_date = end_date
-        next_day = define_date_receive_cash(item['date'], 1)[0]
-        print(f"today_{item['date']}, next_day_{next_day},next_item_date_{next_item_date} ")
-        while next_day <= next_item_date:
-                if cash_t1 !=0 or cash_t2!=0:
+    if transaction_items_merge_date and transaction_items_merge_date[0]['date']<=end_date:
+        for index, item in enumerate(transaction_items_merge_date):
+            # Kiểm tra xem có ngày tiếp theo hay không
+            if index < len(transaction_items_merge_date) - 1:
+                next_item_date = transaction_items_merge_date[index + 1]['date']
+            else:
+                # Nếu đến cuối list, thì thay thế ngày tiếp theo bằng ngày hôm nay
+                next_item_date = end_date
+            next_day = define_date_receive_cash(item['date'], 1)[0]
+            print(f"today_{item['date']}, next_day_{next_day},next_item_date_{next_item_date} ")
+            if cash_t1 !=0 or cash_t2!=0:
+                cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
+                interest_cash_balance = cash_t0 + total_buy_value
+            if item['position']== 'buy':
+                    total_buy_value += item['total_value']
+            else:
+                    cash_t2 += item['total_value']
+            interest_cash_balance = cash_t0 + total_buy_value
+            dict_data = {
+                        'date': item['date'],
+                        'interest_cash_balance': interest_cash_balance,
+                        'interest': round(interest_cash_balance * account.interest_fee / 360, 0)
+                        }
+            list_data.append(dict_data)
+            while next_day <= next_item_date:
                     print(f"Chạy while:today_{item['date']}, next_day_{next_day},next_item_date_{next_item_date} ")
+                    date_while_loop = next_day
                     cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
                     interest_cash_balance = cash_t0 + total_buy_value
-                if item['position']:
-                    date_item =  item['date'],
-                    print(f"Co giao dich{date_item}")
-                    if item['position']== 'buy':
-                        total_buy_value += item['total_value']
-                    else:
-                        cash_t2 += item['total_value']
-                else:
-                    date_item = date_while_loop
-                    print(f"Khong giao dich{date_item}")
-                    print(date_item)
-                interest_cash_balance = cash_t0 + total_buy_value
-                dict_data = {
-                    'date': date_item,
-                    'interest_cash_balance': interest_cash_balance,
-                    'interest': round(interest_cash_balance * account.interest_fee / 360, 0)
-                    }
-                list_data.append(dict_data)
-                date_while_loop = next_day
-                next_day = define_date_receive_cash(next_day, 1)[0]
-                if next_day > next_item_date:
-                    break
+                    dict_data = {
+                        'date': date_while_loop,
+                        'interest_cash_balance': interest_cash_balance,
+                        'interest': round(interest_cash_balance * account.interest_fee / 360, 0)
+                        }
+                    list_data.append(dict_data)
+                    
+                    next_day = define_date_receive_cash(next_day, 1)[0]
+                    if next_day == next_item_date:
+                        break
     return list_data
 
 
