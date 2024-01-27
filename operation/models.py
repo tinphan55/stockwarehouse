@@ -716,7 +716,7 @@ def delete_and_recreate_interest_expense2(account):
             # Nếu đến cuối list, thì thay thế ngày tiếp theo bằng ngày hôm nay
             next_item_date = end_date
         next_day = define_date_receive_cash(item['date'], 1)[0]
-        print(f"today_{item['date']}, next_day - {next_day},next_item_date_{next_item_date} ")
+        print(f"today_{item['date']}, next_day_{next_day},next_item_date_{next_item_date} ")
         if item['date'] <= next_day:
             if item['date'] > date_previous and (cash_t2 > 0 or cash_t1 > 0):
                 if define_t_plus(date_previous, item['date']) == 1:
@@ -740,7 +740,7 @@ def delete_and_recreate_interest_expense2(account):
             
         else:
             while next_day < next_item_date:
-                print(f"next_day - {next_day},next_item_date_{next_item_date} ")
+                print(f"today_{item['date']}, next_day_{next_day},next_item_date_{next_item_date} ")
                 interest_cash_balance, cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2,total_buy_value)
                 dict_data = {
                     'date': next_day,
