@@ -690,7 +690,7 @@ def process_cash_flow(cash_t0, cash_t1, cash_t2):
     return cash_t0, cash_t1, cash_t2
 
 from operation.models import*
-account =Account.objects.get(pk=9)
+# account =Account.objects.get(pk=9)
 
 def delete_and_recreate_interest_expense2(account):
     end_date = datetime.now().date() - timedelta(days=1)
@@ -716,34 +716,27 @@ def delete_and_recreate_interest_expense2(account):
             next_item_date = end_date
         next_day = define_date_receive_cash(item['date'], 1)[0]
         print(f"today_{item['date']}, next_day_{next_day},next_item_date_{next_item_date} ")
-        if next_item_date <= next_day:  
-            if item['position'] == 'buy':
-                total_buy_value += item['total_value']
-                print(item['total_value'])
-            else:
-                cash_t2 += item['total_value']
-            interest_cash_balance = cash_t0 + total_buy_value
-            print(interest_cash_balance)
-            dict_data = {
-                'date': item['date'],
-                'interest_cash_balance': interest_cash_balance,
-                'interest': round(interest_cash_balance * account.interest_fee / 360, 0)
-            }
-            list_data.append(dict_data)
-            date_previous = item['date']
-            
-        else:
-            while next_day <= next_item_date:
-                print(f"Chạy while:today_{item['date']}, next_day_{next_day},next_item_date_{next_item_date} ")
-                cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
-                print(cash_t0, cash_t1, cash_t2)
+        while next_day <= next_item_date:
+                if cash_t1 !=0 or cash_t2!=0:
+                    print(f"Chạy while:today_{item['date']}, next_day_{next_day},next_item_date_{next_item_date} ")
+                    cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
+                    print(cash_t0, cash_t1, cash_t2)
+                    interest_cash_balance = cash_t0 + total_buy_value
+                    print(interest_cash_balance)
+                    if item['position']:
+                        date =  item['date'],
+                        if item['position']== 'buy':
+                            total_buy_value += item['total_value']
+                        else:
+                            cash_t2 += item['total_value']
+                    else:
+                        date = next_day
                 interest_cash_balance = cash_t0 + total_buy_value
-                print(interest_cash_balance)
                 dict_data = {
-                    'date': next_day,
+                    'date': date,
                     'interest_cash_balance': interest_cash_balance,
                     'interest': round(interest_cash_balance * account.interest_fee / 360, 0)
-                }
+                    }
                 list_data.append(dict_data)
                 next_day = define_date_receive_cash(next_day, 1)[0]
                 if next_day > next_item_date:
