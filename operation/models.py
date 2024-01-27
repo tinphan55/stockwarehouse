@@ -599,7 +599,7 @@ def add_list_interest(account, list_data, cash_t0, total_buy_value, date_interes
     return list_data
 
 from operation.models import*
-# account =Account.objects.get(pk=9)
+# account =Account.objects.get(pk=7)
 
 def delete_and_recreate_interest_expense(account):
     end_date = datetime.now().date() - timedelta(days=1)
@@ -627,6 +627,7 @@ def delete_and_recreate_interest_expense(account):
     
             if cash_t1 !=0 or cash_t2!=0:
                 cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
+
             if item['position']== 'buy':
                     print()
                     total_buy_value += item['total_value']
@@ -634,7 +635,10 @@ def delete_and_recreate_interest_expense(account):
             else:
                     cash_t2 += item['total_value']
                     print(f"Bán ngày {item['date']} giá trị {cash_t2}  ")
+            print(total_buy_value, cash_t0)
             add_list_interest(account,list_data,cash_t0 ,total_buy_value,item['date'])
+            
+
             while next_day <= next_item_date:
                 date_while_loop = next_day
                 cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
