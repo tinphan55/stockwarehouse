@@ -50,7 +50,7 @@ def get_credit_limit_default():
 
 # Create your models here.
 class Account (models.Model):
-    name = models.CharField(max_length=50, unique=True, verbose_name= 'Tên')
+    name = models.CharField(max_length=50, unique=True, verbose_name= 'Tên KH')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
     description = models.TextField(max_length=255, blank=True, verbose_name= 'Mô tả')
