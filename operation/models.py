@@ -749,7 +749,7 @@ def delete_and_recreate_interest_expense2(account):
                     'interest': round(interest_cash_balance * account.interest_fee / 360, 0)
                 }
                 list_data.append(dict_data)
-                next_day = define_date_receive_cash(next_day, 1)
+                next_day = define_date_receive_cash(next_day, 1)[0]
                 if next_day > next_item_date:
                     break
     return list_data
