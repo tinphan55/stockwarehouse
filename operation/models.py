@@ -625,8 +625,8 @@ def delete_and_recreate_interest_expense(account):
                 next_item_date = end_date
             next_day = define_date_receive_cash(item['date'], 1)[0]
     
-            if cash_t1 !=0 or cash_t2!=0:
-                cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
+            # if cash_t1 !=0 or cash_t2!=0:
+            #     cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
 
             if item['position']== 'buy':
                     print()
