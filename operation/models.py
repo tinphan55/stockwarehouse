@@ -686,6 +686,7 @@ def process_cash_flow(cash_t0, cash_t1, cash_t2):
     cash_t1 = 0
     cash_t1 += cash_t2
     cash_t2 = 0
+    return cash_t0, cash_t1, cash_t2
 
 def add_list_interest(account,list_data,cash_t0 ,total_buy_value,date_interest):
     interest_cash_balance = cash_t0 + total_buy_value
