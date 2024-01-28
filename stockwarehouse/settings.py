@@ -106,41 +106,6 @@ WSGI_APPLICATION = 'stockwarehouse.wsgi.application'
 
 
 
-# DATABASES_LIST = [{
-# #server
-#       'default': {
-#          'ENGINE': 'django.db.backends.postgresql',
-#          'NAME': 'stock_warehouse',                      
-#          'USER': 'admin',
-#          'PASSWORD': 'Ecotr@ding2023',
-#          'HOST': 'localhost',
-#          'PORT': '',
-#      }
-#  }, 
-# #localhost
-
-
-
-# {
-#      'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'ecotrading',                      
-#         'USER': 'postgres',
-#         'PASSWORD': 'Ecotrading2023',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# },
-# {
-#      'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'postgres',                      
-#         'USER': 'postgres',
-#         'PASSWORD': 'Ecotrading2024',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }]
 DATABASES_LIST = [
     {
         'default': {
