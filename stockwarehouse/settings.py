@@ -14,9 +14,10 @@ import os
 from pathlib import Path
 from .jazzmin import *
 from datetime import timedelta, datetime as dt
+from dotenv import load_dotenv
 
-
-
+# Load environment variables from file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -105,42 +106,56 @@ WSGI_APPLICATION = 'stockwarehouse.wsgi.application'
 
 
 
-DATABASES_LIST = [{
-#server
-      'default': {
-         'ENGINE': 'django.db.backends.postgresql',
-         'NAME': 'stock_warehouse',                      
-         'USER': 'admin',
-         'PASSWORD': 'Ecotr@ding2023',
-         'HOST': 'localhost',
-         'PORT': '',
-     }
- }, 
-#localhost
+# DATABASES_LIST = [{
+# #server
+#       'default': {
+#          'ENGINE': 'django.db.backends.postgresql',
+#          'NAME': 'stock_warehouse',                      
+#          'USER': 'admin',
+#          'PASSWORD': 'Ecotr@ding2023',
+#          'HOST': 'localhost',
+#          'PORT': '',
+#      }
+#  }, 
+# #localhost
 
 
 
-{
-     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ecotrading',                      
-        'USER': 'postgres',
-        'PASSWORD': 'Ecotrading2023',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
-},
-{
-     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',                      
-        'USER': 'postgres',
-        'PASSWORD': 'Ecotrading2024',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
-}]
+# {
+#      'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'ecotrading',                      
+#         'USER': 'postgres',
+#         'PASSWORD': 'Ecotrading2023',
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#     }
+# },
+# {
+#      'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'postgres',                      
+#         'USER': 'postgres',
+#         'PASSWORD': 'Ecotrading2024',
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#     }
+# }]
+DATABASES_LIST = [
+    {
+        'default': {
+            'ENGINE': os.getenv('DB_ENGINE'),
+            'NAME': os.getenv('DB_NAME'),
+            'USER': os.getenv('DB_USER'),
+            'PASSWORD': os.getenv('DB_PASSWORD'),
+            'HOST': os.getenv('DB_HOST'),
+            'PORT': os.getenv('DB_PORT'),
+        }
+
+    },
+]
 DATABASES = DATABASES_LIST[0]
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators

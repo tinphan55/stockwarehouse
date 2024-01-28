@@ -1,7 +1,14 @@
 .history/
 
-env/
+*pycache/
+*/__pycache__/
 
-*__pycache__/
-* migrations
+.env
+.envs
 
+.vscode
+
+/static
+
+*/migrations/*
+!*/migrations/__init__.py
