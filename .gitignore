@@ -2,7 +2,7 @@
 
 *pycache/
 */__pycache__/
-
+env
 .env
 .envs
 
@@ -12,3 +12,4 @@
 
 */migrations/*
 !*/migrations/__init__.py
+
