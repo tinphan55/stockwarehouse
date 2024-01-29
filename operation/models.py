@@ -598,8 +598,6 @@ def add_list_interest(account, list_data, cash_t0, total_buy_value, date_interes
         list_data.append(dict_data)
     return list_data
 
-from operation.models import*
-# account =Account.objects.get(pk=7)
 
 def delete_and_recreate_interest_expense(account):
     end_date = datetime.now().date() - timedelta(days=1)
