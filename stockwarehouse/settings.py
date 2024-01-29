@@ -22,6 +22,10 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# cấu hình để có htpps
+SECURE_SSL_REDIRECT = True
+CSRF_COOKIE_SECURE = True
+CSRF_USE_SESSIONS = True
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -30,7 +34,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-1@%_-7!z=r9nf#$rbge-n10+fs@9x)q8=b2o0qbl&8)n$%#x0x'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
+
 
 ALLOWED_HOSTS = ['*']
 
