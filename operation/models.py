@@ -672,6 +672,9 @@ def delete_and_recreate_interest_expense(account):
     return new_data
 
 
+
+
+
 @receiver([post_save, post_delete], sender=AccountMilestone)
 def save_field_account(sender, instance, **kwargs):
     created = kwargs.get('created', False)
@@ -904,25 +907,24 @@ def setle_milestone_account(account ):
     if account.market_value == 0  and account.total_temporarily_interest !=0 and account.interest_cash_balance <=0:
         status = True
         date=datetime.now().date()
-        if account.cash_t1 !=0 and account.cash_t2 !=0:
-            number_interest_t1 = define_date_receive_cash(date,1)[1]
-            number_interest = define_date_receive_cash(date,2)[1]
-            amount1 = account.interest_fee *(account.interest_cash_balance)*number_interest_t1 /360
-            amount2 = account.interest_fee *(account.interest_cash_balance - account.cash_t1)*number_interest /360
-            amount =amount1+amount2
         
+        if account.cash_t1 !=0 and account.cash_t2 !=0:
+        #cash T1 sẽ không tính lãi nếu thanh toán tk vì đã chạy lãi đầu ngày  T0
+            number_interest = define_date_receive_cash(date,2)[1]-1
+            amount = account.interest_fee *(account.interest_cash_balance + account.cash_t1)*number_interest /360
+    
         elif account.cash_t1 !=0 and account.cash_t2 ==0:
             number_interest = define_date_receive_cash(date,1)[1]
-            amount = account.interest_fee *(account.interest_cash_balance)*number_interest /360
+            amount = account.interest_fee *(account.interest_cash_balance- account.cash_t1)*number_interest /360
         elif account.cash_t1 ==0 and account.cash_t2 !=0:
-            number_interest = define_date_receive_cash(date,2)[1]
+            number_interest = define_date_receive_cash(date,2)[1]-1
             amount = account.interest_fee *(account.interest_cash_balance)*number_interest /360  
         else:
             print('Vẫn còn âm tiền, cần giải pháp đòi nọ')
             amount = 0
             
         description = f"TK {account.pk} tính lãi gộp tất toán cho {number_interest} ngày"
-        if  amount != 0 :
+        if  amount <0 :
             ExpenseStatement.objects.create(
                     account=account,
                     date=date,
