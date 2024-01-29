@@ -783,9 +783,9 @@ def update_market_price_for_port():
 def calculate_interest():
     #kiểm tra vào tính lãi suất
     account = Account.objects.filter(interest_cash_balance__lt=0)
-    formatted_interest_cash_balance = "{:,.0f}".format(instance.interest_cash_balance)
     if account:
         for instance in account:
+            formatted_interest_cash_balance = "{:,.0f}".format(instance.interest_cash_balance)
             amount = instance.interest_fee * instance.interest_cash_balance/360
             if abs(amount)>10:
                 ExpenseStatement.objects.create(
