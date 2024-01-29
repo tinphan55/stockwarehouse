@@ -315,9 +315,13 @@ class ExpenseStatement(models.Model):
     amount = models.FloatField (verbose_name='Số tiền')
     description = models.CharField(max_length=100,null=True, blank=True, verbose_name='Diễn giải')
     interest_cash_balance = models.FloatField (null = True,blank =True ,verbose_name='Số dư tiền tính lãi')
+    transaction_id =models.CharField(max_length= 200,null = True,blank =True ,verbose_name= 'Mã lệnh')
     class Meta:
          verbose_name = 'Bảng kê chi phí '
          verbose_name_plural = 'Bảng kê chi phí '
+    
+    
+
 
     def __str__(self):
         return str(self.type) + str('_')+ str(self.date)
@@ -495,6 +499,7 @@ def created_transaction(instance, portfolio, account):
         
         # tạo sao kê thuế
         ExpenseStatement.objects.create(
+                transaction_id = instance.pk,
                 account=instance.account,
                 date=instance.date,
                 type = 'tax',
@@ -559,16 +564,19 @@ def update_account_transaction(account, transaction_items):
 
 
 
+
 def update_or_created_expense_transaction(instance, description_type):
     description_tax = f"Thuế với lệnh bán {instance.stock} số lượng {instance.qty} và giá {instance.price } "
     description_transaction = f"PGD phát sinh với lệnh {instance.position} {instance.stock} số lượng {instance.qty} và giá {instance.price } "
     ExpenseStatement.objects.update_or_create(
-        description = description_tax if description_type == 'tax' else description_transaction,
+        transaction_id=instance.pk,
         type=description_type,
         defaults={
             'account': instance.account,
             'date': instance.date,
             'amount': instance.tax*-1 if description_type == 'tax' else instance.transaction_fee*-1,
+            'description': description_tax if description_type == 'tax' else description_transaction,
+    
         }
     )
 
@@ -732,7 +740,7 @@ def save_field_account(sender, instance, **kwargs):
             
 @receiver(post_delete, sender=Transaction)
 def delete_expense_statement(sender, instance, **kwargs):
-    expense = ExpenseStatement.objects.filter(description=instance.pk)
+    expense = ExpenseStatement.objects.filter(transaction_id=instance.pk)
     # porfolio = Portfolio.objects.filter(account=instance.account, stock =instance.stock).first()
     if expense:
         expense.delete()      
