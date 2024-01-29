@@ -22,7 +22,7 @@ class RealCashTransferForm(forms.ModelForm):
     
 class RealStockAccountCashTransferAdmin(admin.ModelAdmin):
     form  = RealCashTransferForm
-    list_display = ['date', 'formatted_amount','description', 'user_created', 'user_modified', 'created_at']
+    list_display = ['date','account', 'formatted_amount','description', 'user_created', 'user_modified', 'created_at']
     readonly_fields = ['user_created', 'user_modified']
     search_fields = ['account__id','account__name']
 

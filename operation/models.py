@@ -661,8 +661,9 @@ def delete_and_recreate_interest_expense(account):
     expense.delete()
     for item in new_data:
         if item['interest'] != 0:
+            formatted_interest_cash_balance = "{:,.0f}".format(item['interest_cash_balance'])
             ExpenseStatement.objects.create(
-                description=f"Số dư tính lãi {"{:,.0f}".format(item['interest_cash_balance'])}",
+                description=f"Số dư tính lãi {formatted_interest_cash_balance}",
                 type='interest',
                 account=account,
                 date=item['date'],
@@ -782,6 +783,7 @@ def update_market_price_for_port():
 def calculate_interest():
     #kiểm tra vào tính lãi suất
     account = Account.objects.filter(interest_cash_balance__lt=0)
+    formatted_interest_cash_balance = "{:,.0f}".format(instance.interest_cash_balance)
     if account:
         for instance in account:
             amount = instance.interest_fee * instance.interest_cash_balance/360
@@ -791,7 +793,7 @@ def calculate_interest():
                     date=datetime.now().date()-timedelta(days=1),
                     type = 'interest',
                     amount = amount,
-                    description=f"Số dư tính lãi {"{:,.0f}".format(instance.interest_cash_balance)}",
+                    description=f"Số dư tính lãi {formatted_interest_cash_balance}",
                     interest_cash_balance = instance.interest_cash_balance
                     )
 
