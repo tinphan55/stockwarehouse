@@ -23,9 +23,9 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # cấu hình để có htpps
-SECURE_SSL_REDIRECT = True
-CSRF_COOKIE_SECURE = True
-CSRF_USE_SESSIONS = True
+# SECURE_SSL_REDIRECT = True
+# CSRF_COOKIE_SECURE = True
+# CSRF_USE_SESSIONS = True
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
