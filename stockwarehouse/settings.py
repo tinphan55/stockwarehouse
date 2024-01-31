@@ -35,6 +35,7 @@ SECRET_KEY = 'django-insecure-1@%_-7!z=r9nf#$rbge-n10+fs@9x)q8=b2o0qbl&8)n$%#x0x
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+SECURE_SSL_REDIRECT = True
 
 
 ALLOWED_HOSTS = ['*']
@@ -45,6 +46,7 @@ ALLOWED_HOSTS = ['*']
 INSTALLED_APPS = [
     'django_crontab',
     'jazzmin',
+    'sslserver',
     'rest_framework',
     'debug_toolbar',
     'django.contrib.admin',
@@ -73,6 +75,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware', 
     'django_auto_logout.middleware.auto_logout',
+    # 'sslserver.middleware.SSLRedirectMiddleware',
 ]
 
 INTERNAL_IPS = ['127.0.0.1', 'localhost', '10.100.66.4']
