@@ -725,7 +725,7 @@ def save_field_account(sender, instance, **kwargs):
             
 @receiver(post_delete, sender=Transaction)
 def delete_expense_statement(sender, instance, **kwargs):
-    expense = ExpenseStatement.objects.filter(description=instance.pk)
+    expense = ExpenseStatement.objects.filter(transaction_id=instance.pk)
     # porfolio = Portfolio.objects.filter(account=instance.account, stock =instance.stock).first()
     if expense:
         expense.delete()       
@@ -751,15 +751,15 @@ def save_field_account(sender, instance, **kwargs):
 
     
         
-# @receiver([post_save, post_delete], sender=AccountMilestone)
-# def save_field_account(sender, instance, **kwargs):
-#     created = kwargs.get('created', False)
-#     if not created:
-#         account = instance.account
-#         item_milestone = AccountMilestone.objects.filter(account=account)
-#         account.total_interest_paid = sum(item.interest_paid for item in item_milestone)
-#         account.total_closed_pl =  sum(item.closed_pl for item in item_milestone)
-#         account.save()
+@receiver([post_save, post_delete], sender=AccountMilestone)
+def save_field_account(sender, instance, **kwargs):
+    created = kwargs.get('created', False)
+    if not created:
+        account = instance.account
+        item_milestone = AccountMilestone.objects.filter(account=account)
+        account.total_interest_paid = sum(item.interest_paid for item in item_milestone)
+        account.total_closed_pl =  sum(item.closed_pl for item in item_milestone)
+        account.save()
 
         
 
