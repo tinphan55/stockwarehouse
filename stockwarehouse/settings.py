@@ -75,7 +75,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware', 
     'django_auto_logout.middleware.auto_logout',
-    # 'sslserver.middleware.SSLRedirectMiddleware',
+    'sslserver.middleware.SSLRedirectMiddleware',
 ]
 
 INTERNAL_IPS = ['127.0.0.1', 'localhost', '10.100.66.4']
