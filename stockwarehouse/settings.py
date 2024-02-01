@@ -37,7 +37,7 @@ SECRET_KEY = 'django-insecure-1@%_-7!z=r9nf#$rbge-n10+fs@9x)q8=b2o0qbl&8)n$%#x0x
 DEBUG = True
 
 CSRF_TRUSTED_ORIGINS = ['https://ecotrading.com.vn']
-# SECURE_SSL_REDIRECT = True
+
 
 ALLOWED_HOSTS = ['*']
 
