@@ -16,6 +16,7 @@ from cpd.models import ClientPartnerInfo
 from django.contrib.auth.hashers import make_password
 from regulations.models import *
 from accfifo import Entry, FIFO
+import asyncio
 
 
 maintenance_margin_ratio = OperationRegulations.objects.get(pk=4).parameters
@@ -42,7 +43,12 @@ def get_tax_fee_default():
 def get_credit_limit_default():
     return get_default_parameters(pk=6)
 
-
+async def send_notification(bot,chat_id,noti):
+    # Mã khởi tạo bot và các mã khác ở đây
+    chat_id =chat_id 
+    text = noti
+    # Sử dụng await để thực hiện coroutine
+    await bot.send_message(chat_id=chat_id, text=text)
 
 
 
@@ -101,8 +107,8 @@ class Account (models.Model):
         value_force = round((maintenance_margin_ratio - self.margin_ratio)*self.market_value/100,0)
         value_force_str = '{:,.0f}'.format(value_force)
         status = ""
-        port = Portfolio.objects.filter(account_id = self.pk).first()
-        if port and port.sum_stock>0:
+        port = Portfolio.objects.filter(account_id = self.pk, sum_stock__gt=0).first()
+        if port:
             price_force_sell = round(-self.cash_balance/( 0.87* port.sum_stock),0)
             if abs(self.cash_balance) >1000 and value_force !=0:
                 if check <= maintenance_margin_ratio and check >force_sell_margin_ratio:
@@ -137,11 +143,10 @@ class Account (models.Model):
         self.total_temporarily_pl= self.nav - self.net_cash_flow
         self.total_pl  = self.total_temporarily_pl + self.total_closed_pl
         bot = Bot(token='5806464470:AAH9bLZxhx6xXDJ9rlPKkhaJ6lKpKRrZEfA')
+        chat_id ='-4055438156'
         if self.status:
             noti = f"Tài khoản {self.pk}, tên {self.name} bị {self.status} "
-            bot.send_message(
-                chat_id='-4055438156',
-                text=noti)
+            asyncio.run(send_notification(bot,chat_id,noti))
 
         # Your second save method code
         super(Account, self).save(*args, **kwargs)
