@@ -801,7 +801,7 @@ def pay_money_back():
     account = Account.objects.all()
     if account:
         for instance in account:
-        # chuy?n ti?n d?n lên 1 ngày
+        # chuyển tiền dời lên 1 ngày
             instance.interest_cash_balance += instance.cash_t1
             instance.cash_t0 += instance.cash_t1
             instance.cash_t1= instance.cash_t2
@@ -969,5 +969,3 @@ def setle_milestone_account(account ):
 
 
 
-
-                
