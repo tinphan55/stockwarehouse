@@ -7,20 +7,15 @@ from infotrading.models import get_list_stock_price
 
 def schedule_morning():
     today = datetime.now().date()
-    not_trading_dates = DateNotTrading.objects.filter(date=today)
-    # try:
-    #     # Uncomment nếu bạn có một hàm check_update_analysis_and_send_notifications
-    #     # check_update_analysis_and_send_notifications()
-    # except Exception as e_check_update:
-    #     print(f"An error occurred while running check_update_analysis_and_send_notifications: {e_check_update}")
+    weekday = today.weekday() 
+    check_in_dates =  DateNotTrading.objects.filter(date=today).exists()
 
-   
     try:
         calculate_interest()
     except Exception as e_morning_check:
         print(f"An error occurred while running morning_check: {e_morning_check}")
 
-    if not not_trading_dates:
+    if not (check_in_dates or weekday == 5 or weekday == 6):
         try:
             # Thực hiện công việc cần làm vào 7h30
             # Ví dụ: Gửi email
@@ -52,9 +47,9 @@ def schedule_morning():
 
 def schedule_mid_trading_date():
     today = datetime.now().date()
-    not_trading_dates = DateNotTrading.objects.filter(date=today)
-    
-    if not not_trading_dates:
+    weekday = today.weekday() 
+    check_in_dates =  DateNotTrading.objects.filter(date=today).exists()
+    if not (check_in_dates or weekday == 5 or weekday == 6):
         
         try:
             atternoon_check()
