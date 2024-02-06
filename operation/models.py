@@ -144,9 +144,9 @@ class Account (models.Model):
         self.total_pl  = self.total_temporarily_pl + self.total_closed_pl
         bot = Bot(token='5806464470:AAH9bLZxhx6xXDJ9rlPKkhaJ6lKpKRrZEfA')
         chat_id ='-4055438156'
-        if self.status:
-            noti = f"Tài khoản {self.pk}, tên {self.name} bị {self.status} "
-            asyncio.run(send_notification(bot,chat_id,noti))
+        # if self.status:
+        #     noti = f"Tài khoản {self.pk}, tên {self.name} bị {self.status} "
+        #     asyncio.run(send_notification(bot,chat_id,noti))
 
         # Your second save method code
         super(Account, self).save(*args, **kwargs)
