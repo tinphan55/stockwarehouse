@@ -928,8 +928,8 @@ def setle_milestone_account(account ):
             print('Vẫn còn âm tiền, cần giải pháp đòi nọ')
             amount = 0
             
-        description = f"TK {account.pk} tính lãi gộp tất toán cho {number_interest} ngày"
         if  amount <0 :
+            description = f"TK {account.pk} tính lãi gộp tất toán cho {number_interest} ngày"
             ExpenseStatement.objects.create(
                     account=account,
                     date=date,
