@@ -908,7 +908,7 @@ def check_dividend():
 
 def setle_milestone_account(account ):
     status = False
-    if account.market_value == 0  and account.total_temporarily_interest !=0 and account.interest_cash_balance <=0:
+    if account.market_value == 0  and account.total_temporarily_interest !=0:
         status = True
         date=datetime.now().date()
         if account.cash_t1 !=0 and account.cash_t2 !=0:
