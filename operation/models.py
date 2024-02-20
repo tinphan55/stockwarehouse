@@ -12,7 +12,7 @@ from django.db.models import Sum
 from django.utils import timezone
 from telegram import Bot
 from django.db.models import Q
-from cpd.models import ClientPartnerInfo
+from cpd.models import *
 from django.contrib.auth.hashers import make_password
 from regulations.models import *
 from accfifo import Entry, FIFO
@@ -707,6 +707,7 @@ def save_field_account(sender, instance, **kwargs):
     elif sender == Transaction:
         portfolio = Portfolio.objects.filter(stock =instance.stock, account= instance.account).first()
         transaction_items = Transaction.objects.filter(account=account,created_at__gt = date_mileston)
+        month_year = define_month_year_cp_commission(instance)
         if not created:
             # sửa sao kê phí và thuế
             update_or_created_expense_transaction(instance,'transaction_fee' )
@@ -718,10 +719,14 @@ def save_field_account(sender, instance, **kwargs):
             
             # sửa account
             update_account_transaction( account, transaction_items)
+            # sửa hoa hồng cp
+            transaction_cpd = Transaction.objects.filter(account__cpd__name=account.cpd)
+            cp_update_transaction(account, instance,transaction_cpd , month_year)
            
         else:
             created_transaction(instance, portfolio, account)
             update_or_created_expense_transaction(instance,'transaction_fee' )
+            cp_create_transaction(account, instance, month_year)
         if portfolio:
             portfolio.save()   
     account.save()
