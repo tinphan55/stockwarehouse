@@ -913,9 +913,9 @@ def setle_milestone_account(account ):
         date=datetime.now().date()
         if account.cash_t1 !=0 and account.cash_t2 !=0:
             number_interest_t1 = define_date_receive_cash(date,1)[1]
-            number_interest = define_date_receive_cash(date,2)[1]
+            number_interest_t2 = define_date_receive_cash(date,2)[1]
             amount1 = account.interest_fee *(account.interest_cash_balance)*number_interest_t1 /360
-            amount2 = account.interest_fee *(account.interest_cash_balance - account.cash_t1)*number_interest /360
+            amount2 = account.interest_fee *(account.interest_cash_balance + account.cash_t1)*(number_interest_t2-number_interest_t1) /360
             amount =amount1+amount2
     
         elif account.cash_t1 !=0 and account.cash_t2 ==0:
