@@ -9,24 +9,16 @@ def schedule_morning():
     today = datetime.now().date()
     weekday = today.weekday() 
     check_in_dates =  DateNotTrading.objects.filter(date=today).exists()
-
     try:
         calculate_interest()
     except Exception as e_morning_check:
         print(f"An error occurred while running morning_check: {e_morning_check}")
-
+    try:
+        run_database_backup()
+    except Exception as e_auto_news:
+        print(f"An error occurred while running auto_news_stock_worlds: {e_auto_news}")
     if not (check_in_dates or weekday == 5 or weekday == 6):
         try:
-            # Thực hiện công việc cần làm vào 7h30
-            # Ví dụ: Gửi email
-            # send_mail(
-            #     'Morning Check',
-            #     'Nội dung kiểm tra buổi sáng...',
-            #     'from@example.com',
-            #     ['to@example.com'],
-            #     fail_silently=False,
-            # )
-
             check_dividend_recevie()
         except Exception as e_check_dividend:
             print(f"An error occurred while running check_dividend: {e_check_dividend}")
@@ -35,11 +27,7 @@ def schedule_morning():
             pay_money_back()
         except Exception as e_auto_news:
             print(f"An error occurred while running auto_news_stock_worlds: {e_auto_news}")
-        
-        try:
-            run_database_backup()
-        except Exception as e_auto_news:
-            print(f"An error occurred while running auto_news_stock_worlds: {e_auto_news}")
+
     else:
         pass
 
