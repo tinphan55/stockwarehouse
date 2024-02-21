@@ -58,17 +58,17 @@ class ClientPartnerCommission (models.Model):
     def save(self, *args, **kwargs):
         self.month_year_str = "{}/{}".format(str(self.month_year.month), str(self.month_year.year))
         self.trading_fee_spreads = self.total_value*0.0005
-        self.commission_back = (self.total_value*0.0015 -self.total_value*0.0003)*0.85*0.9
+        self.commission_back = (self.total_value*0.001 -self.total_value*0.0003)*0.85*0.9
         self.total_revenue = self.trading_fee_spreads + self.commission_back
         self.total_commission = self.total_revenue * self.cp.commission
         super(ClientPartnerCommission , self).save(*args, **kwargs)
 
 
 def define_month_year_cp_commission(instance):
-    if instance.date.day >=21:
+    if instance.date.day <=20:
         month_year =  datetime(instance.date.year, instance.date.month, 1)
     else:
-        month_year = instance.date - timedelta(days=instance.date.day)
+        month_year = instance.date + timedelta(days=31)
         month_year = month_year.replace(day=1)
     return month_year
 
