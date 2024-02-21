@@ -722,7 +722,7 @@ def save_field_account(sender, instance, **kwargs):
             # sửa hoa hồng cp
             if account.cpd:
                 month_year = define_month_year_cp_commission(instance)
-                transaction_cpd = Transaction.objects.filter(account__cpd__name=account.cpd)
+                transaction_cpd = Transaction.objects.filter(account__cpd =account.cpd)
                 cp_update_transaction(account, instance,transaction_cpd , month_year)
            
         else:
