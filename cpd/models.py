@@ -28,9 +28,9 @@ class ClientPartnerInfo (models.Model):
         return str(self.full_name) + '_' + str(self.pk)
     
     def save(self, *args, **kwargs):
-        if self.rank ==1:
+        if self.rank =='1':
             self.commission = 0.2
-        elif self.rank ==2:
+        elif self.rank =='2':
             self.commission = 0.4
         else:
             self.commission =0
@@ -56,7 +56,7 @@ class ClientPartnerCommission (models.Model):
         return self.cp.full_name
     
     def save(self, *args, **kwargs):
-        self.month_year_str = "{}/{}".format(self.month_year.month, self.month_year.year)
+        self.month_year_str = "{}/{}".format(str(self.month_year.month), str(self.month_year.year))
         self.trading_fee_spreads = self.total_value*0.0005
         self.commission_back = (self.total_value*0.0015 -self.total_value*0.0003)*0.85*0.9
         self.total_revenue = self.trading_fee_spreads + self.commission_back
@@ -70,16 +70,19 @@ def define_month_year_cp_commission(instance):
     else:
         month_year = instance.date - timedelta(days=instance.date.day)
         month_year = month_year.replace(day=1)
-    return instance
+    return month_year
 
 
 def cp_create_transaction(account, instance, month_year):
-    ClientPartnerCommission.objects.update_or_create(
-        cp=account.cpd,
-        month_year=month_year,
-        defaults={
-            'total_value': F('total_value') + instance.total_value,}
-        )
+    try:
+        # Kiểm tra xem bản ghi đã tồn tại chưa
+        commission_record = ClientPartnerCommission.objects.get(cp=account.cpd, month_year=month_year)
+        # Nếu bản ghi tồn tại, cập nhật giá trị của trường total_value
+        commission_record.total_value = F('total_value') + instance.total_value
+        commission_record.save()
+    except ClientPartnerCommission.DoesNotExist:
+        # Nếu bản ghi không tồn tại, tạo mới bản ghi với giá trị mặc định
+        commission_record = ClientPartnerCommission.objects.create(cp=account.cpd, month_year=month_year, total_value=instance.total_value)
 def cp_update_transaction(account, instance,transaction_cpd , month_year):
     end_period = month_year.replace(day=20)
     # Tính ngày đầu tiên của tháng trước đó
