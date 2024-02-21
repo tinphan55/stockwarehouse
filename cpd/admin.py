@@ -12,11 +12,16 @@ admin.site.register(ClientPartnerInfo,ClientPartnerInfoAdmin)
 
 class ClientPartnerCommissionAdmin(admin.ModelAdmin):
     model= ClientPartnerCommission
-    list_display = ('cp', 'month_year_str', 'formatted_total_value', 'formatted_trading_fee_spreads', 'formatted_commission_back', 'formatted_total_revenue', 'total_commission')
+    list_display = ('cp', 'month_year_str', 'formatted_total_value', 'formatted_trading_fee_spreads', 'formatted_commission_back', 'formatted_total_revenue', 'formatted_total_commission')
     search_fields = ['cp__full_name','month_year_str']
     list_filter = ['cp__full_name','month_year_str']
     readonly_fields = ['user_created', 'user_modified','total_value','trading_fee_spreads','commission_back','total_revenue','total_commission']
-
+    ordering = ['-total_commission']
+    
+    def has_add_permission(self, request):
+        # Return False to disable the "Add" button
+        return False
+    
     def save_model(self, request, obj, form, change):
         # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
         if not change:  # Kiểm tra xem có phải là tạo mới hay không
@@ -51,5 +56,6 @@ class ClientPartnerCommissionAdmin(admin.ModelAdmin):
     formatted_trading_fee_spreads.short_description = 'DT chênh lệch PGD'
     formatted_total_revenue.short_description = 'Tổng Doanh thu tính thu nhập'
     formatted_total_commission.short_description = 'Thu nhập CTV'
+    formatted_commission_back.short_description = 'HH HSC trả'
 
 admin.site.register(ClientPartnerCommission, ClientPartnerCommissionAdmin)
