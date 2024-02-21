@@ -6,7 +6,7 @@ class ClientPartnerInfoAdmin(admin.ModelAdmin):
     model= ClientPartnerInfo
     list_display = ['full_name', 'id', 'rank', 'phone','commission']
     search_fields = ['id','full_name']
-    readonly_fields = ['user_created', 'user_modified','commission']
+    readonly_fields = ['commission']
 
 admin.site.register(ClientPartnerInfo,ClientPartnerInfoAdmin)
 
@@ -17,7 +17,7 @@ class ClientPartnerCommissionAdmin(admin.ModelAdmin):
     list_filter = ['cp__full_name','month_year_str']
     readonly_fields = ['user_created', 'user_modified','total_value','trading_fee_spreads','commission_back','total_revenue','total_commission']
     ordering = ['-total_commission']
-    
+
     def has_add_permission(self, request):
         # Return False to disable the "Add" button
         return False
