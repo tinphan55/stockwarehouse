@@ -265,6 +265,12 @@ class Transaction (models.Model):
     def __str__(self):
         return self.stock.stock
     
+    def __init__(self, *args, **kwargs):
+        super(Transaction, self).__init__(*args, **kwargs)
+        self._original_date = self.date
+        self._original_account =self.account
+        self._original_total_value =self.total_value
+    
     def clean(self):
         if self.price < 0: 
             raise ValidationError('Lỗi giá phải lớn hơn 0')
@@ -684,7 +690,10 @@ def delete_and_recreate_interest_expense(account):
     return new_data
 
 
-
+def calculate_original_date_transaction_edit(transaction):
+    # Tính toán ngày giao dịch gốc dựa trên dữ liệu trong cơ sở dữ liệu, lấy record được chỉnh sửa gần nhất
+    original_date = Transaction.objects.filter(id=transaction.id, date__lt=transaction.date).order_by('-date').first().date
+    return original_date
 
 @receiver([post_save, post_delete], sender=Transaction)
 @receiver([post_save, post_delete], sender=CashTransfer)
@@ -721,17 +730,13 @@ def save_field_account(sender, instance, **kwargs):
             update_account_transaction( account, transaction_items)
             # sửa hoa hồng cp
             if account.cpd:
-                month_year = define_month_year_cp_commission(instance)
-                transaction_cpd = Transaction.objects.filter(account__cpd =account.cpd)
-                cp_update_transaction(account, instance,transaction_cpd , month_year)
+                cp_update_transaction( instance)
            
         else:
             created_transaction(instance, portfolio, account)
             update_or_created_expense_transaction(instance,'transaction_fee' )
             if account.cpd:
-                print('có chạy cpd')
-                month_year = define_month_year_cp_commission(instance)
-                cp_create_transaction(account, instance, month_year)
+                cp_create_transaction(instance)
         if portfolio:
             portfolio.save()   
     account.save()
