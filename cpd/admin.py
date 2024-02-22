@@ -21,6 +21,9 @@ class ClientPartnerCommissionAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         # Return False to disable the "Add" button
         return False
+    def get_queryset(self, request):
+        # Chỉ trả về các bản ghi có sum_stock > 0
+        return super().get_queryset(request).filter(total_value__gt=0)
     
     def save_model(self, request, obj, form, change):
         # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới

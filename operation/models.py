@@ -256,6 +256,9 @@ class Transaction (models.Model):
     user_created = models.ForeignKey(User,on_delete=models.CASCADE,null=True, blank= True,                   verbose_name="Người tạo")
     user_modified = models.CharField(max_length=150, blank=True, null=True,
                              verbose_name="Người chỉnh sửa")
+    previous_date= models.DateField(null= True, blank=True )
+    previous_account = models.IntegerField(null= True, blank=True)
+    previous_total_value = models.FloatField(null= True, blank=True)
     
 
     class Meta:
@@ -268,21 +271,13 @@ class Transaction (models.Model):
     def __init__(self, *args, **kwargs):
         super(Transaction, self).__init__(*args, **kwargs)
         self._original_date = self.date
-        self._original_account =self.account
+        self._original_account =self.account_id
         self._original_total_value =self.total_value
     
     def clean(self):
         if self.price < 0: 
             raise ValidationError('Lỗi giá phải lớn hơn 0')
-
-        # account = self.account
-        # ratio_requirement = self.stock.initial_margin_requirement/100
-
-        # if self.position == 'buy': 
-        #     max_qty = abs((account.nav/(ratio_requirement*account.margin_ratio/100))/self.price)
-        #     if self.qty > max_qty :
-        #         raise ValidationError({'qty': f'Không đủ sức mua, số lượng cổ phiếu tối đa  {max_qty:,.0f}'})
-                   
+          
         if self.position == 'sell':
             port = Portfolio.objects.filter(account = self.account, stock =self.stock).first()
             stock_hold  = port.on_hold
@@ -292,10 +287,6 @@ class Transaction (models.Model):
                     raise ValidationError({'qty': f'Không đủ cổ phiếu bán, tổng cổ phiếu khả dụng là {max_sellable_qty}'})        
                 
 
-         
-             
-        
-        
     def save(self, *args, **kwargs):
         self.total_value = self.price*self.qty
         self.transaction_fee = self.total_value*self.account.transaction_fee
@@ -305,7 +296,19 @@ class Transaction (models.Model):
         else:
             self.tax = self.total_value*self.account.tax
             self.net_total_value = self.total_value-self.transaction_fee-self.tax
-        
+        #lưu giá trị trước chỉnh sửa
+        is_new = self._state.adding
+        if is_new and self.account.cpd:
+            # Nếu là bản ghi mới, gán các giá trị previous bằng các giá trị ban đầu
+            self.previous_date = self.date
+            self.previous_account = self.account.pk
+            self.previous_total_value = self.total_value
+        else:
+            # Nếu không phải là bản ghi mới, chỉ cập nhật previous khi có sự thay đổi
+            self.previous_account = self._original_account
+            self.previous_date = self._original_date
+            self.previous_total_value = self._original_total_value
+
         super(Transaction, self).save(*args, **kwargs)
 
 
@@ -730,7 +733,15 @@ def save_field_account(sender, instance, **kwargs):
             update_account_transaction( account, transaction_items)
             # sửa hoa hồng cp
             if account.cpd:
-                cp_update_transaction( instance)
+                account_all = Account.objects.all()
+                try:
+                    # Kiểm tra xem bản ghi đã bị xóa chưa
+                    edit_commission = Transaction.objects.get(pk =instance.pk)
+                    # Nếu bản ghi tồn tại, cập nhật giá trị của trường total_value
+                    cp_update_transaction( instance, account_all)
+                except Transaction.DoesNotExist:
+                    pass
+                    
            
         else:
             created_transaction(instance, portfolio, account)
@@ -748,8 +759,14 @@ def delete_expense_statement(sender, instance, **kwargs):
     expense = ExpenseStatement.objects.filter(transaction_id=instance.pk)
     # porfolio = Portfolio.objects.filter(account=instance.account, stock =instance.stock).first()
     if expense:
-        expense.delete()       
-    
+        expense.delete()  
+    # điều chỉnh hoa hồng
+    month_year=define_month_year_cp_commission(instance.date)   
+    commission = ClientPartnerCommission.objects.get(cp=instance.account.cpd, month_year=month_year)      
+    commission.total_value=commission.total_value -instance.total_value
+    if commission.total_value<0:
+            commission.total_value=0
+    commission.save()
 
 
 @receiver([post_save, post_delete], sender=ExpenseStatement)
@@ -989,3 +1006,7 @@ def setle_milestone_account(account ):
 
 
 
+
+    
+    
+    

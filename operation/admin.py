@@ -260,6 +260,12 @@ class TransactionAdmin(admin.ModelAdmin):
     list_display_links = ['stock',]
     list_display = ['account','date','stock','position','formatted_price','formatted_qty','formatted_net_total_value','created_at','user_created','formatted_transaction_fee','formatted_tax']
     readonly_fields = ['user_created','user_modified','transaction_fee','tax','total_value','net_total_value']
+    fieldsets = (
+        ('Thông tin giao dịch', {
+            'fields': ('account', 'date', 'stock', 'position', 'price', 'qty')
+        }),
+       
+    )
     search_fields = ['account__id','account__name','stock__stock']
     list_filter = ['account__name',]
     def save_model(self, request, obj, form, change):
