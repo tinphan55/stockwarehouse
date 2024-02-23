@@ -79,7 +79,7 @@ JAZZMIN_SETTINGS = {
     "hide_models": [],
 
     # List of apps (and/or models) to base side menu ordering off of (does not need to contain all apps/models)
-    "order_with_respect_to": [ "Operation","realstockaccount","infotrading","cpd","regulations"],
+    "order_with_respect_to": [ "Operation","realstockaccount","cpd","infotrading","regulations"],
 
     # Custom links to append to app groups, keyed on app name
     # "custom_links": {
@@ -98,6 +98,7 @@ JAZZMIN_SETTINGS = {
         "auth.user": "fas fa-user",
         "auth.Group": "fas fa-users",
         "cpd.ClientPartnerInfo": "fas fa-user-shield",
+        "cpd.ClientPartnerCommission": "fas fa-funnel-dollar",
         "operation.StockListMargin": "fas fa-chess-queen",
         "operation.Portfolio": "far fa-lightbulb",
         "operation.CashTransfer": "fas fa-hand-holding-usd",
