@@ -291,10 +291,11 @@ class TransactionAdmin(admin.ModelAdmin):
                     if not request.user.is_superuser:
                         raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi.")
                     else:
-                        # Thêm dòng cảnh báo cho siêu người dùng
-                        super().save_model(request, obj, form, change)
-                        delete_and_recreate_interest_expense(obj.account)
-                        messages.warning(request, "Sao kê phí lãi vay đã được cập nhật.")
+                        if obj.total_value != obj.previous_total_value or obj.previous_date != obj.date:
+                            # Thêm dòng cảnh báo cho siêu người dùng
+                            super().save_model(request, obj, form, change)
+                            delete_and_recreate_interest_expense(obj.account)
+                            messages.warning(request, "Sao kê phí lãi vay đã được cập nhật.")
                 else:
                     super().save_model(request, obj, form, change)
     
