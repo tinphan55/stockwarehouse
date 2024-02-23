@@ -243,7 +243,7 @@ admin.site.register(StockListMargin,StockListMarginAdmin)
 class TransactionForm(forms.ModelForm):
     class Meta:
         model = Transaction
-        fields = '__all__'
+        exclude = ['user_created', 'user_modified']
     
     # def clean(self):
     #     cleaned_data = super().clean()
@@ -268,6 +268,13 @@ class TransactionAdmin(admin.ModelAdmin):
     )
     search_fields = ['account__id','account__name','stock__stock']
     list_filter = ['account__name',]
+    
+    def get_readonly_fields(self, request, obj=None):
+        # Nếu đang chỉnh sửa bản ghi đã tồn tại, trường account sẽ là chỉ đọc
+        if obj:
+            return ['account']
+        return []
+    
     def save_model(self, request, obj, form, change):
         # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
         if not change:  # Kiểm tra xem có phải là tạo mới hay không
@@ -425,7 +432,7 @@ admin.site.register(ExpenseStatement, ExpenseStatementAdmin)
 class CashTransferForm(forms.ModelForm):
     class Meta:
         model = CashTransfer
-        fields = '__all__'
+        exclude = ['user_created', 'user_modified']
 
     # def clean(self):
     #     cleaned_data = super().clean()
@@ -445,8 +452,17 @@ class CashTransferAdmin(admin.ModelAdmin):
     readonly_fields = ['user_created', 'user_modified']
     search_fields = ['account__id','account__name']
     list_filter = ['account__name',]
+    
+
+    def get_readonly_fields(self, request, obj=None):
+        # Nếu đang chỉnh sửa bản ghi đã tồn tại, trường account sẽ là chỉ đọc
+        if obj:
+            return ['account']
+        return []
+    
     def formatted_amount(self, obj):
         return '{:,.0f}'.format(obj.amount)
+    
 
     formatted_amount.short_description = 'Số tiền'
     

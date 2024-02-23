@@ -257,7 +257,6 @@ class Transaction (models.Model):
     user_modified = models.CharField(max_length=150, blank=True, null=True,
                              verbose_name="Người chỉnh sửa")
     previous_date= models.DateField(null= True, blank=True )
-    previous_account = models.IntegerField(null= True, blank=True)
     previous_total_value = models.FloatField(null= True, blank=True)
     
 
@@ -271,7 +270,6 @@ class Transaction (models.Model):
     def __init__(self, *args, **kwargs):
         super(Transaction, self).__init__(*args, **kwargs)
         self._original_date = self.date
-        self._original_account =self.account_id
         self._original_total_value =self.total_value
     
     def clean(self):
@@ -301,11 +299,9 @@ class Transaction (models.Model):
         if is_new and self.account.cpd:
             # Nếu là bản ghi mới, gán các giá trị previous bằng các giá trị ban đầu
             self.previous_date = self.date
-            self.previous_account = self.account.pk
             self.previous_total_value = self.total_value
         else:
             # Nếu không phải là bản ghi mới, chỉ cập nhật previous khi có sự thay đổi
-            self.previous_account = self._original_account
             self.previous_date = self._original_date
             self.previous_total_value = self._original_total_value
 

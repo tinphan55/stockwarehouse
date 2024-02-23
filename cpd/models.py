@@ -21,8 +21,8 @@ class ClientPartnerInfo (models.Model):
     rank= models.CharField(max_length=4,choices=RANK_CHOICES, null=False, blank=False,verbose_name = 'Cấp')
     commission = models.FloatField(default = 0.3, verbose_name='Tỷ lệ chia hoa hồng')
     class Meta:
-        verbose_name = 'Đối tác giới thiệu KH'
-        verbose_name_plural = 'Đối tác giới thiệu KH'
+        verbose_name = 'Đăng kí CTV'
+        verbose_name_plural = 'Đăng kí CTV'
 
     def __str__(self):
         return str(self.full_name) + '_' + str(self.pk)
@@ -93,37 +93,25 @@ def cp_create_transaction(instance):
         commission_record = ClientPartnerCommission.objects.create(cp=instance.account.cpd, month_year=month_year, total_value=instance.total_value)
 
 
-
-
-
-
 def cp_update_transaction( instance, account_all):
+    cp = instance.account.cpd
     origin_total_value=instance.previous_total_value
     edit_total_value = instance.total_value
     original_date = instance.previous_date
-    edit_account = instance.account
-    origin_account = instance.previous_account
     edit_month_year=define_month_year_cp_commission(instance.date)
     origin_month_year = define_month_year_cp_commission(original_date)
-    # end_period = month_year.replace(day=20)
-    # TÃ­nh ngÃ y Ä‘áº§u tiÃªn cá»§a thÃ¡ng trÆ°á»›c Ä‘Ã³
-    # start_period = month_year - timedelta(days=month_year.day)
-    # start_period = start_period.replace(day=20)
-    # total_value_items = transaction_cpd.filter(date__gt =start_period,date__lte = end_period )
-    if origin_account != edit_account.pk or origin_month_year != edit_month_year:
-        edit_cpd = edit_account.cpd 
+    if origin_month_year != edit_month_year:
         try:
             # Kiểm tra xem bản ghi đã tồn tại chưa
-            edit_commission = ClientPartnerCommission.objects.get(cp=edit_cpd, month_year=edit_month_year)
+            edit_commission = ClientPartnerCommission.objects.get(cp=cp, month_year=edit_month_year)
             # Nếu bản ghi tồn tại, cập nhật giá trị của trường total_value
             edit_commission.total_value += edit_total_value
             edit_commission.save()
         except ClientPartnerCommission.DoesNotExist:
             # Nếu bản ghi không tồn tại, tạo mới bản ghi với giá trị mặc định
-            ClientPartnerCommission.objects.create(cp=edit_cpd, month_year=edit_month_year, total_value=edit_total_value)
-        edit_commission = ClientPartnerCommission.objects.get(cp=edit_cpd, month_year=edit_month_year)
-        origin_cpd =  account_all.filter(id = origin_account).first().cpd
-        origin_commission = ClientPartnerCommission.objects.get(cp=origin_cpd, month_year=origin_month_year)  
+            ClientPartnerCommission.objects.create(cp=cp, month_year=edit_month_year, total_value=edit_total_value)
+        edit_commission = ClientPartnerCommission.objects.get(cp=cp, month_year=edit_month_year)
+        origin_commission = ClientPartnerCommission.objects.get(cp=cp, month_year=origin_month_year)  
         if edit_commission !=origin_commission:  
             origin_commission.total_value-=origin_total_value
             if origin_commission.total_value<0:
@@ -131,9 +119,44 @@ def cp_update_transaction( instance, account_all):
             origin_commission.save()
     else:
         if origin_total_value != edit_total_value: 
-            commission = ClientPartnerCommission.objects.get(cp=instance.account.cpd, month_year=edit_month_year)
+            commission = ClientPartnerCommission.objects.get(cp=cp, month_year=edit_month_year)
             commission.total_value = commission.total_value + edit_total_value - origin_total_value
             commission.save()
+
+
+# trường hợp có cho chỉnh account tại transaction
+# def cp_update_transaction( instance, account_all):
+#     origin_total_value=instance.previous_total_value
+#     edit_total_value = instance.total_value
+#     original_date = instance.previous_date
+#     edit_account = instance.account
+#     origin_account = instance.previous_account
+#     edit_month_year=define_month_year_cp_commission(instance.date)
+#     origin_month_year = define_month_year_cp_commission(original_date)
+#     if origin_account != edit_account.pk or origin_month_year != edit_month_year:
+#         edit_cpd = edit_account.cpd 
+#         try:
+#             # Kiểm tra xem bản ghi đã tồn tại chưa
+#             edit_commission = ClientPartnerCommission.objects.get(cp=edit_cpd, month_year=edit_month_year)
+#             # Nếu bản ghi tồn tại, cập nhật giá trị của trường total_value
+#             edit_commission.total_value += edit_total_value
+#             edit_commission.save()
+#         except ClientPartnerCommission.DoesNotExist:
+#             # Nếu bản ghi không tồn tại, tạo mới bản ghi với giá trị mặc định
+#             ClientPartnerCommission.objects.create(cp=edit_cpd, month_year=edit_month_year, total_value=edit_total_value)
+#         edit_commission = ClientPartnerCommission.objects.get(cp=edit_cpd, month_year=edit_month_year)
+#         origin_cpd =  account_all.filter(id = origin_account).first().cpd
+#         origin_commission = ClientPartnerCommission.objects.get(cp=origin_cpd, month_year=origin_month_year)  
+#         if edit_commission !=origin_commission:  
+#             origin_commission.total_value-=origin_total_value
+#             if origin_commission.total_value<0:
+#                 origin_commission.total_value=0
+#             origin_commission.save()
+#     else:
+#         if origin_total_value != edit_total_value: 
+#             commission = ClientPartnerCommission.objects.get(cp=instance.account.cpd, month_year=edit_month_year)
+#             commission.total_value = commission.total_value + edit_total_value - origin_total_value
+#             commission.save()
 
 
     

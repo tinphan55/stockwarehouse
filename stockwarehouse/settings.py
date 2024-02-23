@@ -214,7 +214,7 @@ CRONJOBS = [
     ('30 4 * * 1-5', 'stockwarehouse.schedule.schedule_mid_trading_date'),# chạy lúc 11h30 sáng
     # ('15 8 * * 1-5', 'stockwarehouse.schedule.schedule_after_trading_date'),# chạy lúc 14h45 trưa
     ('10-25/15 2-7 * * 1-5', 'stockwarehouse.schedule.get_info_stock_price_stock_68'),# từ 2:10 đến 7:25 mỗi ngày cách nhau 15p
-
+    ('0 2 * * *', 'python manage.py dbbackup'),  # Thực hiện backup cơ sở dữ liệu mỗi ngày lúc 2 giờ sáng
 ]
 
 
