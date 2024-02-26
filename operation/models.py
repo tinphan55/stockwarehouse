@@ -68,8 +68,10 @@ def cal_avg_price(account,stock, date_time):
         # fifo.profit_and_loss tính lời lỗ
     return fifo.avgcost
 
-def total_value_inventory_stock (account,stock, date_time): 
-    item_transactions = Transaction.objects.filter(account=account, stock__stock = stock, created_at__gt =date_time).order_by('date','created_at')
+def total_value_inventory_stock(account, stock, date_time, end_date=None):
+    if end_date is None:
+        end_date = datetime.now().date()
+    item_transactions = Transaction.objects.filter(account=account, stock__stock=stock, created_at__gt=date_time, date__lte=end_date).order_by('date', 'created_at')
     fifo = FIFO([])
     for item in item_transactions:
     # Kiểm tra xem giao dịch có phải là mua hay bán
@@ -162,7 +164,8 @@ class Account (models.Model):
     def save(self, *args, **kwargs):
     # Your first save method code
         self.total_loan_interest = self.total_temporarily_interest + self.total_interest_paid
-        self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_temporarily_interest
+        self.total_advance_fee = self.total_temporarily_advance_fee + self.total_advance_fee_paid
+        self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_temporarily_interest + self.total_temporarily_advance_fee
         stock_mapping = {obj.stock: obj.initial_margin_requirement for obj in StockListMargin.objects.all()}
         port = Portfolio.objects.filter(account=self.pk, sum_stock__gt=0)
         sum_initial_margin = 0
@@ -507,6 +510,13 @@ def update_market_price_port(sender, instance, created, **kwargs):
 
             
 # Các hàm cập nhập cho account và port
+def define_interest_cash_balace(account,date_mileston):
+    all_port = Portfolio.objects.filter(account=account, sum_stock__gt=0)
+    interest_cash_balance =0
+    for item in all_port:
+        interest_cash_balance += total_value_inventory_stock (account,item.stock, date_mileston)
+    return interest_cash_balance
+
 
 def created_transaction(instance, portfolio, account,date_mileston):
     if instance.position == 'buy':
@@ -529,11 +539,7 @@ def created_transaction(instance, portfolio, account,date_mileston):
         #điều chỉnh account
         account.net_trading_value += instance.net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
         account.cash_t2 += instance.net_total_value #Dẫn tới thay đổi cash_t0 trong tương lai và thay đổi interest_cash_balance 
-        all_port = Portfolio.objects.filter(account=account, sum_stock__gt=0)
-        interest_cash_balance =0
-        for item in all_port:
-            interest_cash_balance += total_value_inventory_stock (account,item.stock, date_mileston)
-        account.interest_cash_balance = interest_cash_balance
+        account.interest_cash_balance = define_interest_cash_balace(account,date_mileston)
         
         # tạo sao kê thuế
         ExpenseStatement.objects.create(
@@ -597,11 +603,7 @@ def update_account_transaction(account, transaction_items,date_mileston):
     account.cash_t0 = cash_t0
     account.total_buy_trading_value = total_value_buy
     account.net_trading_value = sum(item.net_total_value for item in transaction_items)
-    all_port = Portfolio.objects.filter(account=account, sum_stock__gt=0)
-    interest_cash_balance =0
-    for item in all_port:
-        interest_cash_balance += total_value_inventory_stock (account,item.stock, date_mileston)
-    account.interest_cash_balance = interest_cash_balance
+    account.interest_cash_balance = define_interest_cash_balace(account,date_mileston)
 
 
 
@@ -629,20 +631,50 @@ def process_cash_flow(cash_t0, cash_t1, cash_t2):
     cash_t2 = 0
     return cash_t0, cash_t1, cash_t2
 
-def add_list_interest(account, list_data, cash_t0, total_buy_value, date_interest):
-    # Kiểm tra xem date_interest đã tồn tại trong list_data hay chưa
-    existing_data = next((item for item in list_data if item['date'] == date_interest), None)
-    interest_cash_balance = cash_t0 + total_buy_value if cash_t0 + total_buy_value <= 0 else 0
+def add_list_interest_sell(account, list_data, cash_t1,cash_t2,start_date, end_date):
+    # Kiểm tra xem end_date đã tồn tại trong list_data hay chưa
+    existing_data = next((item for item in list_data if item['date'] == end_date), None)
+    interest_cash_balance = define_interest_cash_balace(account,start_date,end_date)
+    interest_cash_balance = interest_cash_balance if interest_cash_balance <= 0 else 0
+    advance_cash_balance = cash_t1 + cash_t2
     interest = round(interest_cash_balance * account.interest_fee / 360, 0)
-    # Nếu date_interest đã tồn tại
+    advance_fee = round(advance_cash_balance * account.interest_fee / 360, 0)
+    # Nếu end_date đã tồn tại
     if existing_data:
         existing_data['interest_cash_balance'] = interest_cash_balance
         existing_data['interest'] = interest
+        existing_data['advance_cash_balance'] = advance_cash_balance
+        existing_data['advance_fee'] = advance_fee
     else:
         dict_data = {
             'date': date_interest,
             'interest_cash_balance': interest_cash_balance,
-            'interest': interest
+            'interest': interest,
+            'advance_cash_balance':advance_cash_balance,
+            'advance_fee':advance_fee
+        }
+        list_data.append(dict_data)
+    return list_data
+
+def add_list_interest_buy(account, list_data,value_buy, date_interest,advance_cash_balance):
+    # Kiểm tra xem date_interest đã tồn tại trong list_data hay chưa
+    existing_data = next((item for item in list_data if item['date'] == date_interest), None)
+    interest_cash_balance += value_buy
+    interest = round(interest_cash_balance * account.interest_fee / 360, 0)
+    advance_fee = round(advance_cash_balance * account.interest_fee / 360, 0) if advance_cash_balance !=0 else 0
+    # Nếu date_interest đã tồn tại
+    if existing_data:
+        existing_data['interest_cash_balance'] = interest_cash_balance
+        existing_data['interest'] = interest
+        existing_data['advance_cash_balance'] = advance_cash_balance
+        existing_data['advance_fee'] = advance_fee
+    else:
+        dict_data = {
+            'date': date_interest,
+            'interest_cash_balance': interest_cash_balance,
+            'interest': interest,
+            'advance_cash_balance':advance_cash_balance,
+            'advance_fee':advance_fee
         }
         list_data.append(dict_data)
     return list_data
@@ -660,8 +692,9 @@ def delete_and_recreate_interest_expense(account):
         created_at__gt=date_previous
     ).values('position', 'date').annotate(total_value=Sum('net_total_value')).order_by('date')
     list_data = []
-    total_buy_value = 0
+    interest_cash_balance, advance_cash_balance  = 0, 0
     cash_t2, cash_t1, cash_t0 = 0, 0, 0
+
     if transaction_items_merge_date and transaction_items_merge_date[0]['date']<=end_date:
         for index, item in enumerate(transaction_items_merge_date):
             # Kiểm tra xem có ngày tiếp theo hay không
@@ -671,23 +704,22 @@ def delete_and_recreate_interest_expense(account):
                 # Nếu đến cuối list, thì thay thế ngày tiếp theo bằng ngày hôm nay
                 next_item_date = end_date
             next_day = define_date_receive_cash(item['date'], 1)[0]
-    
-            # if cash_t1 !=0 or cash_t2!=0:
-            #     cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
+            
 
             if item['position']== 'buy':
-                    total_buy_value += item['total_value']
-                   
+                    add_list_interest_buy(account, list_data,item['total_value'], item['date'],advance_cash_balance)
             else:
                     cash_t2 += item['total_value']
+                    add_list_interest_sell(account, list_data, cash_t1,cash_t2,date_previous, item['date'])
+
                    
-            add_list_interest(account,list_data,cash_t0 ,total_buy_value,item['date'])  
+             
 
             while next_day <= next_item_date:
                 date_while_loop = next_day
                 cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
                 
-                add_list_interest(account,list_data,cash_t0 ,total_buy_value,date_while_loop)
+                add_list_interest_sell(account, list_data, cash_t1,cash_t2,date_previous, item['date'])
                 next_day = define_date_receive_cash(next_day, 1)[0]
                 if next_day > next_item_date:
                     break
@@ -701,11 +733,13 @@ def delete_and_recreate_interest_expense(account):
                 new_data.append(existing_entry)
             else:
                 previous_entry = new_data[-1]
-                new_entry = {'date': d, 'interest_cash_balance': previous_entry['interest_cash_balance'], 'interest': previous_entry['interest']}
+                new_entry = {'date': d, 'interest_cash_balance': previous_entry['interest_cash_balance'], 'interest': previous_entry['interest'],'advance_cash_balance': 0,'advance_fee':0}
                 new_data.append(new_entry)
     new_data.sort(key=lambda x: x['date'])
-    expense = ExpenseStatement.objects.filter(account = account, type ='interest')
-    expense.delete()
+    expense_interest = ExpenseStatement.objects.filter(account = account, type ='interest')
+    expense_advance_fee = ExpenseStatement.objects.filter(account = account, type ='advance_fee')
+    expense_interest.delete()
+    expense_advance_fee.delete()
     for item in new_data:
         if item['interest'] != 0:
             formatted_interest_cash_balance = "{:,.0f}".format(item['interest_cash_balance'])
@@ -717,6 +751,17 @@ def delete_and_recreate_interest_expense(account):
                 amount=item['interest'],
                 interest_cash_balance=item['interest_cash_balance']
         )
+        if item['advance_fee'] != 0:
+            formatted_advance_cash_balance = "{:,.0f}".format(item['advance_cash_balance'])
+            ExpenseStatement.objects.create(
+                description=f"Số dư tính lãi {formatted_advance_cash_balance}",
+                type='advance_fee',
+                account=account,
+                date=item['date'],
+                amount=item['advance_fee'],
+                advance_cash_balance=item['interest_cash_balance']
+        )
+        
         
     return new_data
 
@@ -806,11 +851,18 @@ def save_field_account(sender, instance, **kwargs):
         date_mileston = milestone_account.created_at
     else:
         date_mileston = account.created_at
+    #tinh tong lai tam tinh
     interests_period = ExpenseStatement.objects.filter(account= account , type ='interest' , created_at__gt = date_mileston)
     sum_interest = 0
     if interests_period:
         sum_interest = sum( item.amount for item in interests_period)
     account.total_temporarily_interest = sum_interest
+    # tinh tong phi ung tam tinh
+    advance_fee_period = ExpenseStatement.objects.filter(account= account , type ='advance_fee' , created_at__gt = date_mileston)
+    sum_advance_fee = 0
+    if advance_fee_period:
+        sum_advance_fee = sum( item.amount for item in advance_fee_period)
+    account.total_temporarily_advance_fee = sum_advance_fee
     account.save()
                         
 
@@ -824,6 +876,7 @@ def save_field_account(sender, instance, **kwargs):
         item_milestone = AccountMilestone.objects.filter(account=account)
         account.total_interest_paid = sum(item.interest_paid for item in item_milestone)
         account.total_closed_pl =  sum(item.closed_pl for item in item_milestone)
+        account.total_advance_fee_paid = sum(item.advance_fee_paid for item in item_milestone)
         account.save()
 
         
@@ -985,29 +1038,29 @@ def setle_milestone_account(account ):
         if account.cash_t1 !=0 and account.cash_t2 !=0:
             number_interest_t1 = define_date_receive_cash(date,1)[1]
             number_interest_t2 = define_date_receive_cash(date,2)[1]
-            amount1 = account.interest_fee *(account.interest_cash_balance)*number_interest_t1 /360
-            amount2 = account.interest_fee *(account.interest_cash_balance + account.cash_t1)*(number_interest_t2-number_interest_t1) /360
+            amount1 = account.interest_fee *(account.advance_cash_balance)*number_interest_t1 /360
+            amount2 = account.interest_fee *(account.advance_cash_balance + account.cash_t1)*(number_interest_t2-number_interest_t1) /360
             amount =amount1+amount2
     
         elif account.cash_t1 !=0 and account.cash_t2 ==0:
             number_interest = define_date_receive_cash(date,1)[1]
-            amount =account.interest_fee *(account.interest_cash_balance)*number_interest /360
+            amount =account.interest_fee *(account.advance_cash_balance)*number_interest /360
         elif account.cash_t1 ==0 and account.cash_t2 !=0:
             number_interest = define_date_receive_cash(date,2)[1]
-            amount = account.interest_fee *(account.interest_cash_balance)*number_interest /360  
+            amount = account.interest_fee *(account.advance_cash_balance)*number_interest /360  
         else:
             print('Vẫn còn âm tiền, cần giải pháp đòi nọ')
             amount = 0
             
         if  amount <0 :
-            description = f"TK {account.pk} tính lãi gộp tất toán cho {number_interest} ngày"
+            description = f"TK {account.pk} tính phí ứng tiền bán tất toán cho {number_interest} ngày"
             ExpenseStatement.objects.create(
                     account=account,
                     date=date,
-                    type = 'interest',
+                    type = 'advance_fee',
                     amount = amount,
                     description = description,
-                    interest_cash_balance = account.interest_cash_balance
+                    advance_cash_balance = account.advance_cash_balance
                     )
         withdraw_cash = CashTransfer.objects.create(
             account = account,
@@ -1026,6 +1079,7 @@ def setle_milestone_account(account ):
             total_buy_trading_value = account.total_buy_trading_value,
             net_trading_value = account.net_trading_value,
             interest_paid  = account.total_temporarily_interest,
+            advance_fee_paid = account.total_temporarily_advance_fee,
             closed_pl    = account.total_temporarily_pl   )
         
         
@@ -1039,6 +1093,7 @@ def setle_milestone_account(account ):
         account.net_trading_value = 0
         account.total_buy_trading_value = 0
         account.total_temporarily_interest = 0
+        account.total_temporarily_advance_fee =0
         account.total_temporarily_pl = 0
         account.save()
     return  status
