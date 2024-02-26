@@ -647,7 +647,7 @@ def add_list_interest_sell(account, list_data, cash_t1,cash_t2,start_date, end_d
         existing_data['advance_fee'] = advance_fee
     else:
         dict_data = {
-            'date': date_interest,
+            'date': end_date,
             'interest_cash_balance': interest_cash_balance,
             'interest': interest,
             'advance_cash_balance':advance_cash_balance,

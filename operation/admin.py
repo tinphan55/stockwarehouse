@@ -35,13 +35,13 @@ def real_max_power(date):
 class AccountAdmin(admin.ModelAdmin):
     model= Account
     ordering = ['-nav']
-    list_display = ['name', 'id', 'formatted_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','formatted_excess_equity','formatted_total_temporarily_pl', 'custom_status_display','interest_payments']
+    list_display = ['name', 'id', 'formatted_cash_balance','advance_cash_balance', 'formatted_interest_cash_balance', 'formatted_market_value', 'formatted_nav', 'margin_ratio','formatted_excess_equity','formatted_total_temporarily_pl', 'custom_status_display','interest_payments']
     fieldsets = [
         ('Thông tin cơ bản', {'fields': ['name','cpd','user_created','description']}),
         ('Biểu phí tài khoản', {'fields': ['interest_fee', 'transaction_fee', 'tax','credit_limit']}),
-        ('Trạng thái tài khoản', {'fields': ['cash_balance', 'interest_cash_balance','net_cash_flow','net_trading_value','market_value','nav','initial_margin_requirement','margin_ratio','excess_equity','custom_status_display','milestone_date_lated']}),
-        ('Thông tin lãi', {'fields': ['total_loan_interest','total_interest_paid','total_temporarily_interest']}),
-        ('Hiệu quả đầu tư', {'fields': ['total_pl','total_closed_pl','total_temporarily_pl']}),
+        ('Trạng thái tài khoản', {'fields': ['cash_balance', 'interest_cash_balance','advance_cash_balance','net_cash_flow','net_trading_value','market_value','nav','initial_margin_requirement','margin_ratio','excess_equity','custom_status_display','milestone_date_lated']}),
+        ('Thông tin lãi và phí ứng', {'fields': ['total_loan_interest','total_interest_paid','total_temporarily_interest','total_advance_fee','total_advance_fee_paid','total_temporarily_advance_fee']}),
+        ('Hiệu quả đầu tư', {'fields': ['total_pl','total_closed_pl','total_temporarily_pl',]}),
         ('Thành phần số dư tiền tính lãi', {'fields': ['cash_t0','cash_t1','cash_t2','total_buy_trading_value']}),
     ]
     readonly_fields = ['cash_balance', 'market_value', 'nav', 'margin_ratio', 'excess_equity', 'user_created', 'initial_margin_requirement', 'net_cash_flow', 'net_trading_value', 'custom_status_display','cash_t2','cash_t1',
