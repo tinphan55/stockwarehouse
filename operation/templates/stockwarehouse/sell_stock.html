@@ -27,10 +27,13 @@
             data: $(this).serialize(),
             success: function(response) {
                 // Display the results in a modal or popup
-                alert("Lợi nhuận: " + response['Lợi nhuận'] 
-                + "\nLãi vay: " + response['Lãi vay']
-                + "\nPhí giao dịch: " + response['Phí giao dịch']
+                alert("Lợi nhuận ròng: " + response['Lợi nhuận ròng'] 
                 + "\nThuế: " + response['Thuế']
+                + "\nPhí giao dịch: " + response['Phí giao dịch']
+                + "\nLãi vay: " + response['Lãi vay']
+                + "\nPhí ứng tiền bán: " + response['Phí ứng tiền bán']
+                
+               
                 
                 );
                 

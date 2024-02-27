@@ -370,6 +370,7 @@ class ExpenseStatement(models.Model):
     amount = models.FloatField (verbose_name='Số tiền')
     description = models.CharField(max_length=100,null=True, blank=True, verbose_name='Diễn giải')
     interest_cash_balance = models.FloatField (null = True,blank =True ,verbose_name='Số dư tiền tính lãi')
+    advance_cash_balance= models.FloatField (null = True,blank =True ,verbose_name='Số dư tiền tính phí ứng')
     transaction_id =models.CharField(max_length= 200,null = True,blank =True ,verbose_name= 'Mã lệnh')
     class Meta:
          verbose_name = 'Bảng kê chi phí '
@@ -835,12 +836,13 @@ def delete_expense_statement(sender, instance, **kwargs):
     if expense:
         expense.delete()  
     # điều chỉnh hoa hồng
-    month_year=define_month_year_cp_commission(instance.date)   
-    commission = ClientPartnerCommission.objects.get(cp=instance.account.cpd, month_year=month_year)      
-    commission.total_value=commission.total_value -instance.total_value
-    if commission.total_value<0:
-            commission.total_value=0
-    commission.save()
+    if instance.account.cpd:
+        month_year=define_month_year_cp_commission(instance.date)   
+        commission = ClientPartnerCommission.objects.get(cp=instance.account.cpd, month_year=month_year)      
+        commission.total_value=commission.total_value -instance.total_value
+        if commission.total_value<0:
+                commission.total_value=0
+        commission.save()
 
 
 @receiver([post_save, post_delete], sender=ExpenseStatement)
@@ -927,12 +929,12 @@ def calculate_interest():
                     description=f"Số dư tính phí ứng {formatted_advance_cash_balance}",
                     interest_cash_balance = instance.interest_cash_balance
                     )
+
 def pay_money_back():
     account = Account.objects.all()
     if account:
         for instance in account:
         # chuyển tiền dời lên 1 ngày
-            instance.interest_cash_balance += instance.cash_t1
             instance.cash_t0 += instance.cash_t1
             instance.cash_t1= instance.cash_t2
             instance.cash_t2 =0
@@ -1087,7 +1089,8 @@ def setle_milestone_account(account ):
         account.cash_t0 = 0
         account.cash_t1 = 0
         account.cash_t2 = 0
-        account.total_interest_paid += a.interest_paid
+        account.total_interest_paid = a.interest_paid
+        account.total_advance_fee_paid += a.advance_fee_paid
         account.total_closed_pl += a.closed_pl
         account.milestone_date_lated = a.created_at
         account.net_cash_flow = 0
