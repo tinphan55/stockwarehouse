@@ -87,7 +87,7 @@ def total_value_inventory_stock(account, stock, date_time, end_date=None):
     total_value = 0
     for entry in fifo_inventory:
         quantity, price = entry.quantity, entry.price
-        total_value += quantity * price 
+        total_value += quantity * price *(1+account.transaction_fee)
     return total_value
 
 
@@ -180,7 +180,7 @@ class Account (models.Model):
         self.nav = self.market_value + self.cash_balance
         self.initial_margin_requirement = sum_initial_margin
         self.excess_equity = self.nav - self.initial_margin_requirement
-        self.advance_cash_balance = self.cash_t1 + self.cash_t2
+        self.advance_cash_balance = (self.cash_t1 + self.cash_t2)*-1
         if self.market_value != 0:
             self.margin_ratio = abs(round((self.nav / self.market_value) * 100, 2))
         self.total_temporarily_pl= self.nav - self.net_cash_flow
@@ -515,7 +515,7 @@ def define_interest_cash_balace(account,date_mileston):
     interest_cash_balance =0
     for item in all_port:
         interest_cash_balance += total_value_inventory_stock (account,item.stock, date_mileston)
-    return interest_cash_balance
+    return -interest_cash_balance
 
 
 def created_transaction(instance, portfolio, account,date_mileston):
@@ -778,9 +778,9 @@ def save_field_account(sender, instance, **kwargs):
     account = instance.account
     milestone_account = AccountMilestone.objects.filter(account =account).order_by('-created_at').first()
     if milestone_account:
-            date_mileston = milestone_account.created_at
+        date_mileston = milestone_account.created_at
     else:
-            date_mileston = account.created_at
+        date_mileston = account.created_at
     
     if sender == CashTransfer:
         if not created:
@@ -803,7 +803,7 @@ def save_field_account(sender, instance, **kwargs):
             update_portfolio_transaction(instance,transaction_items, portfolio)
             
             # sửa account
-            update_account_transaction( account, transaction_items,milestone_account)
+            update_account_transaction( account, transaction_items,date_mileston)
             # sửa hoa hồng cp
             if account.cpd:
                 account_all = Account.objects.all()
@@ -817,7 +817,8 @@ def save_field_account(sender, instance, **kwargs):
                     
            
         else:
-            created_transaction(instance, portfolio, account,milestone_account)
+            print ( )
+            created_transaction(instance, portfolio, account,date_mileston)
             update_or_created_expense_transaction(instance,'transaction_fee' )
             if account.cpd:
                 cp_create_transaction(instance)
