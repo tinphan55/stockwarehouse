@@ -210,6 +210,7 @@ DBBACKUP_FILENAME_TEMPLATE = custom_backup_filename
 
 CRONJOBS = [
     ('0 1 * * *', 'stockwarehouse.schedule.schedule_morning'),# chạy lúc 7 giờ sáng
+    ('15 1 * * *', 'operation.models.calculate_interest'),# chạy lúc 7 giờ 15 sáng
     ('0 */2 2-8 * 1-5', 'stockwarehouse.schedule.get_info_stock_price_filter'),# chạy từ 9 đến 15h, cách 2 giờ chạy 1 lần
     ('30 4 * * 1-5', 'stockwarehouse.schedule.schedule_mid_trading_date'),# chạy lúc 11h30 sáng
     # ('15 8 * * 1-5', 'stockwarehouse.schedule.schedule_after_trading_date'),# chạy lúc 14h45 trưa

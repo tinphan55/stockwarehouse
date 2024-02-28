@@ -9,14 +9,6 @@ def schedule_morning():
     today = datetime.now().date()
     weekday = today.weekday() 
     check_in_dates =  DateNotTrading.objects.filter(date=today).exists()
-    try:
-        calculate_interest()
-    except Exception as e_morning_check:
-        print(f"An error occurred while running morning_check: {e_morning_check}")
-    try:
-        run_database_backup()
-    except Exception as e_auto_news:
-        print(f"An error occurred while running auto_news_stock_worlds: {e_auto_news}")
     if not (check_in_dates or weekday == 5 or weekday == 6):
         try:
             check_dividend_recevie()
