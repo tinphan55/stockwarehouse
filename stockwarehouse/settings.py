@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'cpd',
     'realstockaccount',
     'regulations',
+    'report'
   
     
 ]
