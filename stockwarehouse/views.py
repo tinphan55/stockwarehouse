@@ -179,21 +179,20 @@ def assumption_sell_stock(request, pk, port_pk):
                 # do T2 nền phải 2 ngày sao mới về
                 next_hold_number_days = (
                     selling_date - dt.now().date()).days + 2
-                transaction_fee = -(selling_price + portfolio.avg_price) * \
-                    portfolio.sum_stock*account.transaction_fee
+                transaction_fee = -(selling_price + portfolio.avg_price) *  portfolio.sum_stock*account.transaction_fee
                 tax_fee = selling_price * portfolio.sum_stock*account.tax*-1
                 locked_interest_fee = account.total_temporarily_interest
-                temporary_interest = account.interest_cash_balance * \
-                    account.interest_fee*next_hold_number_days/360
-                total_interest = locked_interest_fee + temporary_interest
-                profit = round((selling_price - portfolio.avg_price) *
-                               portfolio.sum_stock + transaction_fee+tax_fee+total_interest, 0)
+                # tính phí ứng dựa trên giá trị bán không có phí va thuế
+                advance_fee = selling_price *portfolio.sum_stock *account.interest_fee*next_hold_number_days/360
+                total_expense = locked_interest_fee + advance_fee+transaction_fee+tax_fee
+                profit = round((selling_price - portfolio.avg_price) * portfolio.sum_stock +total_expense, 0)
 
                 return JsonResponse({
-                    'Lợi nhuận': '{:,.0f}'.format(profit),
+                    'Lợi nhuận ròng': '{:,.0f}'.format(profit),
                     'Thuế': '{:,.0f}'.format(tax_fee),
                     'Phí giao dịch': '{:,.0f}'.format(transaction_fee),
-                    'Lãi vay': '{:,.0f}'.format(total_interest),
+                    'Lãi vay': '{:,.0f}'.format(locked_interest_fee),
+                    'Phí ứng tiền bán': '{:,.0f}'.format(advance_fee),
                 })
         else:
             form = SellingForm()
