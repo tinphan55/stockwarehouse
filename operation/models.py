@@ -511,11 +511,13 @@ def update_market_price_port(sender, instance, created, **kwargs):
 
             
 # Các hàm cập nhập cho account và port
-def define_interest_cash_balace(account,date_mileston):
+def define_interest_cash_balace(account,date_mileston, end_date=None):
+    if end_date is None:
+        end_date = datetime.now().date()
     all_port = Portfolio.objects.filter(account=account, sum_stock__gt=0)
     interest_cash_balance =0
     for item in all_port:
-        interest_cash_balance += total_value_inventory_stock (account,item.stock, date_mileston)
+        interest_cash_balance += total_value_inventory_stock (account,item.stock, date_mileston, end_date)
     return -interest_cash_balance
 
 
@@ -632,12 +634,27 @@ def process_cash_flow(cash_t0, cash_t1, cash_t2):
     cash_t2 = 0
     return cash_t0, cash_t1, cash_t2
 
-def add_list_interest_sell(account, list_data, cash_t1,cash_t2,start_date, end_date):
+def add_list_when_not_trading(account, list_data, cash_t1,cash_t2,interest_cash_balance, end_date):
+    # Kiểm tra xem end_date đã tồn tại trong list_data hay chưa
+    advance_cash_balance = cash_t1 + cash_t2
+    interest = round(interest_cash_balance * account.interest_fee / 360, 0)
+    advance_fee = round(advance_cash_balance * account.interest_fee / 360, 0)
+    dict_data = {
+        'date': end_date,
+        'interest_cash_balance': interest_cash_balance,
+        'interest': interest,
+        'advance_cash_balance':advance_cash_balance,
+        'advance_fee':advance_fee
+    }
+    list_data.append(dict_data)
+    return list_data, advance_cash_balance
+
+def add_list_when_sell(account, list_data, cash_t1,cash_t2,start_date, end_date):
     # Kiểm tra xem end_date đã tồn tại trong list_data hay chưa
     existing_data = next((item for item in list_data if item['date'] == end_date), None)
     interest_cash_balance = define_interest_cash_balace(account,start_date,end_date)
     interest_cash_balance = interest_cash_balance if interest_cash_balance <= 0 else 0
-    advance_cash_balance = cash_t1 + cash_t2
+    advance_cash_balance = -(cash_t1 + cash_t2)
     interest = round(interest_cash_balance * account.interest_fee / 360, 0)
     advance_fee = round(advance_cash_balance * account.interest_fee / 360, 0)
     # Nếu end_date đã tồn tại
@@ -655,9 +672,9 @@ def add_list_interest_sell(account, list_data, cash_t1,cash_t2,start_date, end_d
             'advance_fee':advance_fee
         }
         list_data.append(dict_data)
-    return list_data
+    return list_data, interest_cash_balance, advance_cash_balance
 
-def add_list_interest_buy(account, list_data,value_buy, date_interest,advance_cash_balance):
+def add_list_when_buy(account, list_data,value_buy, date_interest,interest_cash_balance,advance_cash_balance):
     # Kiểm tra xem date_interest đã tồn tại trong list_data hay chưa
     existing_data = next((item for item in list_data if item['date'] == date_interest), None)
     interest_cash_balance += value_buy
@@ -678,7 +695,7 @@ def add_list_interest_buy(account, list_data,value_buy, date_interest,advance_ca
             'advance_fee':advance_fee
         }
         list_data.append(dict_data)
-    return list_data
+    return list_data, interest_cash_balance
 
 
 def delete_and_recreate_interest_expense(account):
@@ -708,19 +725,19 @@ def delete_and_recreate_interest_expense(account):
             
 
             if item['position']== 'buy':
-                    add_list_interest_buy(account, list_data,item['total_value'], item['date'],advance_cash_balance)
+                when_buy = add_list_when_buy(account, list_data,item['total_value'], item['date'],interest_cash_balance,advance_cash_balance)
+                interest_cash_balance = when_buy[1]
             else:
-                    cash_t2 += item['total_value']
-                    add_list_interest_sell(account, list_data, cash_t1,cash_t2,date_previous, item['date'])
-
-                   
-             
-
+                cash_t2 += item['total_value']
+                when_sell =add_list_when_sell(account, list_data, cash_t1,cash_t2,date_previous, item['date'])
+                interest_cash_balance = when_sell[1]
+                advance_cash_balance = when_sell[2]
             while next_day <= next_item_date:
                 date_while_loop = next_day
                 cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
                 
-                add_list_interest_sell(account, list_data, cash_t1,cash_t2,date_previous, item['date'])
+                when_not_traing = add_list_when_not_trading(account, list_data, cash_t1,cash_t2,interest_cash_balance,date_while_loop)
+                advance_cash_balance = when_not_traing[1]
                 next_day = define_date_receive_cash(next_day, 1)[0]
                 if next_day > next_item_date:
                     break
@@ -760,7 +777,7 @@ def delete_and_recreate_interest_expense(account):
                 account=account,
                 date=item['date'],
                 amount=item['advance_fee'],
-                advance_cash_balance=item['interest_cash_balance']
+                advance_cash_balance=item['advance_cash_balance']
         )
         
         
