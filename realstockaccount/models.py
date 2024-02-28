@@ -21,11 +21,18 @@ class RealStockAccountCashTransfer(models.Model):
         return str(self.amount) 
     
 class RealBankCashTransfer(models.Model):
+    POSITION_CHOICES = [
+        ('salary', 'Chi phí lương'),
+        ('other_expense', 'Chi phí khác'),
+        ('cp_commission','Hoa hồng CTV'),
+        ('trade_transfer','Chuyển tiền giao dịch')
+    ]
     account = models.CharField(max_length=20,default = 'TCB',verbose_name = 'Tài khoản' )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
     date = models.DateField( default=timezone.now,verbose_name = 'Ngày nộp tiền' )
     amount = models.FloatField(verbose_name = 'Số tiền')
+    type = models.CharField(max_length=20,default  = 'trade_transfer' , choices=POSITION_CHOICES, null=False, blank=False,verbose_name = 'Mua/Bán')
     description = models.TextField(max_length=255, blank=True,verbose_name = 'Mô tả')
     user_created = models.ForeignKey(User,on_delete=models.CASCADE,null=True, blank= True,                   verbose_name="Người tạo")
     user_modified = models.CharField(max_length=150, blank=True, null=True,

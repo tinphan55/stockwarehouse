@@ -2,18 +2,23 @@ from django.db import models
 from datetime import datetime, timedelta
 from operation.models import *
 from cpd.models import *
+from realstockaccount.models import *
 
 # Create your models here.
 class SaleReportParam(models.Model):
     month_year = models.DateField(verbose_name='Tháng/Năm')
     month_year_str = models.CharField(max_length=255, blank=True, null=True, verbose_name='Tháng/Năm')
-    ratio_fee_transaction_securities = models.FloatField(verbose_name='Tỷ lệ PGD trả CTCK' )
-    ratio_tax_broker= models.FloatField(verbose_name='Tỷ lệ thuế thu nhập broker' )
-    ratio_commission_securities= models.FloatField(verbose_name='Tỷ lệ hoa hồng CTCK trả broker')
-    ratio_interest_partner = models.FloatField(verbose_name='Tỷ lệ lãi trả đối tác')
+    ratio_fee_transaction_securities = models.FloatField(default = 0.001,verbose_name='Tỷ lệ PGD trả CTCK' )
+    ratio_tax_broker= models.FloatField(default = 0.001,verbose_name='Tỷ lệ thuế thu nhập broker' )
+    ratio_commission_securities= models.FloatField(default = 0.85,verbose_name='Tỷ lệ hoa hồng CTCK trả broker')
+    ratio_interest_partner = models.FloatField(default = 0.15,verbose_name='Tỷ lệ lãi trả đối tác')
     total_interest_fee_paid_securities = models.FloatField(verbose_name='Tổng lãi vay trả CTCK')
+    total_interest_fee_paid_partner = models.FloatField(verbose_name='Tổng lãi vay trả đối tác')
+    total_addvance_fee_paid_partner = models.FloatField(verbose_name='Tổng phí ứng trả đối tác')
     total_depository_fees = models.FloatField(verbose_name='Tổng phí lưu kí')
-
+    class Meta:
+         verbose_name = 'Tạo Báo cáo kinh doanh'
+         verbose_name_plural = 'Tạo Báo cáo kinh doanh'
     def __str__(self):
             return f"Báo cáo tháng {self.month_year_str}"
     
@@ -38,48 +43,53 @@ class SaleReport(models.Model):
     depository_fees = models.FloatField(verbose_name='Phí lưu kí chứng khoán', blank=True, null=True)
     interest_paid_partners = models.FloatField(verbose_name='Lãi suất trả cho đối tác', blank=True, null=True)
     advance_paid_partners = models.FloatField(verbose_name='Phí ứng trả cho đối tác', blank=True, null=True)
-    total_cost = models.FloatField(verbose_name='Tổng chi phí', blank=True, null=True)
-    cp_commission = models.FloatField(verbose_name='Hoa hồng CP', blank=True, null=True)
+    total_cost = models.FloatField(verbose_name='Tổng giá vốn', blank=True, null=True)
+    cp_commission = models.FloatField(verbose_name='Hoa hồng CTV', blank=True, null=True)
     salary = models.FloatField(verbose_name='Lương', blank=True, null=True)
     other_expense = models.FloatField(verbose_name='Chi phí khác', blank=True, null=True)
-    total_expense = models.FloatField(verbose_name='Tổng chi phí', blank=True, null=True)
+    total_expense = models.FloatField(verbose_name='Tổng chi phí vận hành', blank=True, null=True)
     net_profit = models.FloatField(verbose_name='Lợi nhuận', blank=True, null=True)
-
+    class Meta:
+         verbose_name = 'Báo cáo kinh doanh'
+         verbose_name_plural = 'Báo cáo kinh doanh'
     def __str__(self):
         return f"Report for {self.month_year_str}"
     def save(self, *args, **kwargs):
         self.month_year_str = self.month_year.month_year_str
         self.total_revenue = self.transaction_fee_revenue + self.interest_revenue + self.advance_fee_revenue+self.brokerage_commission
         self.total_cost = self.transaction_costs_paid_securities + self.depository_fees + self.interest_paid_partners  + self.interest_costs_paid_securities
-        # self.total_expense = self.cp_commission + self.other_expense + self.salary
-        self.total_expense = 0
+        self.total_expense = self.cp_commission + self.other_expense + self.salary
         self.net_profit = self.total_revenue -self.total_cost -self.total_expense
         super(SaleReport , self).save(*args, **kwargs)
 
-def define_period_date(month_year):
-    end_period = month_year.replace(day=20)
+def define_period_date(month_year,start_date =20, end_date=20):
+    end_period = month_year.replace(day=end_date)
     # Tính ngày đầu tiên của tháng trước đó
     start_period = month_year - timedelta(days=month_year.day)
-    start_period = start_period.replace(day=20)
+    start_period = start_period.replace(day=start_date)
     return start_period, end_period
 
-def run_sale_report(month_year_str):
+def run_sale_report(month_year_str,start_date, end_date):
     cp_item = ClientPartnerCommission.objects.filter(month_year_str = month_year_str)
     report = SaleReportParam.objects.get(month_year_str = month_year_str)
-    period_date = define_period_date(report.month_year)
+    period_date = define_period_date(report.month_year,start_date, end_date)
     transaction_item = Transaction.objects.filter(date__gte = period_date[0],date__lte = period_date[1])
     expense = ExpenseStatement.objects.filter(date__gte = period_date[0],date__lte = period_date[1])
-    advance_fee_revenue = sum(item.amount for item in expense if item.type == 'advance_fee')
-    interest_revenue = sum(item.amount for item in expense if item.type == 'interest')
+    advance_fee_revenue = -sum(item.amount for item in expense if item.type == 'advance_fee')
+    interest_revenue = -sum(item.amount for item in expense if item.type == 'interest')
     total_value = sum(item.total_value for item in transaction_item)
     transaction_fee_revenue = total_value * get_transaction_fee_default()
     transaction_costs_paid_securities = total_value *report.ratio_fee_transaction_securities
     interest_costs_paid_securities = report.total_interest_fee_paid_securities
     depository_fees = report.total_depository_fees
-    interest_paid_partners = sum(item.interest_cash_balance *report.ratio_interest_partner for item in expense if item.type == 'interest' )
-    advance_paid_partners = sum(item.advance_cash_balance *report.ratio_interest_partner for item in expense if item.type == 'advance_fee' )
+    interest_paid_partners = report.total_interest_fee_paid_partner
+    advance_paid_partners = report.total_addvance_fee_paid_partner
     cp_commission = sum(item.total_commission for item in cp_item)
     brokerage_commission = (total_value*report.ratio_fee_transaction_securities - total_value*0.0003)*report.ratio_commission_securities*(1-report.ratio_tax_broker)
+    bank_expense = RealBankCashTransfer.objects.filter(date__gte = period_date[0],date__lte = period_date[1])
+    salary = sum(item.amount for item in bank_expense if item.type =='salary')
+    other_expense= sum(item.amount for item in bank_expense if item.type =='other_expense')
+
     return {
         'month_year' : report,
         'transaction_fee_revenue': transaction_fee_revenue,
@@ -92,10 +102,13 @@ def run_sale_report(month_year_str):
         'interest_paid_partners': interest_paid_partners,
         'advance_paid_partners': advance_paid_partners,
         'cp_commission': cp_commission,
+        'salary':salary,
+        'other_expense':other_expense,
+
     }
     
-def update_or_create_sale_report(month_year_str):
-    value = run_sale_report(month_year_str)
+def update_or_create_sale_report(month_year_str,start_date, end_date):
+    value = run_sale_report(month_year_str,start_date, end_date)
     # Kiểm tra và gán giá trị mặc định 0 cho các trường nếu không tồn tại trong value
     default_values = {
         'transaction_fee_revenue': 0,
@@ -108,6 +121,8 @@ def update_or_create_sale_report(month_year_str):
         'interest_paid_partners': 0,
         'advance_paid_partners': 0,
         'cp_commission': 0,
+        'salary':0,
+        'other_expense':0,
     }
     for key in default_values:
         value[key] = value.get(key, default_values[key])
@@ -130,3 +145,7 @@ def update_or_create_sale_report(month_year_str):
         sale_report.save()
         
         return sale_report
+    
+@receiver([post_save, post_delete], sender=SaleReportParam)
+def auto_create_sale_report(sender, instance, **kwargs):
+    update_or_create_sale_report(instance.month_year_str,start_date=20, end_date=20)
