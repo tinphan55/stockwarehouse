@@ -20,7 +20,7 @@ class SaleReportParam(models.Model):
          verbose_name = 'Tạo Báo cáo kinh doanh'
          verbose_name_plural = 'Tạo Báo cáo kinh doanh'
     def __str__(self):
-            return f"Báo cáo tháng {self.month_year_str}"
+            return f"Tháng {self.month_year_str}"
     
     def save(self, *args, **kwargs):
         self.month_year_str = "{}/{}".format(str(self.month_year.month), str(self.month_year.year))
@@ -53,7 +53,8 @@ class SaleReport(models.Model):
          verbose_name = 'Báo cáo kinh doanh'
          verbose_name_plural = 'Báo cáo kinh doanh'
     def __str__(self):
-        return f"Report for {self.month_year_str}"
+        return f"Báo cáo tháng {self.month_year_str}"
+    
     def save(self, *args, **kwargs):
         self.month_year_str = self.month_year.month_year_str
         self.total_revenue = self.transaction_fee_revenue + self.interest_revenue + self.advance_fee_revenue+self.brokerage_commission
