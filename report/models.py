@@ -74,8 +74,8 @@ def run_sale_report(month_year_str,start_date, end_date):
     cp_item = ClientPartnerCommission.objects.filter(month_year_str = month_year_str)
     report = SaleReportParam.objects.get(month_year_str = month_year_str)
     period_date = define_period_date(report.month_year,start_date, end_date)
-    transaction_item = Transaction.objects.filter(date__gte = period_date[0],date__lte = period_date[1])
-    expense = ExpenseStatement.objects.filter(date__gte = period_date[0],date__lte = period_date[1])
+    transaction_item = Transaction.objects.filter(date__gt = period_date[0],date__lte = period_date[1])
+    expense = ExpenseStatement.objects.filter(date__gt = period_date[0],date__lte = period_date[1])
     advance_fee_revenue = -sum(item.amount for item in expense if item.type == 'advance_fee')
     interest_revenue = -sum(item.amount for item in expense if item.type == 'interest')
     total_value = sum(item.total_value for item in transaction_item)
@@ -87,7 +87,7 @@ def run_sale_report(month_year_str,start_date, end_date):
     advance_paid_partners = report.total_addvance_fee_paid_partner
     cp_commission = sum(item.total_commission for item in cp_item)
     brokerage_commission = (total_value*report.ratio_fee_transaction_securities - total_value*0.0003)*report.ratio_commission_securities*(1-report.ratio_tax_broker)
-    bank_expense = RealBankCashTransfer.objects.filter(date__gte = period_date[0],date__lte = period_date[1])
+    bank_expense = RealBankCashTransfer.objects.filter(date__gt = period_date[0],date__lte = period_date[1])
     salary = sum(item.amount for item in bank_expense if item.type =='salary')
     other_expense= sum(item.amount for item in bank_expense if item.type =='other_expense')
 
