@@ -92,7 +92,7 @@ def run_sale_report(month_year_str,start_date, end_date):
     bank_expense = RealBankCashTransfer.objects.filter(date__gt = period_date[0],date__lte = period_date[1])
     salary = -sum(item.amount for item in bank_expense if item.type =='salary')
     other_expense= -sum(item.amount for item in bank_expense if item.type =='other_expense')
-
+    total_deposit_interest_revenue = report.total_deposit_interest_revenue
     return {
         'month_year' : report,
         'transaction_fee_revenue': transaction_fee_revenue,
@@ -107,6 +107,7 @@ def run_sale_report(month_year_str,start_date, end_date):
         'cp_commission': cp_commission,
         'salary':salary,
         'other_expense':other_expense,
+        'total_deposit_interest_revenue':total_deposit_interest_revenue,
 
     }
     
@@ -126,6 +127,7 @@ def update_or_create_sale_report(month_year_str,start_date, end_date):
         'cp_commission': 0,
         'salary':0,
         'other_expense':0,
+        'total_deposit_interest_revenue':0,
     }
     for key in default_values:
         value[key] = value.get(key, default_values[key])
