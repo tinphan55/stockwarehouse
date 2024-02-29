@@ -88,8 +88,8 @@ def run_sale_report(month_year_str,start_date, end_date):
     cp_commission = sum(item.total_commission for item in cp_item)
     brokerage_commission = (total_value*report.ratio_fee_transaction_securities - total_value*0.0003)*report.ratio_commission_securities*(1-report.ratio_tax_broker)
     bank_expense = RealBankCashTransfer.objects.filter(date__gt = period_date[0],date__lte = period_date[1])
-    salary = sum(item.amount for item in bank_expense if item.type =='salary')
-    other_expense= sum(item.amount for item in bank_expense if item.type =='other_expense')
+    salary = -sum(item.amount for item in bank_expense if item.type =='salary')
+    other_expense= -sum(item.amount for item in bank_expense if item.type =='other_expense')
 
     return {
         'month_year' : report,
