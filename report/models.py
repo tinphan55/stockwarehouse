@@ -9,7 +9,7 @@ class SaleReportParam(models.Model):
     month_year = models.DateField(verbose_name='Tháng/Năm')
     month_year_str = models.CharField(max_length=255, blank=True, null=True, verbose_name='Tháng/Năm')
     ratio_fee_transaction_securities = models.FloatField(default = 0.001,verbose_name='Tỷ lệ PGD trả CTCK' )
-    ratio_tax_broker= models.FloatField(default = 0.001,verbose_name='Tỷ lệ thuế thu nhập broker' )
+    ratio_tax_broker= models.FloatField(default = 0.1,verbose_name='Tỷ lệ thuế thu nhập broker' )
     ratio_commission_securities= models.FloatField(default = 0.85,verbose_name='Tỷ lệ hoa hồng CTCK trả broker')
     ratio_interest_partner = models.FloatField(default = 0.15,verbose_name='Tỷ lệ lãi trả đối tác')
     total_interest_fee_paid_securities = models.FloatField(verbose_name='Tổng lãi vay trả CTCK')
