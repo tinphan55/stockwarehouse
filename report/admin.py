@@ -11,9 +11,9 @@ class SaleReportAdmin(admin.ModelAdmin):
         return None
 
     list_display = ['month_year_str','formatted_total_revenue','formatted_total_cost','formatted_total_expense','formatted_net_profit',]
-    readonly_fields = ['formatted_transaction_fee_revenue','formatted_interest_revenue','formatted_advance_fee_revenue','formatted_brokerage_commission','formatted_total_revenue','formatted_transaction_costs_paid_securities', 'formatted_interest_costs_paid_securities', 'formatted_depository_fees','formatted_interest_paid_partners','formatted_advance_paid_partners','formatted_total_cost','formatted_cp_commission', 'formatted_salary','formatted_other_expense','formatted_total_expense','formatted_net_profit']
+    readonly_fields = ['formatted_transaction_fee_revenue','formatted_interest_revenue','formatted_advance_fee_revenue','formatted_brokerage_commission','formatted_total_revenue','formatted_transaction_costs_paid_securities', 'formatted_interest_costs_paid_securities', 'formatted_depository_fees','formatted_interest_paid_partners','formatted_advance_paid_partners','formatted_total_cost','formatted_cp_commission', 'formatted_salary','formatted_other_expense','formatted_total_expense','formatted_net_profit','formatted_total_deposit_interest_revenue']
     fieldsets = [
-        ('Doanh thu', {'fields': ['formatted_transaction_fee_revenue','formatted_interest_revenue','formatted_advance_fee_revenue','formatted_brokerage_commission','formatted_total_revenue']}),
+        ('Doanh thu', {'fields': ['formatted_transaction_fee_revenue','formatted_interest_revenue','formatted_advance_fee_revenue','formatted_brokerage_commission','formatted_total_deposit_interest_revenue','formatted_total_revenue']}),
         ('Giá vốn', {'fields': ['formatted_transaction_costs_paid_securities', 'formatted_interest_costs_paid_securities', 'formatted_depository_fees','formatted_interest_paid_partners','formatted_advance_paid_partners','formatted_total_cost']}),
         ('Chi phí vận hành', {'fields': ['formatted_cp_commission', 'formatted_salary','formatted_other_expense','formatted_total_expense',]}),
         ('Lợi nhuận ròng', {'fields': ['formatted_net_profit']}),
@@ -100,5 +100,10 @@ class SaleReportAdmin(admin.ModelAdmin):
     
     formatted_net_profit.short_description = SaleReport._meta.get_field('net_profit').verbose_name
 
+    
+    def formatted_total_deposit_interest_revenue(self, obj):
+        return self.formatted_amount(obj.total_deposit_interest_revenue)
+    
+    formatted_total_deposit_interest_revenue.short_description = SaleReport._meta.get_field('total_deposit_interest_revenue').verbose_name
 # Đăng ký admin cho model SaleReport
 admin.site.register(SaleReport, SaleReportAdmin)
