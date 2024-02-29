@@ -147,6 +147,6 @@ def update_or_create_sale_report(month_year_str,start_date, end_date):
         
         return sale_report
     
-@receiver([post_save, post_delete], sender=SaleReportParam)
-def auto_create_sale_report(sender, instance, **kwargs):
-    update_or_create_sale_report(instance.month_year_str,start_date=20, end_date=20)
+# @receiver([post_save, post_delete], sender=SaleReportParam)
+# def auto_create_sale_report(sender, instance, **kwargs):
+#     update_or_create_sale_report(instance.month_year_str,start_date=20, end_date=20)
