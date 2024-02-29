@@ -541,7 +541,7 @@ def created_transaction(instance, portfolio, account,date_mileston):
         portfolio.on_hold = portfolio.on_hold -instance.qty
         #điều chỉnh account
         account.net_trading_value += instance.net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
-        account.cash_t2 += instance.net_total_value #Dẫn tới thay đổi cash_t0 trong tương lai và thay đổi interest_cash_balance 
+        account.cash_t2 += instance.total_value #Dẫn tới thay đổi cash_t0 trong tương lai và thay đổi interest_cash_balance 
         account.interest_cash_balance = define_interest_cash_balace(account,date_mileston)
         
         # tạo sao kê thuế
@@ -596,11 +596,11 @@ def update_account_transaction(account, transaction_items,date_mileston):
     today  = datetime.now().date()     
     for item in item_all_sell:
         if define_t_plus(item.date,today) == 0:
-            cash_t2 += item.net_total_value 
+            cash_t2 += item.total_value 
         elif define_t_plus(item.date, today) == 1:
-            cash_t1+= item.net_total_value 
+            cash_t1+= item.total_value 
         else:
-            cash_t0 += item.net_total_value 
+            cash_t0 += item.total_value 
     account.cash_t2 = cash_t2
     account.cash_t1 = cash_t1
     account.cash_t0 = cash_t0
@@ -636,7 +636,7 @@ def process_cash_flow(cash_t0, cash_t1, cash_t2):
 
 def add_list_when_not_trading(account, list_data, cash_t1,cash_t2,interest_cash_balance, end_date):
     # Kiểm tra xem end_date đã tồn tại trong list_data hay chưa
-    advance_cash_balance = cash_t1 + cash_t2
+    advance_cash_balance = -(cash_t1 + cash_t2)
     interest = round(interest_cash_balance * account.interest_fee / 360, 0)
     advance_fee = round(advance_cash_balance * account.interest_fee / 360, 0)
     dict_data = {
@@ -835,7 +835,6 @@ def save_field_account(sender, instance, **kwargs):
                     
            
         else:
-            print ( )
             created_transaction(instance, portfolio, account,date_mileston)
             update_or_created_expense_transaction(instance,'transaction_fee' )
             if account.cpd:
