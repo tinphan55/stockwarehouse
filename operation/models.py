@@ -927,9 +927,9 @@ def update_market_price_for_port():
 
 def calculate_interest():
     #kiểm tra vào tính lãi suất
-    account = Account.objects.filter(interest_cash_balance__lt=0)
-    if account:
-        for instance in account:
+    account_interest = Account.objects.filter(interest_cash_balance__lt=0)
+    if account_interest:
+        for instance in account_interest:
             formatted_interest_cash_balance = "{:,.0f}".format(instance.interest_cash_balance)
             interest_amount = instance.interest_fee * instance.interest_cash_balance/360
             if abs(interest_amount)>10:
@@ -941,7 +941,10 @@ def calculate_interest():
                     description=f"Số dư tính lãi {formatted_interest_cash_balance}",
                     interest_cash_balance = instance.interest_cash_balance
                     )
-            # chạy tính lãi phí ứng
+    # chạy tính lãi phí ứng
+    account_advance_fee = Account.objects.filter(advance_cash_balance__lt=0)
+    if account_advance_fee:
+        for instance in account_advance_fee:
             formatted_advance_cash_balance= "{:,.0f}".format(instance.advance_cash_balance)
             advance_amount =instance.interest_fee * instance.advance_cash_balance/360
             if abs(advance_amount)>10:
