@@ -1118,7 +1118,162 @@ def setle_milestone_account(account ):
         account.save()
     return  status
 
+def add_list_interest(account, list_data, cash_t0, total_buy_value, date_interest):
+    # Kiểm tra xem date_interest đã tồn tại trong list_data hay chưa
+    existing_data = next((item for item in list_data if item['date'] == date_interest), None)
+    interest_cash_balance = cash_t0 + total_buy_value if cash_t0 + total_buy_value <= 0 else 0
+    interest = round(interest_cash_balance * account.interest_fee / 360, 0)
+    # Nếu date_interest đã tồn tại
+    if existing_data:
+        existing_data['interest_cash_balance'] = interest_cash_balance
+        existing_data['interest'] = interest
+    else:
+        dict_data = {
+            'date': date_interest,
+            'interest_cash_balance': interest_cash_balance,
+            'interest': interest
+        }
+        list_data.append(dict_data)
+    return list_data
 
+def old_logic_delete_and_recreate_interest_expense(account):
+    end_date = datetime.now().date() - timedelta(days=1)
+    milestone_account = AccountMilestone.objects.filter(account=account).order_by('-created_at').first()
+    if milestone_account:
+        date_previous = milestone_account.created_at
+    else:
+        date_previous = account.created_at
+    transaction_items_merge_date = Transaction.objects.filter(
+        account=account,
+        created_at__gt=date_previous
+    ).values('position', 'date').annotate(total_value=Sum('net_total_value')).order_by('date')
+    list_data = []
+    total_buy_value = 0
+    cash_t2, cash_t1, cash_t0 = 0, 0, 0
+    if transaction_items_merge_date and transaction_items_merge_date[0]['date']<=end_date:
+        for index, item in enumerate(transaction_items_merge_date):
+            # Kiểm tra xem có ngày tiếp theo hay không
+            if index < len(transaction_items_merge_date) - 1:
+                next_item_date = transaction_items_merge_date[index + 1]['date']
+            else:
+                # Nếu đến cuối list, thì thay thế ngày tiếp theo bằng ngày hôm nay
+                next_item_date = end_date
+            next_day = define_date_receive_cash(item['date'], 1)[0]
+    
+            # if cash_t1 !=0 or cash_t2!=0:
+            #     cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
+
+            if item['position']== 'buy':
+                    total_buy_value += item['total_value']
+                   
+            else:
+                    cash_t2 += item['total_value']
+                   
+            add_list_interest(account,list_data,cash_t0 ,total_buy_value,item['date'])  
+
+            while next_day <= next_item_date:
+                date_while_loop = next_day
+                cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
+                
+                add_list_interest(account,list_data,cash_t0 ,total_buy_value,date_while_loop)
+                next_day = define_date_receive_cash(next_day, 1)[0]
+                if next_day > next_item_date:
+                    break
+        # Tạo một danh sách chứa tất cả các ngày từ ngày đầu tiên đến ngày cuối
+        all_dates = [list_data[0]['date'] + timedelta(days=i) for i in range((list_data[-1]['date'] - list_data[0]['date']).days + 1)]
+        # Tạo một danh sách mới chứa các phần tử đã có và điền giá trị bằng giá trị trước đó nếu thiếu
+        new_data = []
+        for d in all_dates:
+            existing_entry = next((item for item in list_data if item['date'] == d), None)
+            if existing_entry:
+                new_data.append(existing_entry)
+            else:
+                previous_entry = new_data[-1]
+                new_entry = {'date': d, 'interest_cash_balance': previous_entry['interest_cash_balance'], 'interest': previous_entry['interest']}
+                new_data.append(new_entry)
+    new_data.sort(key=lambda x: x['date'])
+    expense = ExpenseStatement.objects.filter(account = account, type ='interest')
+    expense.delete()
+    for item in new_data:
+        if item['interest'] != 0:
+            formatted_interest_cash_balance = "{:,.0f}".format(item['interest_cash_balance'])
+            ExpenseStatement.objects.create(
+                description=f"Số dư tính lãi {formatted_interest_cash_balance}",
+                type='interest',
+                account=account,
+                date=item['date'],
+                amount=item['interest'],
+                interest_cash_balance=item['interest_cash_balance']
+        )
+        
+    return new_data
+
+
+def old_setle_milestone_account(account ):
+    status = False
+    if account.market_value == 0  and account.total_temporarily_interest !=0:
+        status = True
+        date=datetime.now().date()
+        if account.cash_t1 !=0 and account.cash_t2 !=0:
+            number_interest_t1 = define_date_receive_cash(date,1)[1]
+            number_interest_t2 = define_date_receive_cash(date,2)[1]
+            amount1 = account.interest_fee *(account.interest_cash_balance)*number_interest_t1 /360
+            amount2 = account.interest_fee *(account.interest_cash_balance + account.cash_t1)*(number_interest_t2-number_interest_t1) /360
+            amount =amount1+amount2
+    
+        elif account.cash_t1 !=0 and account.cash_t2 ==0:
+            number_interest = define_date_receive_cash(date,1)[1]
+            amount =account.interest_fee *(account.interest_cash_balance)*number_interest /360
+        elif account.cash_t1 ==0 and account.cash_t2 !=0:
+            number_interest = define_date_receive_cash(date,2)[1]
+            amount = account.interest_fee *(account.interest_cash_balance)*number_interest /360  
+        else:
+            print('Vẫn còn âm tiền, cần giải pháp đòi nọ')
+            amount = 0
+            
+        if  amount <0 :
+            description = f"TK {account.pk} tính lãi gộp tất toán cho {number_interest} ngày"
+            ExpenseStatement.objects.create(
+                    account=account,
+                    date=date,
+                    type = 'interest',
+                    amount = amount,
+                    description = description,
+                    interest_cash_balance = account.interest_cash_balance
+                    )
+        withdraw_cash = CashTransfer.objects.create(
+            account = account,
+            date = date,
+            amount = -account.nav,
+            description = "Tất toán tài khoản, lệnh rút tiền tự động",      
+        )
+        number = len(AccountMilestone.objects.filter(account=account)) +1
+        a = AccountMilestone.objects.create(
+            account=account,
+            milestone = number,
+            interest_fee = account.interest_fee,
+            transaction_fee = account.transaction_fee,
+            tax = account.tax,
+            net_cash_flow = account.net_cash_flow,
+            total_buy_trading_value = account.total_buy_trading_value,
+            net_trading_value = account.net_trading_value,
+            interest_paid  = account.total_temporarily_interest,
+            closed_pl    = account.total_temporarily_pl   )
+        
+        
+        account.cash_t0 = 0
+        account.cash_t1 = 0
+        account.cash_t2 = 0
+        account.total_interest_paid += a.interest_paid
+        account.total_closed_pl += a.closed_pl
+        account.milestone_date_lated = a.created_at
+        account.net_cash_flow = 0
+        account.net_trading_value = 0
+        account.total_buy_trading_value = 0
+        account.total_temporarily_interest = 0
+        account.total_temporarily_pl = 0
+        account.save()
+    return  status
 
 
     
