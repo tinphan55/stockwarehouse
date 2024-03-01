@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from django.forms import ValidationError
 import requests
 from bs4 import BeautifulSoup
-from infotrading.models import DateNotTrading, StockPriceFilter, DividendManage, get_list_stock_price
+from infotrading.models import DateNotTrading, StockPriceFilter, DividendManage, get_stock_price_tpbs
 from django.db.models import Sum
 from django.utils import timezone
 from telegram import Bot
@@ -483,15 +483,15 @@ def get_stock_market_price(stock):
             print(f"Cổ phiếu 68 không có cổ phiếu")
             list_stock = []
             list_stock.append(stock)
-            price = get_list_stock_price(list_stock)[0]
-            return price.close*1000            
+            price = get_stock_price_tpbs(list_stock)[1]
+            return price   
     except requests.exceptions.RequestException as primary_exception:
         try:
             print(f"lỗi truy cập cổ phiếu 68")
             list_stock = []
             list_stock.append(stock)
-            price = get_list_stock_price(list_stock)[0]
-            return price.close*1000   
+            price = get_stock_price_tpbs(list_stock)[1]
+            return price
         except Exception as alternative_exception:
             print(f"Lỗi truy cập TPBS: {alternative_exception}")
             return 0
