@@ -1118,6 +1118,24 @@ def setle_milestone_account(account ):
         account.save()
     return  status
 
+def add_list_interest(account, list_data, cash_t0, total_buy_value, date_interest):
+    # Kiểm tra xem date_interest đã tồn tại trong list_data hay chưa
+    existing_data = next((item for item in list_data if item['date'] == date_interest), None)
+    interest_cash_balance = cash_t0 + total_buy_value if cash_t0 + total_buy_value <= 0 else 0
+    interest = round(interest_cash_balance * account.interest_fee / 360, 0)
+    # Nếu date_interest đã tồn tại
+    if existing_data:
+        existing_data['interest_cash_balance'] = interest_cash_balance
+        existing_data['interest'] = interest
+    else:
+        dict_data = {
+            'date': date_interest,
+            'interest_cash_balance': interest_cash_balance,
+            'interest': interest
+        }
+        list_data.append(dict_data)
+    return list_data
+
 def old_logic_delete_and_recreate_interest_expense(account):
     end_date = datetime.now().date() - timedelta(days=1)
     milestone_account = AccountMilestone.objects.filter(account=account).order_by('-created_at').first()
@@ -1190,6 +1208,72 @@ def old_logic_delete_and_recreate_interest_expense(account):
         
     return new_data
 
+
+def old_setle_milestone_account(account ):
+    status = False
+    if account.market_value == 0  and account.total_temporarily_interest !=0:
+        status = True
+        date=datetime.now().date()
+        if account.cash_t1 !=0 and account.cash_t2 !=0:
+            number_interest_t1 = define_date_receive_cash(date,1)[1]
+            number_interest_t2 = define_date_receive_cash(date,2)[1]
+            amount1 = account.interest_fee *(account.interest_cash_balance)*number_interest_t1 /360
+            amount2 = account.interest_fee *(account.interest_cash_balance + account.cash_t1)*(number_interest_t2-number_interest_t1) /360
+            amount =amount1+amount2
+    
+        elif account.cash_t1 !=0 and account.cash_t2 ==0:
+            number_interest = define_date_receive_cash(date,1)[1]
+            amount =account.interest_fee *(account.interest_cash_balance)*number_interest /360
+        elif account.cash_t1 ==0 and account.cash_t2 !=0:
+            number_interest = define_date_receive_cash(date,2)[1]
+            amount = account.interest_fee *(account.interest_cash_balance)*number_interest /360  
+        else:
+            print('Vẫn còn âm tiền, cần giải pháp đòi nọ')
+            amount = 0
+            
+        if  amount <0 :
+            description = f"TK {account.pk} tính lãi gộp tất toán cho {number_interest} ngày"
+            ExpenseStatement.objects.create(
+                    account=account,
+                    date=date,
+                    type = 'interest',
+                    amount = amount,
+                    description = description,
+                    interest_cash_balance = account.interest_cash_balance
+                    )
+        withdraw_cash = CashTransfer.objects.create(
+            account = account,
+            date = date,
+            amount = -account.nav,
+            description = "Tất toán tài khoản, lệnh rút tiền tự động",      
+        )
+        number = len(AccountMilestone.objects.filter(account=account)) +1
+        a = AccountMilestone.objects.create(
+            account=account,
+            milestone = number,
+            interest_fee = account.interest_fee,
+            transaction_fee = account.transaction_fee,
+            tax = account.tax,
+            net_cash_flow = account.net_cash_flow,
+            total_buy_trading_value = account.total_buy_trading_value,
+            net_trading_value = account.net_trading_value,
+            interest_paid  = account.total_temporarily_interest,
+            closed_pl    = account.total_temporarily_pl   )
+        
+        
+        account.cash_t0 = 0
+        account.cash_t1 = 0
+        account.cash_t2 = 0
+        account.total_interest_paid += a.interest_paid
+        account.total_closed_pl += a.closed_pl
+        account.milestone_date_lated = a.created_at
+        account.net_cash_flow = 0
+        account.net_trading_value = 0
+        account.total_buy_trading_value = 0
+        account.total_temporarily_interest = 0
+        account.total_temporarily_pl = 0
+        account.save()
+    return  status
 
 
     
