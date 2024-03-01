@@ -1118,7 +1118,7 @@ def setle_milestone_account(account ):
         account.save()
     return  status
 
-def add_list_interest(account, list_data, cash_t0, total_buy_value, date_interest):
+def old_add_list_interest(account, list_data, cash_t0, total_buy_value, date_interest):
     # Kiểm tra xem date_interest đã tồn tại trong list_data hay chưa
     existing_data = next((item for item in list_data if item['date'] == date_interest), None)
     interest_cash_balance = cash_t0 + total_buy_value if cash_t0 + total_buy_value <= 0 else 0
@@ -1169,13 +1169,13 @@ def old_logic_delete_and_recreate_interest_expense(account):
             else:
                     cash_t2 += item['total_value']
                    
-            add_list_interest(account,list_data,cash_t0 ,total_buy_value,item['date'])  
+            old_add_list_interest(account,list_data,cash_t0 ,total_buy_value,item['date'])  
 
             while next_day <= next_item_date:
                 date_while_loop = next_day
                 cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
                 
-                add_list_interest(account,list_data,cash_t0 ,total_buy_value,date_while_loop)
+                old_add_list_interest(account,list_data,cash_t0 ,total_buy_value,date_while_loop)
                 next_day = define_date_receive_cash(next_day, 1)[0]
                 if next_day > next_item_date:
                     break
@@ -1276,6 +1276,5 @@ def old_setle_milestone_account(account ):
     return  status
 
 
-    
     
     
