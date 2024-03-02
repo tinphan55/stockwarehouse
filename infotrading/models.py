@@ -108,3 +108,16 @@ def get_list_stock_price(list_stock):
             'date_time':date_time
                         } )
     return StockPriceFilter.objects.all().order_by('-date')[:number]
+
+
+def get_stock_price_tpbs(list_stock):
+    # list_stock = list(Transaction.objects.values_list('stock', flat=True).distinct())
+    number =len(list_stock)
+    linkstockquote ='https://price.tpbs.com.vn/api/SymbolApi/getStockQuote'
+    r = requests.post(linkstockquote,json = {"stocklist" : list_stock })
+    b= json.loads(r.text)
+    a = json.loads(b['content'])
+    for i in range (0,len(a)):
+        ticker=a[i]['sym']
+        close=float(a[i]['mat'].replace(',', ''))
+    return ticker,close*1000
