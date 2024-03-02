@@ -3,6 +3,26 @@ from operation.models import *
 from realstockaccount.models import *
 
 # Create your models here.
+def partner_cal_avg_price(account,partner,stock, date_time): 
+    item_transactions = Transaction.objects.filter(account=account,partner =partner, stock__stock = stock, created_at__gt =date_time).order_by('date','created_at')
+    fifo = FIFO([])
+    for item in item_transactions:
+    # Kiểm tra xem giao dịch có phải là mua hay bán
+        if item.position == 'buy':
+            # Nếu là giao dịch mua, thêm một Entry mới với quantity dương vào FIFO
+            entry = Entry(item.qty, item.price)
+        else:
+            # Nếu là giao dịch bán, thêm một Entry mới với quantity âm vào FIFO
+            entry = Entry(-item.qty, item.price)
+        # Thêm entry vào FIFO
+        fifo._push(entry) if entry.buy else fifo._fill(entry)
+        
+        # fifo.trace in ra từng giao dịch bán
+        # fifo.profit_and_loss tính lời lỗ
+    return fifo.avgcost
+
+
+
 class PartnerInfoProxy(PartnerInfo):
     class Meta:
         proxy = True
@@ -13,7 +33,7 @@ class PartnerInfoProxy(PartnerInfo):
         return str(self.name)
     
 class AccountPartner (models.Model):
-    name = models.ForeignKey(Account,on_delete=models.CASCADE, verbose_name= 'Tài khoản' )
+    account = models.ForeignKey(Account,on_delete=models.CASCADE, verbose_name= 'Tài khoản' )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
     description = models.TextField(max_length=255, blank=True, verbose_name= 'Mô tả')
@@ -54,7 +74,7 @@ class AccountPartner (models.Model):
          verbose_name_plural = 'Tài khoản đối tác'
 
     def __str__(self):
-        return self.name
+        return self.account.name
     
     @property
     def status(self):
@@ -62,7 +82,7 @@ class AccountPartner (models.Model):
         value_force = round((maintenance_margin_ratio - self.margin_ratio)*self.market_value/100,0)
         value_force_str = '{:,.0f}'.format(value_force)
         status = ""
-        port = Portfolio.objects.filter(account_id = self.pk, sum_stock__gt=0).first()
+        port = PortfolioPartner.objects.filter(account_id = self.pk, sum_stock__gt=0).first()
         if port:
             price_force_sell = round(-self.cash_balance/( 0.87* port.sum_stock),0)
             if abs(self.cash_balance) >1000 and value_force !=0:
@@ -80,7 +100,7 @@ class AccountPartner (models.Model):
         self.total_advance_fee = self.total_temporarily_advance_fee + self.total_advance_fee_paid
         self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_temporarily_interest + self.total_temporarily_advance_fee
         stock_mapping = {obj.stock: obj.initial_margin_requirement for obj in StockListMargin.objects.all()}
-        port = Portfolio.objects.filter(account=self.pk, sum_stock__gt=0)
+        port = PortfolioPartner.objects.filter(account=self.pk, sum_stock__gt=0)
         sum_initial_margin = 0
         market_value = 0
         if port:
@@ -98,7 +118,7 @@ class AccountPartner (models.Model):
             self.margin_ratio = abs(round((self.nav / self.market_value) * 100, 2))
         self.total_temporarily_pl= self.nav - self.net_cash_flow
         self.total_pl  = self.total_temporarily_pl + self.total_closed_pl
-        super(Account, self).save(*args, **kwargs)
+        super(AccountPartner, self).save(*args, **kwargs)
 
         
 class ExpenseStatementPartner(models.Model):
@@ -145,8 +165,8 @@ class PortfolioPartner (models.Model):
     sum_stock =models.IntegerField(default=0,null=True,blank=True,verbose_name = 'Tổng cổ phiếu')
     market_value = models.FloatField(default=0,null=True,blank=True,verbose_name = 'Giá trị thị trường')
     class Meta:
-         verbose_name = 'Danh mục '
-         verbose_name_plural = 'Danh mục '
+         verbose_name = 'Danh mục đối tác'
+         verbose_name_plural = 'Danh mục đối tác'
 
     def __str__(self):
         return self.stock
@@ -157,32 +177,91 @@ class PortfolioPartner (models.Model):
         self.percent_profit = 0
         if self.sum_stock >0:
             self.market_price = round(get_stock_market_price(str(self.stock)),0)
-            if self.account.milestone_date_lated:
-                date_cal = self.account.milestone_date_lated
+            if self.account.account.milestone_date_lated:
+                date_cal = self.account.account.milestone_date_lated
             else:
-                date_cal = self.account.created_at
-            self.avg_price = round(cal_avg_price(self.account.pk,self.stock,date_cal ),0)
+                date_cal = self.account.account.created_at
+            self.avg_price = round(partner_cal_avg_price(self.account.account.pk,self.account.partner,self.stock,date_cal ),0)
             self.profit = round((self.market_price - self.avg_price)*self.sum_stock,0)
             self.percent_profit = round((self.market_price/self.avg_price-1)*100,2)
             self.market_value = self.market_price*self.sum_stock
-        super(Portfolio, self).save(*args, **kwargs)
+        super(PortfolioPartner, self).save(*args, **kwargs)
+
+class TransactionPartnerManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().exclude(partner=None)
 
 class TransactionPartner(Transaction):
+    objects = TransactionPartnerManager()
+
     class Meta:
         proxy = True
         verbose_name = 'Sổ lệnh đối tác'
         verbose_name_plural = 'Sổ lệnh đối tác'
-    def get_queryset(self):
-        return super().get_queryset().filter(product__is_sell=False)
+    
+
     def __str__(self):
-        return str(self.name)
+        return str(self.stock)
+    
+
+class CashTransferPartnerManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().exclude(partner=None)
+
 
 class CashTransferPartner(RealBankCashTransfer):
+    objects =CashTransferPartnerManager()
     class Meta:
         proxy = True
-        verbose_name = 'Sổ lệnh đối tác'
-        verbose_name_plural = 'Sổ lệnh đối tác'
-    def get_queryset(self):
-        return super().get_queryset().filter(product__is_sell=False)
+        verbose_name = 'Giao dịch tiền đối tác'
+        verbose_name_plural = 'Giao dịch tiền đối tác'
+    
     def __str__(self):
-        return str(self.name)
+        return str(self.account)
+    
+
+def created_account_partner(instance,account,date_mileston):
+    partner = instance.partner
+    account_partner, created = AccountPartner.objects.get_or_create(
+        account=account,
+        partner=partner,
+        defaults={'description': ''}  # Trường 'description' không bị cập nhật
+    )
+
+    if instance.position == 'buy':
+        #điều chỉnh account partner
+        account_partner.net_trading_value += instance.net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
+        account_partner.total_buy_trading_value+= instance.net_total_value #Dẫn tới thay đổi interest_cash_balance 
+        account_partner.interest_cash_balance += instance.net_total_value
+        try:
+            portfolio_partner = PortfolioPartner.objects.get(stock=instance.stock, account=account_partner)
+            # Nếu đối tượng tồn tại, điều chỉnh danh mục
+            portfolio_partner.receiving_t2 += instance.qty
+            portfolio_partner.save()
+        except PortfolioPartner.DoesNotExist:
+            # Nếu không tìm thấy, tạo danh mục mới
+            PortfolioPartner.objects.create(
+                stock=instance.stock,
+                account=account_partner,
+                receiving_t2=instance.qty,
+            )
+    
+    elif instance.position == 'sell':
+        # điều chỉnh danh mục
+        portfolio_partner.on_hold = portfolio_partner.on_hold -instance.qty
+        #điều chỉnh account_partner
+        account_partner.net_trading_value += instance.net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
+        account_partner.cash_t2 += instance.total_value #Dẫn tới thay đổi cash_t0 trong tương lai và thay đổi interest_cash_balance 
+        # account_partner.interest_cash_balance = define_interest_cash_balace(account,date_mileston)
+        
+        # tạo sao kê thuế
+        ExpenseStatementPartner.objects.create(
+                transaction_id = instance.pk,
+                account=instance.account,
+                date=instance.date,
+                type = 'tax',
+                amount = instance.tax*-1,
+                description = f"Thuế phát sinh bán với lệnh bán {instance.stock} số lượng {instance.qty} và giá {instance.price } "
+                )
+
+

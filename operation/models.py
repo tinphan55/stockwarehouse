@@ -17,6 +17,7 @@ from django.contrib.auth.hashers import make_password
 from regulations.models import *
 from accfifo import Entry, FIFO
 import asyncio
+from realstockaccount.models import PartnerInfo
 
 
 maintenance_margin_ratio = OperationRegulations.objects.get(pk=4).parameters
@@ -312,6 +313,7 @@ class Transaction (models.Model):
         ('sell', 'Bán'),
     ]
     account = models.ForeignKey(Account,on_delete=models.CASCADE, null=False, blank=False, verbose_name = 'Tài khoản' )
+    partner = models.ForeignKey(PartnerInfo,on_delete=models.CASCADE,null=True, blank= True,verbose_name="Đối tác")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     date = models.DateField( default=timezone.now,verbose_name = 'Ngày giao dịch' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )

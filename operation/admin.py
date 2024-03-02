@@ -263,7 +263,7 @@ class TransactionAdmin(admin.ModelAdmin):
     readonly_fields = ['user_created','user_modified','transaction_fee','tax','total_value','net_total_value']
     fieldsets = (
         ('Thông tin giao dịch', {
-            'fields': ('account', 'date', 'stock', 'position', 'price', 'qty')
+            'fields': ('account','partner', 'date', 'stock', 'position', 'price', 'qty')
         }),
        
     )
