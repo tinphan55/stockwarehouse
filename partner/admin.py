@@ -2,6 +2,8 @@ from django.contrib import admin
 from .models import *
 from django import forms
 from django.utils.html import format_html
+from django.core.exceptions import PermissionDenied
+from django.contrib import messages
 # Register your models here.
 
 admin.site.register(PartnerInfoProxy)
@@ -149,10 +151,14 @@ admin.site.register(TransactionPartner,TransationPartnerAdmin)
 
 class PortfolioPartnerAdmin(admin.ModelAdmin):
     model = PortfolioPartner
-    list_display = ['account', 'stock', 'formatted_market_price', 'formatted_avg_price', 'formatted_on_hold', 'formatted_receiving_t1', 'formatted_receiving_t2', 'formatted_profit', 'percent_profit', 'formatted_sum_stock']
+    list_display = ['account', 'stock','get_partner', 'formatted_market_price', 'formatted_avg_price', 'formatted_on_hold', 'formatted_receiving_t1', 'formatted_receiving_t2', 'formatted_profit', 'percent_profit', 'formatted_sum_stock']
     readonly_fields = ['account','stock','market_price','avg_price','on_hold','receiving_t1','receiving_t2','profit','percent_profit', 'sum_stock', 'market_value']
     search_fields = ['stock','account__id','account__name']
     list_filter = ['account__partner__name','account__account',]
+    
+    def get_partner(self,obj):
+        return obj.account.partner
+    get_partner.short_description = 'Đối tác'
     
     # def get_queryset(self, request):
     #     # Chỉ trả về các bản ghi có sum_stock > 0
@@ -229,3 +235,55 @@ class CashTransferPartnerAdmin(admin.ModelAdmin):
     
 admin.site.register(CashTransferPartner,CashTransferPartnerAdmin)
 
+class ExpenseStatementPartnerAdmin(admin.ModelAdmin):
+    model = ExpenseStatementPartner
+    list_display = ['account','get_partner', 'date', 'type', 'formatted_amount', 'description']
+    search_fields = ['account__account__name']
+    list_filter = ['account__account__name','type']
+
+    def get_partner(self,obj):
+        return obj.account.partner
+    get_partner.short_description = 'Đối tác'
+    
+    def has_add_permission(self, request):
+        # Return False to disable the "Add" button
+        return False
+    def formatted_amount(self, obj):
+        return '{:,.0f}'.format(obj.amount)
+    
+    
+
+    formatted_amount.short_description = 'Số tiền'
+
+    def has_add_permission(self, request):
+        # Return False to disable the "Add" button
+        return False
+
+    def save_model(self, request, obj, form, change):
+        # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
+        if not change:  # Kiểm tra xem có phải là tạo mới hay không
+            obj.user_created = request.user
+            super().save_model(request, obj, form, change)
+        else:
+            today = timezone.now().date()
+            obj.user_modified = request.user.username
+            milestone_account = AccountMilestone.objects.filter(account =obj.account).order_by('-created_at').first()
+            if milestone_account and obj.created_at < milestone_account.created_at:
+                raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi trong giai đoạn đã được tất toán.")
+            else:
+                if obj.type !='interest':
+                    messages.warning(request, "Phí và thuế sẽ tự động update khi chỉnh sổ lệnh")
+                    raise PermissionDenied("Không cần chỉnh sửa")
+                else:
+                    if obj.created_at.date() != today:
+                        if not request.user.is_superuser:
+                            raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi.")
+                        else:
+                            # Thêm dòng cảnh báo cho siêu người dùng
+                            if obj.type =='interest':
+                                messages.warning(request, "Lãi vay tạm tính đã được cập nhật")
+                                super().save_model(request, obj, form, change)
+                    else:       
+                        super().save_model(request, obj, form, change)
+
+admin.site.register(ExpenseStatementPartner, ExpenseStatementPartnerAdmin)

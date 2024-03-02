@@ -399,10 +399,12 @@ def save_field_account(sender, instance, **kwargs):
                 cp_create_transaction(instance)
             #xủ lí account partner
             if instance.partner:
-                created_account_partner(instance,account,date_mileston)
+                created_transaction_partner(instance,account,date_mileston)
         if portfolio:
             portfolio.save()   
+    
     account.save()
+
         
           
             

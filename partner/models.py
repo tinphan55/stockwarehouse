@@ -21,7 +21,36 @@ def partner_cal_avg_price(account,partner,stock, date_time):
         # fifo.profit_and_loss tính lời lỗ
     return fifo.avgcost
 
+def partner_total_value_inventory_stock(account,partner, stock, date_time, end_date=None):
+    if end_date is None:
+        end_date = datetime.now().date()
+    item_transactions = Transaction.objects.filter(account=account.account,partner =partner, stock__stock=stock, created_at__gt=date_time, date__lte=end_date).order_by('date', 'created_at')
+    fifo = FIFO([])
+    for item in item_transactions:
+    # Kiểm tra xem giao dịch có phải là mua hay bán
+        if item.position == 'buy':
+            # Nếu là giao dịch mua, thêm một Entry mới với quantity dương vào FIFO
+            entry = Entry(item.qty, item.price)
+        else:
+            # Nếu là giao dịch bán, thêm một Entry mới với quantity âm vào FIFO
+            entry = Entry(-item.qty, item.price)
+        # Thêm entry vào FIFO
+        fifo._push(entry) if entry.buy else fifo._fill(entry)
+    fifo_inventory =fifo.inventory
+    total_value = 0
+    for entry in fifo_inventory:
+        quantity, price = entry.quantity, entry.price
+        total_value += quantity * price *(1+account.account.transaction_fee)
+    return total_value
 
+def partner_define_interest_cash_balace(account,partner,date_mileston, end_date=None):
+    if end_date is None:
+        end_date = datetime.now().date()
+    all_port = PortfolioPartner.objects.filter(account=account, sum_stock__gt=0)
+    interest_cash_balance =0
+    for item in all_port:
+        interest_cash_balance += partner_total_value_inventory_stock (account,partner,item.stock, date_mileston, end_date)
+    return -interest_cash_balance
 
 class PartnerInfoProxy(PartnerInfo):
     class Meta:
@@ -139,8 +168,8 @@ class ExpenseStatementPartner(models.Model):
     advance_cash_balance= models.FloatField (null = True,blank =True ,verbose_name='Số dư tiền tính phí ứng')
     transaction_id =models.CharField(max_length= 200,null = True,blank =True ,verbose_name= 'Mã lệnh')
     class Meta:
-         verbose_name = 'Bảng kê chi phí '
-         verbose_name_plural = 'Bảng kê chi phí '
+         verbose_name = 'Bảng kê chi phí đối tác '
+         verbose_name_plural = 'Bảng kê chi phí đối tác '
     
     
 
@@ -219,15 +248,35 @@ class CashTransferPartner(RealBankCashTransfer):
     def __str__(self):
         return str(self.account)
     
+def update_or_created_expense_partner(instance,account, description_type):
+    description_tax = f"Thuế với lệnh bán {instance.stock} số lượng {instance.qty} và giá {instance.price } "
+    description_transaction = f"PGD phát sinh với lệnh {instance.position} {instance.stock} số lượng {instance.qty} và giá {instance.price } "
+    if description_type=='tax':
+        amount = instance.tax*-1
+    elif description_type== 'transaction_fee':
+        amount = instance.transaction_fee*-1
 
-def created_account_partner(instance,account,date_mileston):
+    ExpenseStatementPartner.objects.update_or_create(
+        transaction_id=instance.pk,
+        type=description_type,
+        defaults={
+            'account': account,
+            'date': instance.date,
+            'amount': amount,
+            'description': description_tax if description_type == 'tax' else description_transaction,
+    
+        }
+    )
+
+def created_transaction_partner(instance,account,date_mileston):
     partner = instance.partner
-    account_partner, created = AccountPartner.objects.get_or_create(
+    account_partner , created= AccountPartner.objects.get_or_create(
         account=account,
         partner=partner,
         defaults={'description': ''}  # Trường 'description' không bị cập nhật
     )
-
+    # tạo phí giao dịch
+    update_or_created_expense_partner(instance,account_partner, description_type='transaction_fee')
     if instance.position == 'buy':
         #điều chỉnh account partner
         account_partner.net_trading_value += instance.net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
@@ -245,23 +294,20 @@ def created_account_partner(instance,account,date_mileston):
                 account=account_partner,
                 receiving_t2=instance.qty,
             )
-    
+        
     elif instance.position == 'sell':
         # điều chỉnh danh mục
+        portfolio_partner = PortfolioPartner.objects.get(stock=instance.stock, account=account_partner)
         portfolio_partner.on_hold = portfolio_partner.on_hold -instance.qty
+        portfolio_partner.save()
         #điều chỉnh account_partner
         account_partner.net_trading_value += instance.net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
         account_partner.cash_t2 += instance.total_value #Dẫn tới thay đổi cash_t0 trong tương lai và thay đổi interest_cash_balance 
-        # account_partner.interest_cash_balance = define_interest_cash_balace(account,date_mileston)
+        account_partner.interest_cash_balance = partner_define_interest_cash_balace(account_partner,partner,date_mileston)
+        update_or_created_expense_partner(instance,account_partner, description_type='tax')
         
-        # tạo sao kê thuế
-        ExpenseStatementPartner.objects.create(
-                transaction_id = instance.pk,
-                account=instance.account,
-                date=instance.date,
-                type = 'tax',
-                amount = instance.tax*-1,
-                description = f"Thuế phát sinh bán với lệnh bán {instance.stock} số lượng {instance.qty} và giá {instance.price } "
-                )
+    
+    account_partner.save()
+
 
 
