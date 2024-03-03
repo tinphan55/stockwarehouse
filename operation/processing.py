@@ -380,6 +380,9 @@ def save_field_account(sender, instance, **kwargs):
             
             # sửa account
             update_account_transaction( account, transaction_items,date_mileston)
+            # sửa accout_partner
+            if instance.partner and instance.total_value != instance.previous_total_value:
+                partner_update_transaction(instance,date_mileston)
             # sửa hoa hồng cp
             if account.cpd:
                 account_all = Account.objects.all()
@@ -411,9 +414,12 @@ def save_field_account(sender, instance, **kwargs):
 @receiver(post_delete, sender=Transaction)
 def delete_expense_statement(sender, instance, **kwargs):
     expense = ExpenseStatement.objects.filter(transaction_id=instance.pk)
-    # porfolio = Portfolio.objects.filter(account=instance.account, stock =instance.stock).first()
     if expense:
         expense.delete()  
+    # điều chỉnh chi phí partner 
+    expense_partner = ExpenseStatementPartner.objects.filter(transaction_id=instance.pk)
+    if expense_partner:
+        expense_partner.delete()  
     # điều chỉnh hoa hồng
     if instance.account.cpd:
         month_year=define_month_year_cp_commission(instance.date)   

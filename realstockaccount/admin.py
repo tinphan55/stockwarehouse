@@ -69,9 +69,10 @@ class RealBankCashTransferForm(forms.ModelForm):
     
 class RealBankCashTransferAdmin(admin.ModelAdmin):
     form  = RealBankCashTransferForm
-    list_display = ['date', 'formatted_amount','description', 'user_created', 'user_modified', 'created_at']
+    list_display = ['source','date', 'formatted_amount','description', 'user_created', 'user_modified', 'created_at']
     readonly_fields = ['user_created', 'user_modified']
     search_fields = ['account__id','account__name']
+    list_filter = ['type',]
 
     def formatted_amount(self, obj):
         return '{:,.0f}'.format(obj.amount)

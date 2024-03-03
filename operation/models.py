@@ -17,7 +17,7 @@ from django.contrib.auth.hashers import make_password
 from regulations.models import *
 from accfifo import Entry, FIFO
 import asyncio
-from realstockaccount.models import PartnerInfo
+
 
 
 maintenance_margin_ratio = OperationRegulations.objects.get(pk=4).parameters
@@ -118,7 +118,21 @@ def get_stock_market_price(stock):
             print(f"Lỗi truy cập TPBS: {alternative_exception}")
             return 0
     
+class PartnerInfo(models.Model):
+    name = models.CharField(max_length= 50, verbose_name='Tên đối tác')
+    phone = models.IntegerField(null=False, verbose_name='Điện thoại', unique=True)
+    created_date = models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo')
+    address = models.CharField(max_length=100, null= True, blank = True, verbose_name='Địa chỉ')
+    note =  models.CharField(max_length= 200,null=True, blank = True, verbose_name='Ghi chú')
+    ratio_trading_fee = models.FloatField(default = 0.001, verbose_name='Phí giao dịch')
+    ratio_interest_fee= models.FloatField(default = 0.15, verbose_name='Lãi vay')
+    ratio_advance_fee= models.FloatField(default = 0.15, verbose_name='Phí ứng tiền')
+    class Meta:
+        verbose_name = 'Đăng kí đối tác'
+        verbose_name_plural = 'Đăng kí đối tác'
 
+    def __str__(self):
+        return str(self.name) + '_' + str(self.pk)
 # Create your models here.
 class Account (models.Model):
     name = models.CharField(max_length=50, unique=True, verbose_name= 'Tên Khách hàng')

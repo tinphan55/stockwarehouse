@@ -1,23 +1,8 @@
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User, Group
-
-class PartnerInfo(models.Model):
-    name = models.CharField(max_length= 50, verbose_name='Tên đối tác')
-    phone = models.IntegerField(null=False, verbose_name='Điện thoại', unique=True)
-    created_date = models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo')
-    address = models.CharField(max_length=100, null= True, blank = True, verbose_name='Địa chỉ')
-    note =  models.CharField(max_length= 200,null=True, blank = True, verbose_name='Ghi chú')
-    ratio_trading_fee = models.FloatField(default = 0.001, verbose_name='Phí giao dịch')
-    ratio_interest_fee= models.FloatField(default = 0.15, verbose_name='Lãi vay')
-    ratio_advance_fee= models.FloatField(default = 0.15, verbose_name='Phí ứng tiền')
-    class Meta:
-        verbose_name = 'Đăng kí đối tác'
-        verbose_name_plural = 'Đăng kí đối tác'
-
-    def __str__(self):
-        return str(self.name) + '_' + str(self.pk)
-
+from operation.models import Account, PartnerInfo
+Eco@warehouse2024
 
 # Create your models here.
 class RealStockAccountCashTransfer(models.Model):
@@ -44,7 +29,11 @@ class RealBankCashTransfer(models.Model):
         ('cp_commission','Hoa hồng CTV'),
         ('trade_transfer','Chuyển tiền giao dịch')
     ]
-    account = models.CharField(max_length=20,default = 'TCB',verbose_name = 'Tài khoản' )
+    SOURCE_CHOICES= [
+        ('TCB-Ha','TCB-Hà'),
+        ('TCB-Vinh','TCB-Vĩnh')
+    ]
+    source = models.CharField(max_length=20,default = 'TCB',verbose_name = 'Tài khoản' )
     partner = models.ForeignKey(PartnerInfo,on_delete=models.CASCADE,null=True, blank= True,verbose_name="Chi cho đối tác")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )

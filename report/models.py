@@ -13,9 +13,9 @@ class SaleReportParam(models.Model):
     ratio_commission_securities= models.FloatField(default = 0.85,verbose_name='Tỷ lệ hoa hồng CTCK trả broker')
     ratio_interest_partner = models.FloatField(default = 0.15,verbose_name='Tỷ lệ lãi trả đối tác')
     total_interest_fee_paid_securities = models.FloatField(verbose_name='Tổng lãi vay trả CTCK')
-    total_interest_fee_paid_partner = models.FloatField(verbose_name='Tổng lãi vay trả đối tác')
-    total_addvance_fee_paid_partner = models.FloatField(verbose_name='Tổng phí ứng trả đối tác')
-    total_depository_fees = models.FloatField(verbose_name='Tổng phí lưu kí')
+    total_interest_fee_paid_partner = models.FloatField(default = 0,verbose_name='Tổng lãi vay trả đối tác')
+    total_addvance_fee_paid_partner = models.FloatField(default = 0,verbose_name='Tổng phí ứng trả đối tác')
+    total_depository_fees = models.FloatField(default = 0,verbose_name='Tổng phí lưu kí')
     total_deposit_interest_revenue = models.FloatField(default = 0,verbose_name='Doanh thu lãi tiền gửi')
     class Meta:
          verbose_name = 'Tạo Báo cáo kinh doanh'
