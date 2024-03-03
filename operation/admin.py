@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import *
+from operation.processing import *
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.contrib import messages
 from django.utils import timezone
@@ -262,7 +263,7 @@ class TransactionAdmin(admin.ModelAdmin):
     readonly_fields = ['user_created','user_modified','transaction_fee','tax','total_value','net_total_value']
     fieldsets = (
         ('Thông tin giao dịch', {
-            'fields': ('account', 'date', 'stock', 'position', 'price', 'qty')
+            'fields': ('account','partner', 'date', 'stock', 'position', 'price', 'qty')
         }),
        
     )

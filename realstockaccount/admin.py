@@ -3,6 +3,8 @@ from django.contrib import admin
 from realstockaccount.models import *
 
 # Register your models here.
+
+
 class RealCashTransferForm(forms.ModelForm):
     class Meta:
         model = RealStockAccountCashTransfer
@@ -53,17 +55,17 @@ class RealBankCashTransferForm(forms.ModelForm):
         model = RealBankCashTransfer
         fields = '__all__'
 
-    def clean(self):
-        cleaned_data = super().clean()
-        change = self.instance.pk is not None  # Kiểm tra xem có phải là sửa đổi không
+    # def clean(self):
+    #     cleaned_data = super().clean()
+    #     change = self.instance.pk is not None  # Kiểm tra xem có phải là sửa đổi không
 
-        today = timezone.now().date()
+    #     today = timezone.now().date()
 
-        # Kiểm tra quyền
-        if change and self.instance.created_at.date() != today:
-            raise forms.ValidationError("Bạn không có quyền sửa đổi các bản ghi được tạo ngày trước đó.")
+    #     # Kiểm tra quyền
+    #     if change and self.instance.created_at.date() != today:
+    #         raise forms.ValidationError("Bạn không có quyền sửa đổi các bản ghi được tạo ngày trước đó.")
 
-        return cleaned_data
+    #     return cleaned_data
     
 class RealBankCashTransferAdmin(admin.ModelAdmin):
     form  = RealBankCashTransferForm

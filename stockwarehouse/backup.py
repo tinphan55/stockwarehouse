@@ -25,17 +25,22 @@ import subprocess
 
 
 
+
+
 def run_database_backup():
     """
     Thực hiện sao lưu cơ sở dữ liệu với loại bỏ cơ sở dữ liệu của ứng dụng 'portfolio' và 'stocklist'.
     """
-    command = [
+    # Kích hoạt môi trường ảo
+    activate_env_command = "source env/bin/activate"
+    subprocess.run(activate_env_command, shell=True)
+
+    # Lệnh sao lưu cơ sở dữ liệu
+    backup_command = [
         "python",
         "manage.py",
         "dbbackup",
-    
     ]
+    
     # Chạy lệnh sao lưu
-    subprocess.run(command)
-
-
+    subprocess.run(backup_command)
