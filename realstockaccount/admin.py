@@ -69,7 +69,7 @@ class RealBankCashTransferForm(forms.ModelForm):
     
 class RealBankCashTransferAdmin(admin.ModelAdmin):
     form  = RealBankCashTransferForm
-    list_display = ['source','date', 'formatted_amount','description', 'user_created', 'user_modified', 'created_at']
+    list_display = ['account','date', 'formatted_amount','description', 'user_created', 'user_modified', 'created_at']
     readonly_fields = ['user_created', 'user_modified']
     search_fields = ['account__id','account__name']
     list_filter = ['type',]
@@ -93,6 +93,34 @@ class RealBankCashTransferAdmin(admin.ModelAdmin):
 
 admin.site.register(RealBankCashTransfer,RealBankCashTransferAdmin)
 
+
+class BankCashTransferForm(forms.ModelForm):
+    class Meta:
+        model = BankCashTransfer
+        fields = '__all__'
+
+class BankCashTransferAdmin(admin.ModelAdmin):
+    form  = BankCashTransferForm
+    list_display = ['source','date', 'formatted_amount','description', 'user_created', 'user_modified', 'created_at']
+    readonly_fields = ['user_created', 'user_modified']
+    search_fields = ['account__id','account__name']
+    list_filter = ['type',]
+
+    def formatted_amount(self, obj):
+        return '{:,.0f}'.format(obj.amount)
+
+    formatted_amount.short_description = 'Số tiền'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Kiểm tra xem có phải là tạo mới hay không
+            obj.user_created = request.user
+         # Check if the record is being edited
+        else:
+            obj.user_modified = request.user.username
+                
+        super().save_model(request, obj, form, change)
+
+admin.site.register(BankCashTransfer,BankCashTransferAdmin)
 
 class RealTradingPowerForm(forms.ModelForm):
     class Meta:

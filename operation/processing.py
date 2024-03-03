@@ -1,6 +1,7 @@
 from .models import *
 from partner.models import *
 
+
 def define_t_plus(initial_date, date_milestone):
     try:
         if date_milestone >= initial_date:
@@ -362,8 +363,26 @@ def save_field_account(sender, instance, **kwargs):
         if not created:
             cash_items = CashTransfer.objects.filter(account=account,created_at__gt = date_mileston)
             account.net_cash_flow = sum(item.amount for item in cash_items)
+            # update lệnh tiền tk bank tư động
+            bank_cash_transfer = BankCashTransfer.objects.get(customer_cash_id = instance.pk)
+            bank_cash_transfer.amount = instance.amount
+            bank_cash_transfer.date=instance.date
+            bank_cash_transfer.save()
+
         else:
             account.net_cash_flow +=  instance.amount
+        
+            
+            #tạo lệnh lệnh tiền tk bank tư động
+            bank_cash_transfer = BankCashTransfer.objects.create(
+                source='TCB-Ha',
+                account=instance.account,
+                amount=instance.amount,
+                type='trade_transfer',
+                date=instance.date,
+                description=f"Lệnh nạp tiền tự dộng từ TK {instance.account}",
+                customer_cash_id = instance.pk
+            )
         
     elif sender == Transaction:
         portfolio = Portfolio.objects.filter(stock =instance.stock, account= instance.account).first()
@@ -428,6 +447,14 @@ def delete_expense_statement(sender, instance, **kwargs):
         if commission.total_value<0:
                 commission.total_value=0
         commission.save()
+
+
+@receiver(post_delete, sender=CashTransfer)
+def delete_bankcash(sender, instance, **kwargs):
+    bank_cash_transfer = BankCashTransfer.objects.get(customer_cash_id = instance.pk)
+    if bank_cash_transfer:
+        bank_cash_transfer.delete()  
+    
 
 
 @receiver([post_save, post_delete], sender=ExpenseStatement)

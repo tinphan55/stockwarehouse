@@ -242,7 +242,7 @@ class CashTransferPartnerManager(models.Manager):
         return super().get_queryset().exclude(partner=None)
 
 
-class CashTransferPartner(RealBankCashTransfer):
+class CashTransferPartner(BankCashTransfer):
     objects =CashTransferPartnerManager()
     class Meta:
         proxy = True
@@ -271,6 +271,27 @@ def update_or_created_expense_partner(instance,account, description_type):
     
         }
     )
+
+
+def define_t_plus(initial_date, date_milestone):
+    try:
+        if date_milestone >= initial_date:
+            t = 0
+            check_date = initial_date 
+            max_iterations = (date_milestone - check_date).days   # Số lần lặp tối đa để tránh vòng lặp vô tận
+            for _ in range(max_iterations + 1):  
+                check_date += timedelta(days=1)
+                if check_date > date_milestone or t==2:
+                    break  # Nếu đã vượt qua ngày mốc, thoát khỏi vòng lặp
+                weekday = check_date.weekday() 
+                check_in_dates =  DateNotTrading.objects.filter(date=check_date).exists()
+                if not (check_in_dates or weekday == 5 or weekday == 6):
+                    t += 1
+            return t
+        else:
+            print(f'Lỗi: date_milestone không lớn hơn hoặc bằng initial_date')
+    except Exception as e:
+        print(f'Lỗi: {e}')
 
 def created_transaction_partner(instance,account,date_mileston):
     partner = instance.partner
@@ -362,5 +383,25 @@ def partner_update_transaction(instance,date_mileston):
     account_partner.save()
 
     
+@receiver([post_save, post_delete], sender=BankCashTransfer)
+def save_field_account_partner(sender, instance, **kwargs):
+    created = kwargs.get('created', False)
+    if instance.type == 'trade_transfer' and instance.partner:
+        account = instance.account
+        account_partner = AccountPartner.objects.get(account=account, partner=instance.partner)
+        milestone_account = AccountMilestone.objects.filter(account =account).order_by('-created_at').first()
+        if milestone_account:
+            date_mileston = milestone_account.created_at
+        else:
+            date_mileston = account.created_at
+        amount =instance.amount*-1
+        
+        if not created:
+            cash_items = BankCashTransfer.objects.filter(account=account,partner =instance.partner,created_at__gt = date_mileston)
+            account_partner.net_cash_flow = sum(-item.amount for item in cash_items)
+           
 
-
+        else:
+            account_partner.net_cash_flow +=  amount
+            
+        account_partner.save()
