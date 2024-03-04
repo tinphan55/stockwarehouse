@@ -336,6 +336,10 @@ def created_transaction_partner(instance,account,date_mileston):
 def partner_update_transaction(instance,date_mileston):
     account_partner = AccountPartner.objects.get(account=instance.account, partner=instance.partner)
     transaction = Transaction.objects.filter(partner =instance.partner,created_at__gt = date_mileston)
+    # sửa chi phí
+    update_or_created_expense_partner(instance,account_partner, description_type='transaction_fee')
+    if instance.position == 'sell':
+        update_or_created_expense_partner(instance,account_partner, description_type='tax')
     # sửa danh mục
     portfolio_partner = PortfolioPartner.objects.filter(stock =instance.stock, account= account_partner).first()
     stock_transaction = transaction.filter(stock = instance.stock)
