@@ -79,7 +79,8 @@ def created_transaction_partner(instance,account,date_mileston):
         #điều chỉnh account_partner
         account_partner.net_trading_value += instance.net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
         account_partner.cash_t2 += instance.total_value #Dẫn tới thay đổi cash_t0 trong tương lai và thay đổi interest_cash_balance 
-        account_partner.interest_cash_balance = define_interest_cash_balace(account_partner.account,date_mileston,account_partner)
+        end_date = datetime.now().date()
+        account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston, end_date,account_partner)
         update_or_created_expense_partner(instance,account_partner, description_type='tax')
     
     account_partner.save()
@@ -134,7 +135,9 @@ def partner_update_transaction(instance,date_mileston):
         account_partner.cash_t0 = cash_t0
     account_partner.total_buy_trading_value = total_value_buy
     account_partner.net_trading_value = sum(item.net_total_value for item in transaction)
-    account_partner.interest_cash_balance = define_interest_cash_balace(account_partner.account,date_mileston,account_partner)
+    end_date = datetime.now().date()
+    account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston, end_date,account_partner)
+
     account_partner.save()
 
 def define_t_plus(initial_date, date_milestone):
