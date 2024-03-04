@@ -21,36 +21,9 @@ def partner_cal_avg_price(account,partner,stock, date_time):
         # fifo.profit_and_loss tính lời lỗ
     return fifo.avgcost
 
-def partner_total_value_inventory_stock(account,partner, stock, date_time, end_date=None):
-    if end_date is None:
-        end_date = datetime.now().date()
-    item_transactions = Transaction.objects.filter(account=account.account,partner =partner, stock__stock=stock, created_at__gt=date_time, date__lte=end_date).order_by('date', 'created_at')
-    fifo = FIFO([])
-    for item in item_transactions:
-    # Kiểm tra xem giao dịch có phải là mua hay bán
-        if item.position == 'buy':
-            # Nếu là giao dịch mua, thêm một Entry mới với quantity dương vào FIFO
-            entry = Entry(item.qty, item.price)
-        else:
-            # Nếu là giao dịch bán, thêm một Entry mới với quantity âm vào FIFO
-            entry = Entry(-item.qty, item.price)
-        # Thêm entry vào FIFO
-        fifo._push(entry) if entry.buy else fifo._fill(entry)
-    fifo_inventory =fifo.inventory
-    total_value = 0
-    for entry in fifo_inventory:
-        quantity, price = entry.quantity, entry.price
-        total_value += quantity * price *(1+account.account.transaction_fee)
-    return total_value
 
-def partner_define_interest_cash_balace(account,partner,date_mileston, end_date=None):
-    if end_date is None:
-        end_date = datetime.now().date()
-    all_port = PortfolioPartner.objects.filter(account=account, sum_stock__gt=0)
-    interest_cash_balance =0
-    for item in all_port:
-        interest_cash_balance += partner_total_value_inventory_stock (account,partner,item.stock, date_mileston, end_date)
-    return -interest_cash_balance
+
+
 
 class PartnerInfoProxy(PartnerInfo):
     class Meta:
@@ -251,6 +224,39 @@ class CashTransferPartner(BankCashTransfer):
     
     def __str__(self):
         return str(self.account)
+    
+
+def total_value_inventory_stock(account,partner,ratio_trading_fee, stock, date_time, end_date=None):
+    if end_date is None:
+        end_date = datetime.now().date()
+    item_transactions = Transaction.objects.filter(account=account,partner=partner, stock__stock=stock, created_at__gt=date_time, date__lte=end_date).order_by('date', 'created_at')
+    fifo = FIFO([])
+    for item in item_transactions:
+    # Kiểm tra xem giao dịch có phải là mua hay bán
+        if item.position == 'buy':
+            # Nếu là giao dịch mua, thêm một Entry mới với quantity dương vào FIFO
+            entry = Entry(item.qty, item.price)
+        else:
+            # Nếu là giao dịch bán, thêm một Entry mới với quantity âm vào FIFO
+            entry = Entry(-item.qty, item.price)
+        # Thêm entry vào FIFO
+        fifo._push(entry) if entry.buy else fifo._fill(entry)
+    fifo_inventory =fifo.inventory
+    total_value = 0
+    for entry in fifo_inventory:
+        quantity, price = entry.quantity, entry.price
+        total_value += quantity * price *(1+ratio_trading_fee)
+    return total_value
+
+def define_partner_account_interest_cash_balace(account,date_mileston, end_date=None):
+    if end_date is None:
+        end_date = datetime.now().date()
+    all_port = Portfolio.objects.filter(account=account, sum_stock__gt=0)
+    interest_cash_balance =0
+    for item in all_port:
+        interest_cash_balance += account_total_value_inventory_stock (account,item.stock, date_mileston, end_date)
+    return -interest_cash_balance
+
     
 def update_or_created_expense_partner(instance,account, description_type):
     description_tax = f"Thuế với lệnh bán {instance.stock} số lượng {instance.qty} và giá {instance.price } "
