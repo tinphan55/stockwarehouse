@@ -268,7 +268,7 @@ class TransactionAdmin(admin.ModelAdmin):
        
     )
     search_fields = ['account__id','account__name','stock__stock']
-    list_filter = ['account__name',]
+    list_filter = ['account__name','partner__name']
     
     def get_readonly_fields(self, request, obj=None):
         # Nếu đang chỉnh sửa bản ghi đã tồn tại, trường account sẽ là chỉ đọc
