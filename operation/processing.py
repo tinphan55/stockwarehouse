@@ -77,7 +77,7 @@ def define_interest_cash_balace(account,date_mileston, end_date=None):
     interest_cash_balance =0
     for item in all_port:
         interest_cash_balance += total_value_inventory_stock (account,item.stock, date_mileston, end_date)
-    return interest_cash_balance
+    return -interest_cash_balance
 
 
 def created_transaction(instance, portfolio, account,date_mileston):
