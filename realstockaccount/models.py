@@ -78,6 +78,12 @@ class BankCashTransfer(models.Model):
     def __str__(self):
         return f"{self.type}_{self.amount}" 
     
+    def get_readonly_fields(self, request, obj=None):
+        # Nếu đang chỉnh sửa bản ghi đã tồn tại, trường account sẽ là chỉ đọc
+        if obj:
+            return ['account','partner',]
+        return []
+    
 class RealTradingPower(models.Model):
     account = models.CharField(max_length=20,default = '011C263979',verbose_name = 'Tài khoản' )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )

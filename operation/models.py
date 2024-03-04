@@ -69,10 +69,13 @@ def cal_avg_price(account,stock, date_time):
         # fifo.profit_and_loss tính lời lỗ
     return fifo.avgcost
 
-def total_value_inventory_stock(account, stock, date_time, end_date=None):
+def total_value_inventory_stock(account,ratio_trading_fee, stock, start_date, end_date=None,partner=None):
     if end_date is None:
         end_date = datetime.now().date()
-    item_transactions = Transaction.objects.filter(account=account, stock__stock=stock, created_at__gt=date_time, date__lte=end_date).order_by('date', 'created_at')
+    filter_conditions = {'account': account, 'stock__stock': stock, 'created_at__gt': start_date, 'date__lte': end_date}
+    if partner:
+        filter_conditions['partner'] = partner
+    item_transactions = Transaction.objects.filter(**filter_conditions).order_by('date', 'created_at')
     fifo = FIFO([])
     for item in item_transactions:
     # Kiểm tra xem giao dịch có phải là mua hay bán
@@ -88,8 +91,9 @@ def total_value_inventory_stock(account, stock, date_time, end_date=None):
     total_value = 0
     for entry in fifo_inventory:
         quantity, price = entry.quantity, entry.price
-        total_value += quantity * price *(1+account.transaction_fee)
+        total_value += quantity * price *(1+ratio_trading_fee)
     return total_value
+
 
 def get_stock_market_price(stock):
     linkbase = 'https://www.cophieu68.vn/quote/summary.php?id=' + stock
@@ -119,6 +123,11 @@ def get_stock_market_price(stock):
             return 0
     
 class PartnerInfo(models.Model):
+
+    method_interest= [
+        ('total_buy_value', 'Tính trên giá trị mua'),
+        ('dept', 'Tính trên dư nợ'),
+    ]
     name = models.CharField(max_length= 50, verbose_name='Tên đối tác')
     phone = models.IntegerField(null=False, verbose_name='Điện thoại', unique=True)
     created_date = models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo')
@@ -127,6 +136,8 @@ class PartnerInfo(models.Model):
     ratio_trading_fee = models.FloatField(default = 0.001, verbose_name='Phí giao dịch')
     ratio_interest_fee= models.FloatField(default = 0.15, verbose_name='Lãi vay')
     ratio_advance_fee= models.FloatField(default = 0.15, verbose_name='Phí ứng tiền')
+    total_date_interest = models.IntegerField(default = 360,verbose_name = 'Số ngày tính lãi/năm')
+    method_interest =models.CharField(max_length=100,null=True,blank=True, choices=method_interest,verbose_name = 'Phương thức tính lãi')
     class Meta:
         verbose_name = 'Đăng kí đối tác'
         verbose_name_plural = 'Đăng kí đối tác'

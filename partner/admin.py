@@ -287,3 +287,10 @@ class ExpenseStatementPartnerAdmin(admin.ModelAdmin):
                         super().save_model(request, obj, form, change)
 
 admin.site.register(ExpenseStatementPartner, ExpenseStatementPartnerAdmin)
+
+
+
+
+
+
+
