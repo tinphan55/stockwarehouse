@@ -71,7 +71,7 @@ def update_market_price_port(sender, instance, created, **kwargs):
 
             
 # Các hàm cập nhập cho account và port
-def define_interest_cash_balace(account,date_mileston, end_date=None,account_partner=None):
+def define_interest_cash_balace(account,start_date, end_date=None,account_partner=None):
     interest_cash_balance =0
     if end_date is None:
         end_date = datetime.now().date()
@@ -80,8 +80,9 @@ def define_interest_cash_balace(account,date_mileston, end_date=None,account_par
         all_port = PortfolioPartner.objects.filter(account=account_partner,sum_stock__gt=0)
         ratio_trading_fee =account_partner.partner.ratio_trading_fee
         for item in all_port:
-            interest_cash_balance += total_value_inventory_stock (account=account,ratio_trading_fee=ratio_trading_fee,stock=item.stock, start_date=date_mileston,end_date= end_date,partner=partner)
+            interest_cash_balance += (total_value_inventory_stock (account,ratio_trading_fee,item.stock,start_date,end_date,partner=partner))*-1
         if partner.method_interest =='dept':
+            
             interest_cash_balance = interest_cash_balance - account_partner.net_cash_flow
             if interest_cash_balance >0:
                 interest_cash_balance=0
@@ -89,8 +90,8 @@ def define_interest_cash_balace(account,date_mileston, end_date=None,account_par
         all_port = Portfolio.objects.filter(account=account, sum_stock__gt=0)
         ratio_trading_fee = account.transaction_fee
         for item in all_port:
-            interest_cash_balance += total_value_inventory_stock (account=account,ratio_trading_fee=ratio_trading_fee,stock=item.stock, start_date=date_mileston,end_date= end_date)
-    return -interest_cash_balance
+            interest_cash_balance += (total_value_inventory_stock (account,ratio_trading_fee,item.stock,start_date,end_date))*-1
+    return interest_cash_balance
 
 
 def created_transaction(instance, portfolio, account,date_mileston):
