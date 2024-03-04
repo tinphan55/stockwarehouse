@@ -69,9 +69,7 @@ def cal_avg_price(account,stock, date_time):
         # fifo.profit_and_loss tính lời lỗ
     return fifo.avgcost
 
-def total_value_inventory_stock(account,ratio_trading_fee, stock, start_date, end_date=None,partner=None):
-    if end_date is None:
-        end_date = datetime.now().date()
+def total_value_inventory_stock(account,ratio_trading_fee, stock, start_date, end_date,partner=None):
     filter_conditions = {'account': account, 'stock__stock': stock, 'created_at__gt': start_date, 'date__lte': end_date}
     if partner:
         filter_conditions['partner'] = partner
