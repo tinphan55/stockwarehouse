@@ -257,17 +257,24 @@ def add_list_when_buy(account, list_data,value_buy, date_interest,interest_cash_
         list_data.append(dict_data)
     return list_data, interest_cash_balance
 
-def create_expense_list_when_edit_transaction(account):
+
+
+def create_expense_list_when_edit_transaction(account, partner=None):
     end_date = datetime.now().date() - timedelta(days=1)
     milestone_account = AccountMilestone.objects.filter(account=account).order_by('-created_at').first()
     if milestone_account:
         date_previous = milestone_account.created_at
     else:
         date_previous = account.created_at
-    transaction_items_merge_date = Transaction.objects.filter(
-        account=account,
-        created_at__gt=date_previous
-        ).values('position', 'date').annotate(
+    filter_params = {'account': account}
+    if partner is not None:
+        filter_params['partner'] = partner
+    
+    transaction_items_merge_date = (
+        Transaction.objects
+        .filter(**filter_params, created_at__gt=date_previous)
+        .values('position', 'date')
+        .annotate(
             total_value=Sum(
                 Case(
                     When(position='buy', then=F('total_value') * -1),
@@ -275,7 +282,10 @@ def create_expense_list_when_edit_transaction(account):
                     output_field=IntegerField(),
                 )
             )
-        ).order_by('date')
+        )
+        .order_by('date')
+    )
+    
     list_data = []
     interest_cash_balance, advance_cash_balance  = 0, 0
     cash_t2, cash_t1, cash_t0 = 0, 0, 0
@@ -324,8 +334,8 @@ def create_expense_list_when_edit_transaction(account):
     new_data.sort(key=lambda x: x['date'])
     return new_data
 
-def delete_and_recreate_interest_expense(account):
-    expense_list= create_expense_list_when_edit_transaction(account)
+def delete_and_recreate_account_expense(account, partner=None):
+    expense_list= create_expense_list_when_edit_transaction(account, partner)
     expense_interest = ExpenseStatement.objects.filter(account = account, type ='interest')
     expense_advance_fee = ExpenseStatement.objects.filter(account = account, type ='advance_fee')
     expense_interest.delete()
@@ -354,6 +364,37 @@ def delete_and_recreate_interest_expense(account):
     return 
 
 
+def delete_and_recreate_account_partner_expense(account, partner=None):
+    expense_list= create_expense_list_when_edit_transaction(account, partner)
+    account_partner = AccountPartner.objects.get(account =account, partner=partner)
+    expense_interest = ExpenseStatementPartner.objects.filter(account = account_partner, type ='interest')
+    expense_advance_fee = ExpenseStatementPartner.objects.filter(account = account_partner, type ='advance_fee')
+    expense_interest.delete()
+    expense_advance_fee.delete()
+    for item in expense_list:
+        if item['interest'] != 0:
+            formatted_interest_cash_balance = "{:,.0f}".format(item['interest_cash_balance'])
+            ExpenseStatementPartner.objects.create(
+                description=f"Số dư tính lãi {formatted_interest_cash_balance}",
+                type='interest',
+                account=account_partner,
+                date=item['date'],
+                amount=item['interest'],
+                interest_cash_balance=item['interest_cash_balance']
+        )
+        if item['advance_fee'] != 0:
+            formatted_advance_cash_balance = "{:,.0f}".format(item['advance_cash_balance'])
+            ExpenseStatementPartner.objects.create(
+                description=f"Số dư tính lãi {formatted_advance_cash_balance}",
+                type='advance_fee',
+                account=account_partner,
+                date=item['date'],
+                amount=item['advance_fee'],
+                advance_cash_balance=item['advance_cash_balance']
+        )
+    return 
+
+
 def calculate_original_date_transaction_edit(transaction):
     # Tính toán ngày giao dịch gốc dựa trên dữ liệu trong cơ sở dữ liệu, lấy record được chỉnh sửa gần nhất
     original_date = Transaction.objects.filter(id=transaction.id, date__lt=transaction.date).order_by('-date').first().date
@@ -361,7 +402,7 @@ def calculate_original_date_transaction_edit(transaction):
 
 @receiver([post_save, post_delete], sender=Transaction)
 @receiver([post_save, post_delete], sender=CashTransfer)
-def save_field_account(sender, instance, **kwargs):
+def save_field_account_1(sender, instance, **kwargs):
     created = kwargs.get('created', False)
     account = instance.account
     milestone_account = AccountMilestone.objects.filter(account =account).order_by('-created_at').first()
@@ -467,35 +508,44 @@ def delete_bankcash(sender, instance, **kwargs):
         bank_cash_transfer.delete()  
     
 
+def sum_temporarily_account_when_edit_expense(instance,account,account_expense_period):
+    # tìm mileston gần nhất
+    if account_expense_period:
+        #tinh tong lãi TK tổng tam tinh
+        account.total_temporarily_interest = sum(item.amount for item in account_expense_period if item.type =='interest' )
+        # tinh tong phi ung TK tổng tam tinh
+        account.total_temporarily_advance_fee = sum(item.amount for item in account_expense_period if item.type =='advance_fee')
+    account.save()
 
 @receiver([post_save, post_delete], sender=ExpenseStatement)
-def save_field_account(sender, instance, **kwargs):
-    account = instance.account 
-    # tìm mileston gần nhất
+def save_field_account_2(sender, instance, **kwargs):
+    account = instance.account
     milestone_account = AccountMilestone.objects.filter(account = account).order_by('-created_at').first()
     if milestone_account:
         date_mileston = milestone_account.created_at
     else:
         date_mileston = account.created_at
-    #tinh tong lai tam tinh
-    interests_period = ExpenseStatement.objects.filter(account= account , type ='interest' , created_at__gt = date_mileston)
-    sum_interest = 0
-    if interests_period:
-        sum_interest = sum( item.amount for item in interests_period)
-    account.total_temporarily_interest = sum_interest
-    # tinh tong phi ung tam tinh
-    advance_fee_period = ExpenseStatement.objects.filter(account= account , type ='advance_fee' , created_at__gt = date_mileston)
-    sum_advance_fee = 0
-    if advance_fee_period:
-        sum_advance_fee = sum( item.amount for item in advance_fee_period)
-    account.total_temporarily_advance_fee = sum_advance_fee
-    account.save()
+    account =instance.account
+    account_expense_period = ExpenseStatement.objects.filter(account= account , created_at__gt = date_mileston)
+    sum_temporarily_account_when_edit_expense(instance,account,account_expense_period)
+
+@receiver([post_save, post_delete], sender=ExpenseStatementPartner)
+def save_field_account_3(sender, instance, **kwargs):
+    account_partner = instance.account
+    account = account_partner.account
+    milestone_account = AccountMilestone.objects.filter(account = account).order_by('-created_at').first()
+    if milestone_account:
+        date_mileston = milestone_account.created_at
+    else:
+        date_mileston = account.created_at
+    account_expense_period = ExpenseStatementPartner.objects.filter(account= account_partner , created_at__gt = date_mileston)
+    sum_temporarily_account_when_edit_expense(instance, account_partner ,account_expense_period)
                         
 
     
         
 @receiver([post_save, post_delete], sender=AccountMilestone)
-def save_field_account(sender, instance, **kwargs):
+def save_field_account_4(sender, instance, **kwargs):
     created = kwargs.get('created', False)
     if not created:
         account = instance.account
@@ -504,14 +554,6 @@ def save_field_account(sender, instance, **kwargs):
         account.total_closed_pl =  sum(item.closed_pl for item in item_milestone)
         account.total_advance_fee_paid = sum(item.advance_fee_paid for item in item_milestone)
         account.save()
-
-        
-
-
-            
-
-    
-        
 
 
 
@@ -525,7 +567,7 @@ def update_market_price_for_port():
         item.save()
 
 def calculate_interest():
-    #kiểm tra vào tính lãi suất
+    #kiểm tra TK tổng  tính lãi suất
     account_interest = Account.objects.filter(interest_cash_balance__lt=0)
     if account_interest:
         for instance in account_interest:
@@ -540,7 +582,7 @@ def calculate_interest():
                     description=f"Số dư tính lãi {formatted_interest_cash_balance}",
                     interest_cash_balance = instance.interest_cash_balance
                     )
-    # chạy tính lãi phí ứng
+    # KT tài khoảng tổng chạy tính lãi phí ứng
     account_advance_fee = Account.objects.filter(advance_cash_balance__lt=0)
     if account_advance_fee:
         for instance in account_advance_fee:
@@ -555,8 +597,40 @@ def calculate_interest():
                     description=f"Số dư tính phí ứng {formatted_advance_cash_balance}",
                     interest_cash_balance = instance.interest_cash_balance
                     )
+    # kt tài khoản con, tính lãi
+    account_interest = AccountPartner.objects.filter(interest_cash_balance__lt=0)
+    if account_interest:
+        for instance in account_interest:
+            formatted_interest_cash_balance = "{:,.0f}".format(instance.interest_cash_balance)
+            interest_amount = instance.partner.ratio_interest_fee * instance.interest_cash_balance/360
+            if abs(interest_amount)>10:
+                ExpenseStatementPartner.objects.create(
+                    account=instance,
+                    date=datetime.now().date()-timedelta(days=1),
+                    type = 'interest',
+                    amount = interest_amount,
+                    description=f"Số dư tính lãi {formatted_interest_cash_balance}",
+                    interest_cash_balance = instance.interest_cash_balance
+                    )
+    # KT tài khoảng tổng chạy tính lãi phí ứng
+    account_advance_fee = AccountPartner.objects.filter(advance_cash_balance__lt=0)
+    if account_advance_fee:
+        for instance in account_advance_fee:
+            formatted_advance_cash_balance= "{:,.0f}".format(instance.advance_cash_balance)
+            advance_amount =instance.partner.ratio_advance_fee * instance.advance_cash_balance/360
+            if abs(advance_amount)>10:
+                ExpenseStatementPartner.objects.create(
+                    account=instance,
+                    date=datetime.now().date()-timedelta(days=1),
+                    type = 'advance_fee',
+                    amount = advance_amount,
+                    description=f"Số dư tính phí ứng {formatted_advance_cash_balance}",
+                    interest_cash_balance = instance.interest_cash_balance
+                    )
+
 
 def pay_money_back():
+    # chạy tk tổng
     account = Account.objects.all()
     if account:
         for instance in account:
@@ -565,9 +639,19 @@ def pay_money_back():
             instance.cash_t1= instance.cash_t2
             instance.cash_t2 =0
             instance.save()
+    # chạy tk con
+    account_partner = AccountPartner.objects.all()
+    if account:
+        for instance in account_partner:
+        # chuyển tiền dời lên 1 ngày
+            instance.cash_t0 += instance.cash_t1
+            instance.cash_t1= instance.cash_t2
+            instance.cash_t2 =0
+            instance.save()
 
 
 def atternoon_check():
+    #chạy tk tổng
     port = Portfolio.objects.filter(sum_stock__gt=0)
     if port:
         for item in port:
@@ -577,6 +661,18 @@ def atternoon_check():
             item.receiving_t1 = item.receiving_t2  - qty_buy_today
             item.receiving_t2 = qty_buy_today
             item.save()
+    # chạy tk con
+    port_partner = PortfolioPartner.objects.filter(sum_stock__gt=0)
+    if port_partner:
+        for item in port_partner:
+            partner = item.account.partner
+            buy_today = Transaction.objects.filter(account = item.account,partner =partner,position ='buy',date = datetime.now().date(),stock__stock = item.stock)
+            qty_buy_today = sum(item.qty for item in buy_today )
+            item.on_hold += item.receiving_t1
+            item.receiving_t1 = item.receiving_t2  - qty_buy_today
+            item.receiving_t2 = qty_buy_today
+            item.save()
+            
 
 def check_dividend_recevie():
     #check cổ tức
