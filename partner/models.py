@@ -392,7 +392,11 @@ def save_field_account_partner(sender, instance, **kwargs):
     created = kwargs.get('created', False)
     if instance.type == 'trade_transfer' and instance.partner:
         account = instance.account
-        account_partner = AccountPartner.objects.get(account=account, partner=instance.partner)
+        account_partner , created= AccountPartner.objects.get_or_create(
+        account=account,
+        partner=instance.partner,
+        defaults={'description': ''}  # Trường 'description' không bị cập nhật
+            )
         milestone_account = AccountMilestone.objects.filter(account =account).order_by('-created_at').first()
         if milestone_account:
             date_mileston = milestone_account.created_at

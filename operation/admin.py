@@ -273,7 +273,7 @@ class TransactionAdmin(admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         # Nếu đang chỉnh sửa bản ghi đã tồn tại, trường account sẽ là chỉ đọc
         if obj:
-            return ['account', 'partner', 'stock']
+            return ['account', 'stock']
         return []
     
     def save_model(self, request, obj, form, change):
