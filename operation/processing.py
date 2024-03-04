@@ -77,7 +77,7 @@ def define_interest_cash_balace(account,date_mileston, end_date=None):
     interest_cash_balance =0
     for item in all_port:
         interest_cash_balance += total_value_inventory_stock (account,item.stock, date_mileston, end_date)
-    return -interest_cash_balance
+    return interest_cash_balance
 
 
 def created_transaction(instance, portfolio, account,date_mileston):
@@ -256,8 +256,7 @@ def add_list_when_buy(account, list_data,value_buy, date_interest,interest_cash_
         list_data.append(dict_data)
     return list_data, interest_cash_balance
 
-
-def delete_and_recreate_interest_expense(account):
+def create_expense_list_when_edit_transaction(account):
     end_date = datetime.now().date() - timedelta(days=1)
     milestone_account = AccountMilestone.objects.filter(account=account).order_by('-created_at').first()
     if milestone_account:
@@ -267,11 +266,10 @@ def delete_and_recreate_interest_expense(account):
     transaction_items_merge_date = Transaction.objects.filter(
         account=account,
         created_at__gt=date_previous
-    ).values('position', 'date').annotate(total_value=Sum('net_total_value')).order_by('date')
+    ).values('position', 'date').annotate(total_value=Sum('total_value')).order_by('date')
     list_data = []
     interest_cash_balance, advance_cash_balance  = 0, 0
     cash_t2, cash_t1, cash_t0 = 0, 0, 0
-
     if transaction_items_merge_date and transaction_items_merge_date[0]['date']<=end_date:
         for index, item in enumerate(transaction_items_merge_date):
             # Kiểm tra xem có ngày tiếp theo hay không
@@ -281,8 +279,6 @@ def delete_and_recreate_interest_expense(account):
                 # Nếu đến cuối list, thì thay thế ngày tiếp theo bằng ngày hôm nay
                 next_item_date = end_date
             next_day = define_date_receive_cash(item['date'], 1)[0]
-            
-
             if item['position']== 'buy':
                 when_buy = add_list_when_buy(account, list_data,item['total_value'], item['date'],interest_cash_balance,advance_cash_balance)
                 interest_cash_balance = when_buy[1]
@@ -294,14 +290,13 @@ def delete_and_recreate_interest_expense(account):
             while next_day <= next_item_date:
                 date_while_loop = next_day
                 cash_t0, cash_t1, cash_t2 = process_cash_flow(cash_t0, cash_t1, cash_t2)
-                
                 when_not_traing = add_list_when_not_trading(account, list_data, cash_t1,cash_t2,interest_cash_balance,date_while_loop)
                 advance_cash_balance = when_not_traing[1]
                 next_day = define_date_receive_cash(next_day, 1)[0]
                 if next_day > next_item_date:
                     break
         # Tạo một danh sách chứa tất cả các ngày từ ngày đầu tiên đến ngày cuối
-        all_dates = [list_data[0]['date'] + timedelta(days=i) for i in range((list_data[-1]['date'] - list_data[0]['date']).days + 1)]
+        all_dates = [list_data[0]['date'] + timedelta(days=i) for i in range((end_date - list_data[0]['date']).days + 1)]
         # Tạo một danh sách mới chứa các phần tử đã có và điền giá trị bằng giá trị trước đó nếu thiếu
         new_data = []
         for d in all_dates:
@@ -310,14 +305,23 @@ def delete_and_recreate_interest_expense(account):
                 new_data.append(existing_entry)
             else:
                 previous_entry = new_data[-1]
-                new_entry = {'date': d, 'interest_cash_balance': previous_entry['interest_cash_balance'], 'interest': previous_entry['interest'],'advance_cash_balance': 0,'advance_fee':0}
+                new_entry = {
+                    'date': d,
+                    'interest_cash_balance': previous_entry['interest_cash_balance'],
+                    'interest': previous_entry['interest'],
+                    'advance_cash_balance': previous_entry['advance_cash_balance'],
+                    'advance_fee':previous_entry['advance_fee']}
                 new_data.append(new_entry)
     new_data.sort(key=lambda x: x['date'])
+    return new_data
+
+def delete_and_recreate_interest_expense(account):
+    expense_list= create_expense_list_when_edit_transaction(account)
     expense_interest = ExpenseStatement.objects.filter(account = account, type ='interest')
     expense_advance_fee = ExpenseStatement.objects.filter(account = account, type ='advance_fee')
     expense_interest.delete()
     expense_advance_fee.delete()
-    for item in new_data:
+    for item in expense_list:
         if item['interest'] != 0:
             formatted_interest_cash_balance = "{:,.0f}".format(item['interest_cash_balance'])
             ExpenseStatement.objects.create(
@@ -338,9 +342,7 @@ def delete_and_recreate_interest_expense(account):
                 amount=item['advance_fee'],
                 advance_cash_balance=item['advance_cash_balance']
         )
-        
-        
-    return new_data
+    return 
 
 
 def calculate_original_date_transaction_edit(transaction):
