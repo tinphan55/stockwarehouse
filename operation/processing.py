@@ -3,6 +3,140 @@ from partner.models import *
 from django.db.models import Sum, Case, When, F, Value, IntegerField
 
 
+def update_or_created_expense_partner(instance,account, description_type):
+    description_tax = f"Thuế với lệnh bán {instance.stock} số lượng {instance.qty} và giá {instance.price } "
+    description_transaction = f"PGD phát sinh với lệnh {instance.position} {instance.stock} số lượng {instance.qty} và giá {instance.price } "
+    if description_type=='tax':
+        amount = instance.tax*-1
+    elif description_type== 'transaction_fee':
+        amount = instance.transaction_fee*-1
+
+    ExpenseStatementPartner.objects.update_or_create(
+        transaction_id=instance.pk,
+        type=description_type,
+        defaults={
+            'account': account,
+            'date': instance.date,
+            'amount': amount,
+            'description': description_tax if description_type == 'tax' else description_transaction,
+    
+        }
+    )
+
+
+def define_t_plus(initial_date, date_milestone):
+    try:
+        if date_milestone >= initial_date:
+            t = 0
+            check_date = initial_date 
+            max_iterations = (date_milestone - check_date).days   # Số lần lặp tối đa để tránh vòng lặp vô tận
+            for _ in range(max_iterations + 1):  
+                check_date += timedelta(days=1)
+                if check_date > date_milestone or t==2:
+                    break  # Nếu đã vượt qua ngày mốc, thoát khỏi vòng lặp
+                weekday = check_date.weekday() 
+                check_in_dates =  DateNotTrading.objects.filter(date=check_date).exists()
+                if not (check_in_dates or weekday == 5 or weekday == 6):
+                    t += 1
+            return t
+        else:
+            print(f'Lỗi: date_milestone không lớn hơn hoặc bằng initial_date')
+    except Exception as e:
+        print(f'Lỗi: {e}')
+
+def created_transaction_partner(instance,account,date_mileston):
+    partner = instance.partner
+    account_partner , created= AccountPartner.objects.get_or_create(
+        account=account,
+        partner=partner,
+        defaults={'description': ''}  # Trường 'description' không bị cập nhật
+    )
+    # tạo phí giao dịch
+    update_or_created_expense_partner(instance,account_partner, description_type='transaction_fee')
+    if instance.position == 'buy':
+        #điều chỉnh account partner
+        account_partner.net_trading_value += instance.net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
+        account_partner.total_buy_trading_value+= instance.net_total_value #Dẫn tới thay đổi interest_cash_balance 
+        account_partner.interest_cash_balance += instance.net_total_value
+        try:
+            portfolio_partner = PortfolioPartner.objects.get(stock=instance.stock, account=account_partner)
+            # Nếu đối tượng tồn tại, điều chỉnh danh mục
+            portfolio_partner.receiving_t2 += instance.qty
+            portfolio_partner.save()
+        except PortfolioPartner.DoesNotExist:
+            # Nếu không tìm thấy, tạo danh mục mới
+            PortfolioPartner.objects.create(
+                stock=instance.stock,
+                account=account_partner,
+                receiving_t2=instance.qty,
+            )
+        
+    elif instance.position == 'sell':
+        # điều chỉnh danh mục
+        portfolio_partner = PortfolioPartner.objects.get(stock=instance.stock, account=account_partner)
+        portfolio_partner.on_hold = portfolio_partner.on_hold -instance.qty
+        portfolio_partner.save()
+        #điều chỉnh account_partner
+        account_partner.net_trading_value += instance.net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
+        account_partner.cash_t2 += instance.total_value #Dẫn tới thay đổi cash_t0 trong tương lai và thay đổi interest_cash_balance 
+        account_partner.interest_cash_balance = define_interest_cash_balace(account_partner.account,date_mileston,account_partner)
+        update_or_created_expense_partner(instance,account_partner, description_type='tax')
+    
+    account_partner.save()
+
+def partner_update_transaction(instance,date_mileston):
+    account_partner = AccountPartner.objects.get(account=instance.account, partner=instance.partner)
+    transaction = Transaction.objects.filter(account = instance.account,partner =instance.partner,created_at__gt = date_mileston)
+    # sửa chi phí
+    update_or_created_expense_partner(instance,account_partner, description_type='transaction_fee')
+    if instance.position == 'sell':
+        update_or_created_expense_partner(instance,account_partner, description_type='tax')
+    # sửa danh mục
+    portfolio_partner = PortfolioPartner.objects.filter(stock =instance.stock, account= account_partner).first()
+    stock_transaction = transaction.filter(stock = instance.stock)
+    sum_sell = sum(item.qty for item in stock_transaction if item.position =='sell')
+    item_buy = stock_transaction.filter( position = 'buy')
+    
+    if portfolio_partner:
+        receiving_t2 =0
+        receiving_t1=0
+        on_hold =0 
+        today  = datetime.now().date()      
+        for item in item_buy:
+            if define_t_plus(item.date, today) == 0:
+                        receiving_t2 += item.qty                           
+            elif define_t_plus(item.date, today) == 1:
+                        receiving_t1 += item.qty                             
+            else:
+                        on_hold += item.qty
+
+        on_hold = on_hold - sum_sell
+                                           
+        portfolio_partner.receiving_t2 = receiving_t2
+        portfolio_partner.receiving_t1 = receiving_t1
+        portfolio_partner.on_hold = on_hold
+        portfolio_partner.save()
+    # sửa tài khoản    
+    item_all_sell = transaction.filter(position = 'sell')
+    cash_t0, cash_t1, cash_t2 =0,0,0
+    total_value_buy= sum(i.net_total_value for i in transaction if i.position =='buy')
+    today  = datetime.now().date()  
+    if item_all_sell:
+        for item in item_all_sell:
+            if define_t_plus(item.date,today) == 0:
+                cash_t2 += item.total_value 
+            elif define_t_plus(item.date, today) == 1:
+                cash_t1+= item.total_value 
+            else:
+                cash_t0 += item.total_value 
+        account_partner.cash_t2 = cash_t2
+        account_partner.cash_t1 = cash_t1
+        account_partner.cash_t0 = cash_t0
+    account_partner.total_buy_trading_value = total_value_buy
+    account_partner.net_trading_value = sum(item.net_total_value for item in transaction)
+    account_partner.interest_cash_balance = define_interest_cash_balace(account_partner.account,date_mileston,account_partner)
+    account_partner.save()
+
 def define_t_plus(initial_date, date_milestone):
     try:
         if date_milestone >= initial_date:
