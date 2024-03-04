@@ -1,5 +1,6 @@
 from .models import *
 from partner.models import *
+from django.db.models import Sum, Case, When, F, Value, IntegerField
 
 
 def define_t_plus(initial_date, date_milestone):
@@ -266,7 +267,15 @@ def create_expense_list_when_edit_transaction(account):
     transaction_items_merge_date = Transaction.objects.filter(
         account=account,
         created_at__gt=date_previous
-    ).values('position', 'date').annotate(total_value=Sum('total_value')).order_by('date')
+        ).values('position', 'date').annotate(
+            total_value=Sum(
+                Case(
+                    When(position='buy', then=F('total_value') * -1),
+                    default=F('total_value'),
+                    output_field=IntegerField(),
+                )
+            )
+        ).order_by('date')
     list_data = []
     interest_cash_balance, advance_cash_balance  = 0, 0
     cash_t2, cash_t1, cash_t0 = 0, 0, 0
