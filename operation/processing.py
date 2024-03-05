@@ -437,7 +437,7 @@ def create_expense_list_when_edit_transaction(account,account_partner=None):
                 )
             )
         )
-        .order_by('created_at')
+        .order_by('date','created_at')
     )
     list_data = []
     interest_cash_balance, advance_cash_balance  = 0, 0
