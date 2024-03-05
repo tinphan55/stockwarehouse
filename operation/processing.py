@@ -905,7 +905,63 @@ def check_dividend():
     for i in dividend_today:
         i.save()
 
-
+def setle_milestone_account_partner(account_partner):
+    status = False
+    if account_partner.market_value == 0:
+        status = True
+        date=datetime.now().date()
+        if account_partner.cash_t1 !=0 and account_partner.cash_t2 !=0:
+            number_interest_t1 = define_date_receive_cash(date,1)[1]
+            number_interest_t2 = define_date_receive_cash(date,2)[1]
+            amount1 = account_partner.interest_fee *(account_partner.advance_cash_balance)*number_interest_t1 /360
+            amount2 = account_partner.interest_fee *(account_partner.advance_cash_balance + account_partner.cash_t1)*(number_interest_t2-number_interest_t1) /360
+            amount =amount1+amount2
+    
+        elif account_partner.cash_t1 !=0 and account_partner.cash_t2 ==0:
+            number_interest = define_date_receive_cash(date,1)[1]
+            amount =account_partner.interest_fee *(account_partner.advance_cash_balance)*number_interest /360
+        elif account_partner.cash_t1 ==0 and account_partner.cash_t2 !=0:
+            number_interest = define_date_receive_cash(date,2)[1]
+            amount = account_partner.interest_fee *(account_partner.advance_cash_balance)*number_interest /360  
+        else:
+            print('Vẫn còn âm tiền, cần giải pháp đòi nọ')
+            amount = 0
+            
+        if  amount <0 :
+            description = f"TK {account_partner.pk} tính phí ứng tiền bán tất toán cho {number_interest} ngày"
+            ExpenseStatementPartner.objects.create(
+                    account_partner=account_partner,
+                    date=date,
+                    type = 'advance_fee',
+                    amount = amount,
+                    description = description,
+                    advance_cash_balance = account_partner.advance_cash_balance
+                    )
+        withdraw_cash = BankCashTransfer.objects.create(
+            account_partner = account_partner,
+            date = date,
+            amount = -account_partner.nav,
+            description = "Tất toán tài khoản, lệnh rút tiền tự động",      
+        )
+        number = len(AccountMilestone.objects.filter(account_partner=account_partner)) +1
+        
+        
+        
+        account_partner.cash_t0 = 0
+        account_partner.cash_t1 = 0
+        account_partner.cash_t2 = 0
+        account_partner.total_interest_paid = a.interest_paid
+        account_partner.total_advance_fee_paid += a.advance_fee_paid
+        account_partner.total_closed_pl += a.closed_pl
+        account_partner.milestone_date_lated = a.created_at
+        account_partner.net_cash_flow = 0
+        account_partner.net_trading_value = 0
+        account_partner.total_buy_trading_value = 0
+        account_partner.total_temporarily_interest = 0
+        account_partner.total_temporarily_advance_fee =0
+        account_partner.total_temporarily_pl = 0
+        account_partner.save()
+    return  status
 
 def setle_milestone_account(account ):
     status = False
