@@ -938,29 +938,25 @@ def setle_milestone_account_partner(account_partner):
                     advance_cash_balance = account_partner.advance_cash_balance
                     )
         withdraw_cash = BankCashTransfer.objects.create(
-            account_partner = account_partner,
-            date = date,
-            amount = -account_partner.nav,
-            description = "Tất toán tài khoản, lệnh rút tiền tự động",      
-        )
-        number = len(AccountMilestone.objects.filter(account_partner=account_partner)) +1
+                source='TCB-Ha',
+                partner = account_partner.partner,
+                account=account_partner,
+                amount= account_partner.nav,
+                type='trade_transfer',
+                date=date,
+                description=f"Lệnh nạp tiền tự dộng từ tất toán tiểu khoản {account_partner}",
+            )
+        cash_in = BankCashTransfer.objects.create(
+                source='TCB-Ha',
+                partner = account_partner.partner,
+                amount= -account_partner.nav,
+                type='trade_transfer',
+                date=date,
+                description=f"Lệnh nạp tiền tự dộng từ tất toán tiểu khoản {account_partner}",
+            )
         
-        
-        
-        account_partner.cash_t0 = 0
-        account_partner.cash_t1 = 0
-        account_partner.cash_t2 = 0
-        account_partner.total_interest_paid = a.interest_paid
-        account_partner.total_advance_fee_paid += a.advance_fee_paid
-        account_partner.total_closed_pl += a.closed_pl
-        account_partner.milestone_date_lated = a.created_at
-        account_partner.net_cash_flow = 0
-        account_partner.net_trading_value = 0
-        account_partner.total_buy_trading_value = 0
-        account_partner.total_temporarily_interest = 0
-        account_partner.total_temporarily_advance_fee =0
-        account_partner.total_temporarily_pl = 0
-        account_partner.save()
+        account_partner.delete()
+
     return  status
 
 def setle_milestone_account(account ):
