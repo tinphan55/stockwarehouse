@@ -99,7 +99,7 @@ class AccountPartner (models.Model):
     # Your first save method code
         self.total_loan_interest = self.total_temporarily_interest + self.total_interest_paid
         self.total_advance_fee = self.total_temporarily_advance_fee + self.total_advance_fee_paid
-        self.cash_balance = self.net_cash_flow + self.partner_net_total_value + self.total_temporarily_interest + self.total_temporarily_advance_fee
+        self.cash_balance = self.net_cash_flow + self.net_trading_value  + self.total_temporarily_interest + self.total_temporarily_advance_fee
         stock_mapping = {obj.stock: obj.initial_margin_requirement for obj in StockListMargin.objects.all()}
         port = PortfolioPartner.objects.filter(account=self.pk, sum_stock__gt=0)
         sum_initial_margin = 0
@@ -209,15 +209,7 @@ class TransactionPartner(Transaction):
     def __str__(self):
         return str(self.stock)
     
-    @property
-    def partner_net_total_value(self):
-        ratio_transaction_fee = self.partner.ratio_trading_fee
-        partner_transaction_fee = self.total_value * ratio_transaction_fee
-        if self.position == 'buy':
-            partner_net_total_value = -self.total_value - partner_transaction_fee - self.tax
-        else:
-            partner_net_total_value = self.total_value - self.tax - partner_transaction_fee
-        return partner_net_total_value
+    
 
     
 

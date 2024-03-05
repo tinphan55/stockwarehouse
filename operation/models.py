@@ -378,7 +378,16 @@ class Transaction (models.Model):
             max_sellable_qty =stock_hold  + sell_pending
             if self.qty > max_sellable_qty:
                     raise ValidationError({'qty': f'Không đủ cổ phiếu bán, tổng cổ phiếu khả dụng là {max_sellable_qty}'})        
-                
+
+    @property
+    def partner_net_total_value(self):
+        ratio_transaction_fee = self.partner.ratio_trading_fee
+        partner_transaction_fee = self.total_value * ratio_transaction_fee
+        if self.position == 'buy':
+            partner_net_total_value = -self.total_value - partner_transaction_fee - self.tax
+        else:
+            partner_net_total_value = self.total_value - self.tax - partner_transaction_fee
+        return partner_net_total_value           
 
     def save(self, *args, **kwargs):
         self.total_value = self.price*self.qty

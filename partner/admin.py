@@ -103,7 +103,7 @@ class TransationPartnerAdmin(admin.ModelAdmin):
     form = TransactionPartnerForm
     list_display_links = ['stock',]
     list_display = ['account','partner','date','stock','position','formatted_price','formatted_qty','formatted_partner_net_total_value','created_at','user_created','formatted_transaction_fee','formatted_tax']
-    readonly_fields = ['account','partner', 'date', 'stock', 'position', 'price', 'qty','user_created','user_modified','transaction_fee','tax','total_value','parner_net_total_value']
+    readonly_fields = ['account','partner', 'date', 'stock', 'position', 'price', 'qty','user_created','user_modified','transaction_fee','tax','total_value',]
     fieldsets = (
         ('Thông tin giao dịch', {
             'fields': ('account','partner', 'date', 'stock', 'position', 'price', 'qty')
