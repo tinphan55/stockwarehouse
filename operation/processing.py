@@ -1038,7 +1038,7 @@ def setle_milestone_account(account):
         account.total_temporarily_pl = 0
         account.save()
         status = True
-        account_partner = Account.objects.filter(account=account)
+        account_partner = AccountPartner.objects.filter(account=account)
         for item in account_partner:
             setle_milestone_account_partner(item)
     return  status
