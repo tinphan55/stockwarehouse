@@ -55,9 +55,9 @@ def created_transaction_partner(instance,account,date_mileston):
     update_or_created_expense_partner(instance,account_partner, description_type='transaction_fee')
     if instance.position == 'buy':
         #điều chỉnh account partner
-        account_partner.net_trading_value += instance.net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
-        account_partner.total_buy_trading_value+= instance.net_total_value #Dẫn tới thay đổi interest_cash_balance 
-        account_partner.interest_cash_balance += instance.net_total_value
+        account_partner.net_trading_value += instance.partner_net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
+        account_partner.total_buy_trading_value+= instance.partner_net_total_value #Dẫn tới thay đổi interest_cash_balance 
+        account_partner.interest_cash_balance += instance.partner_net_total_value
         try:
             portfolio_partner = PortfolioPartner.objects.get(stock=instance.stock, account=account_partner)
             # Nếu đối tượng tồn tại, điều chỉnh danh mục
@@ -77,8 +77,11 @@ def created_transaction_partner(instance,account,date_mileston):
         portfolio_partner.on_hold = portfolio_partner.on_hold -instance.qty
         portfolio_partner.save()
         #điều chỉnh account_partner
-        account_partner.net_trading_value += instance.net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
-        account_partner.cash_t2 += instance.total_value #Dẫn tới thay đổi cash_t0 trong tương lai và thay đổi interest_cash_balance 
+        account_partner.net_trading_value += instance.partner_net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
+        if partner.method_interest == 'total_buy_value':
+            account_partner.cash_t2 += instance.total_value #Dẫn tới thay đổi cash_t0 trong tương lai và thay đổi interest_cash_balance 
+        else:
+            account_partner.cash_t2 += instance.partner_net_total_value
         end_date = datetime.now().date()
         account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston, end_date,account_partner)
         update_or_created_expense_partner(instance,account_partner, description_type='tax')
@@ -99,17 +102,15 @@ def partner_update_transaction(instance,date_mileston):
     item_buy = stock_transaction.filter( position = 'buy')
     
     if portfolio_partner:
-        receiving_t2 =0
-        receiving_t1=0
-        on_hold =0 
+        receiving_t2,receiving_t1,on_hold =0,0,0
         today  = datetime.now().date()      
         for item in item_buy:
             if define_t_plus(item.date, today) == 0:
-                        receiving_t2 += item.qty                           
+                receiving_t2 += item.qty                           
             elif define_t_plus(item.date, today) == 1:
-                        receiving_t1 += item.qty                             
+                receiving_t1 += item.qty                             
             else:
-                        on_hold += item.qty
+                on_hold += item.qty
 
         on_hold = on_hold - sum_sell
                                            
@@ -134,7 +135,7 @@ def partner_update_transaction(instance,date_mileston):
         account_partner.cash_t1 = cash_t1
         account_partner.cash_t0 = cash_t0
     account_partner.total_buy_trading_value = total_value_buy
-    account_partner.net_trading_value = sum(item.net_total_value for item in transaction)
+    account_partner.net_trading_value = sum(item.partner_net_total_value for item in transaction)
     end_date = datetime.now().date()
     account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston, end_date,account_partner)
 
@@ -220,7 +221,7 @@ def define_interest_cash_balace(account,start_date, end_date=None,account_partne
             interest_cash_balance += (total_value_inventory_stock (account,ratio_trading_fee,item.stock,start_date,end_date,partner=partner))*-1
         if partner.method_interest =='dept':
             
-            interest_cash_balance = interest_cash_balance - account_partner.net_cash_flow
+            interest_cash_balance = interest_cash_balance + account_partner.net_cash_flow
             if interest_cash_balance >0:
                 interest_cash_balance=0
     else:
