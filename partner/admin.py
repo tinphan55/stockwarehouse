@@ -31,13 +31,14 @@ class AccountPartnerAdmin(admin.ModelAdmin):
         # Return False to disable the "Add" button
         return False
     
-
+    
     def has_change_permission(self, request, obj=None):
         return False
     
     def has_delete_permission(self, request, obj=None):
         return False
 
+    
     def formatted_number(self, value):
         # Format number with commas as thousand separators and no decimal places
         return '{:,.0f}'.format(value)
@@ -162,9 +163,9 @@ class PortfolioPartnerAdmin(admin.ModelAdmin):
         return obj.account.partner
     get_partner.short_description = 'Đối tác'
     
-    # def get_queryset(self, request):
-    #     # Chỉ trả về các bản ghi có sum_stock > 0
-    #     return super().get_queryset(request).filter(sum_stock__gt=0)
+    def get_queryset(self, request):
+        # Chỉ trả về các bản ghi có sum_stock > 0
+        return super().get_queryset(request).filter(sum_stock__gt=0)
 
     def formatted_number(self, value):
         # Format number with commas as thousand separators and no decimal places
@@ -214,10 +215,10 @@ class CashTransferPartnerForm(forms.ModelForm):
 
 class CashTransferPartnerAdmin(admin.ModelAdmin):
     form  = CashTransferPartnerForm
-    list_display = ['source', 'date', 'formatted_amount', 'user_created', 'user_modified', 'created_at']
+    list_display = ['source','partner', 'date', 'formatted_amount', 'user_created', 'user_modified', 'created_at']
     readonly_fields = ['user_created', 'user_modified']
     search_fields = ['account__id','account__name']
-    # list_filter = ['account__name',]
+    list_filter = ['partner__name',]
 
     def has_add_permission(self, request):
         # Return False to disable the "Add" button
