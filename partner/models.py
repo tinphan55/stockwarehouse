@@ -235,7 +235,7 @@ class CashTransferPartner(BankCashTransfer):
 @receiver([post_save, post_delete], sender=BankCashTransfer)
 def save_field_account_partner(sender, instance, **kwargs):
     created = kwargs.get('created', False)
-    if instance.type == 'trade_transfer' and instance.partner:
+    if instance.type == 'trade_transfer' and instance.partner and instance.account:
         account = instance.account
         account_partner , created= AccountPartner.objects.get_or_create(
         account=account,
@@ -252,7 +252,6 @@ def save_field_account_partner(sender, instance, **kwargs):
         if not created:
             cash_items = BankCashTransfer.objects.filter(account=account,partner =instance.partner,created_at__gt = date_mileston)
             account_partner.net_cash_flow = sum(-item.amount for item in cash_items)
-           
 
         else:
             account_partner.net_cash_flow +=  amount
