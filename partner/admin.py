@@ -6,7 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 # Register your models here.
 
-class PartnerInfoProxyAdmin:
+class PartnerInfoProxyAdmin(admin.ModelAdmin):
     models = PartnerInfoProxy
     list_display = ['name', 'ratio_trading_fee','ratio_interest_fee','ratio_advance_fee','ratio_advance_fee','method_interest','total_date_interest']
    
