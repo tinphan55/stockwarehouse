@@ -966,8 +966,22 @@ def setle_milestone_account_partner(account_partner):
                 date=date,
                 description=f"Lệnh nạp tiền tự dộng từ tất toán tiểu khoản {account_partner}",
             )
+        # reset thong so account_partner
+        account_partner.cash_t0 = 0
+        account_partner.cash_t1 = 0
+        account_partner.cash_t2 = 0
+        account_partner.total_interest_paid = account_partner.total_temporarily_interest
+        account_partner.total_advance_fee_paid +=account_partner.total_temporarily_advance_fee
+        account_partner.total_closed_pl += account_partner.total_temporarily_pl
+        account_partner.net_cash_flow = 0
+        account_partner.net_trading_value = 0
+        account_partner.total_buy_trading_value = 0
+        account_partner.total_temporarily_interest = 0
+        account_partner.total_temporarily_advance_fee =0
+        account_partner.total_temporarily_pl = 0
+        account_partner.save()
         
-        account_partner.delete()
+        
 
     return  status
 

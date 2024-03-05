@@ -30,6 +30,9 @@ class AccountPartnerAdmin(admin.ModelAdmin):
                        ]
     search_fields = ['id','account__name']
     list_filter = ['partner__name','account__name',]
+    def get_queryset(self, request):
+        # Chỉ trả về các bản ghi có sum_stock > 0
+        return super().get_queryset(request).filter(nav__gt=0)
     
     def has_add_permission(self, request):
         # Return False to disable the "Add" button
