@@ -295,9 +295,10 @@ class TransactionAdmin(admin.ModelAdmin):
                         super().save_model(request, obj, form, change)
                         if obj.total_value != obj.previous_total_value or obj.previous_date != obj.date:
                             # Chạy lại phí tk tổng
-                            delete_and_recreate_interest_expense(obj.account, partner=None)
+                            delete_and_recreate_account_expense(obj.account)
                             # Chạy lại phí tk con
-                            delete_and_recreate_interest_expense(obj.account, obj.partner)
+                            if obj.partner.method_interest =='total_buy_value':
+                                delete_and_recreate_account_partner_expense(obj.account, obj.partner)
                             # Thêm dòng cảnh báo cho siêu người dùng
                             messages.warning(request, "Sao kê phí lãi vay đã được cập nhật.")
                 else:
