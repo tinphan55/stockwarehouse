@@ -220,7 +220,7 @@ def define_interest_cash_balace(account,start_date, end_date=None,account_partne
             interest_cash_balance += (total_value_inventory_stock (account,ratio_trading_fee,item.stock,start_date,end_date,partner=partner))*-1
         if partner.method_interest =='dept':
             
-            interest_cash_balance = interest_cash_balance - account_partner.net_cash_flow
+            interest_cash_balance = interest_cash_balance + account_partner.net_cash_flow
             if interest_cash_balance >0:
                 interest_cash_balance=0
     else:
@@ -384,10 +384,10 @@ def add_list_when_sell(account, list_data, cash_t1,cash_t2,start_date, end_date,
         list_data.append(dict_data)
     return list_data, interest_cash_balance, advance_cash_balance
 
-def add_list_when_buy(list_data,value_buy, date_interest,interest_cash_balance,advance_cash_balance,interest_fee):
+def add_list_when_buy(account,list_data,start_date, date_interest,advance_cash_balance,interest_fee,account_partner=None):
     # Kiểm tra xem date_interest đã tồn tại trong list_data hay chưa
     existing_data = next((item for item in list_data if item['date'] == date_interest), None)
-    interest_cash_balance += value_buy
+    interest_cash_balance = define_interest_cash_balace(account, start_date, date_interest, account_partner)
     interest = round(interest_cash_balance * interest_fee / 360, 0)
     advance_fee = round(advance_cash_balance * interest_fee / 360, 0) if advance_cash_balance !=0 else 0
     # Nếu date_interest đã tồn tại
@@ -451,7 +451,7 @@ def create_expense_list_when_edit_transaction(account,account_partner=None):
                 next_item_date = end_date
             next_day = define_date_receive_cash(item['date'], 1)[0]
             if item['position']== 'buy':
-                when_buy = add_list_when_buy(list_data,item['total_value'], item['date'],interest_cash_balance,advance_cash_balance,interest_fee)
+                when_buy = add_list_when_buy(account,list_data,date_previous, item['date'],advance_cash_balance,interest_fee,account_partner)
                 interest_cash_balance = when_buy[1]
             else:
                 cash_t2 += item['total_value']
