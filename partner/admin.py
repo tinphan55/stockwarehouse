@@ -6,7 +6,11 @@ from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 # Register your models here.
 
-admin.site.register(PartnerInfoProxy)
+class PartnerInfoProxyAdmin:
+    models = PartnerInfoProxy
+    list_display = ['name', 'ratio_trading_fee','ratio_interest_fee','ratio_advance_fee','ratio_advance_fee','method_interest','total_date_interest']
+   
+admin.site.register(PartnerInfoProxy,PartnerInfoProxyAdmin)
 
 class AccountPartnerAdmin(admin.ModelAdmin):
     model= AccountPartner
@@ -215,7 +219,7 @@ class CashTransferPartnerForm(forms.ModelForm):
 
 class CashTransferPartnerAdmin(admin.ModelAdmin):
     form  = CashTransferPartnerForm
-    list_display = ['source','partner', 'date', 'formatted_amount', 'user_created', 'user_modified', 'created_at']
+    list_display = ['source','partner','account', 'date', 'formatted_amount', 'user_created', 'user_modified', 'created_at']
     readonly_fields = ['user_created', 'user_modified']
     search_fields = ['account__id','account__name']
     list_filter = ['partner__name',]
