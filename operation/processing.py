@@ -916,7 +916,7 @@ def check_dividend():
 
 def setle_milestone_account_partner(account_partner):
     status = False
-    if account_partner.market_value == 0:
+    if account_partner.market_value == 0 and  account_partner.total_temporarily_interest !=0:
         status = True
         date=datetime.now().date()
         partner =account_partner.partner
@@ -940,9 +940,9 @@ def setle_milestone_account_partner(account_partner):
             amount = 0
             
         if  amount <0 :
-            description = f"TK {account_partner.pk} tính phí ứng tiền bán tất toán cho {number_interest} ngày"
+            description = f"TK {account_partner} tính phí ứng tiền bán tất toán cho {number_interest} ngày"
             ExpenseStatementPartner.objects.create(
-                    account_partner=account_partner,
+                    account=account_partner,
                     date=date,
                     type = 'advance_fee',
                     amount = amount,
@@ -952,11 +952,11 @@ def setle_milestone_account_partner(account_partner):
         withdraw_cash = BankCashTransfer.objects.create(
                 source='TCB-Ha',
                 partner = account_partner.partner,
-                account=account_partner,
+                account=account_partner.account,
                 amount= account_partner.nav,
                 type='trade_transfer',
                 date=date,
-                description=f"Lệnh nạp tiền tự dộng từ tất toán tiểu khoản {account_partner}",
+                description=f"Lệnh rút tiền tự dộng từ tất toán tiểu khoản {account_partner}",
             )
         cash_in = BankCashTransfer.objects.create(
                 source='TCB-Ha',

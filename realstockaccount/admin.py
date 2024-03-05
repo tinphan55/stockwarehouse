@@ -101,10 +101,10 @@ class BankCashTransferForm(forms.ModelForm):
 
 class BankCashTransferAdmin(admin.ModelAdmin):
     form  = BankCashTransferForm
-    list_display = ['source','date', 'formatted_amount','description', 'user_created', 'user_modified', 'created_at']
+    list_display = ['source','date','account', 'formatted_amount','description', 'user_created', 'user_modified', 'created_at']
     readonly_fields = ['user_created', 'user_modified','customer_cash_id']
     search_fields = ['account__id','account__name']
-    list_filter = ['type',]
+    list_filter = ['type','account__name']
 
     def formatted_amount(self, obj):
         return '{:,.0f}'.format(obj.amount)
