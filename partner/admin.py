@@ -31,7 +31,7 @@ class AccountPartnerAdmin(admin.ModelAdmin):
         # Return False to disable the "Add" button
         return False
     
-    
+
     def has_change_permission(self, request, obj=None):
         return False
     
@@ -242,7 +242,7 @@ class ExpenseStatementPartnerAdmin(admin.ModelAdmin):
     model = ExpenseStatementPartner
     list_display = ['account','get_partner', 'date', 'type', 'formatted_amount', 'description']
     search_fields = ['account__account__name']
-    list_filter = ['account__account__name','type']
+    list_filter = ['account__account__name','account__partner__name','type']
 
     def get_partner(self,obj):
         return obj.account.partner

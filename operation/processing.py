@@ -126,11 +126,20 @@ def partner_update_transaction(instance,date_mileston):
     if item_all_sell:
         for item in item_all_sell:
             if define_t_plus(item.date,today) == 0:
-                cash_t2 += item.total_value 
+                if account_partner.partner.method_interest == 'total_buy_value':
+                    cash_t2 += item.total_value 
+                else:
+                    cash_t2+= item.partner_net_total_value
             elif define_t_plus(item.date, today) == 1:
-                cash_t1+= item.total_value 
+                if account_partner.partner.method_interest == 'total_buy_value':
+                    cash_t1 += item.total_value 
+                else:
+                    cash_t1+= item.partner_net_total_value
             else:
-                cash_t0 += item.total_value 
+                if account_partner.partner.method_interest == 'total_buy_value':
+                    cash_t0 += item.total_value 
+                else:
+                    cash_t0+= item.partner_net_total_value
         account_partner.cash_t2 = cash_t2
         account_partner.cash_t1 = cash_t1
         account_partner.cash_t0 = cash_t0
@@ -818,7 +827,7 @@ def atternoon_check():
     if port_partner:
         for item in port_partner:
             partner = item.account.partner
-            buy_today = Transaction.objects.filter(account = item.account,partner =partner,position ='buy',date = datetime.now().date(),stock__stock = item.stock)
+            buy_today = Transaction.objects.filter(account = item.account.account,partner =partner,position ='buy',date = datetime.now().date(),stock__stock = item.stock)
             qty_buy_today = sum(item.qty for item in buy_today )
             item.on_hold += item.receiving_t1
             item.receiving_t1 = item.receiving_t2  - qty_buy_today
@@ -905,12 +914,66 @@ def check_dividend():
     for i in dividend_today:
         i.save()
 
-
-
-def setle_milestone_account(account ):
+def setle_milestone_account_partner(account_partner):
     status = False
-    if account.market_value == 0  and account.total_temporarily_interest !=0:
+    if account_partner.market_value == 0:
         status = True
+        date=datetime.now().date()
+        partner =account_partner.partner
+        ratio_interest_fee = partner.ratio_interest_fee
+        total_date_interest =partner.total_date_interest
+        if account_partner.cash_t1 !=0 and account_partner.cash_t2 !=0:
+            number_interest_t1 = define_date_receive_cash(date,1)[1]
+            number_interest_t2 = define_date_receive_cash(date,2)[1]
+            amount1 = ratio_interest_fee *(account_partner.advance_cash_balance)*number_interest_t1 /total_date_interest
+            amount2 = ratio_interest_fee *(account_partner.advance_cash_balance + account_partner.cash_t1)*(number_interest_t2-number_interest_t1) /total_date_interest
+            amount =amount1+amount2
+    
+        elif account_partner.cash_t1 !=0 and account_partner.cash_t2 ==0:
+            number_interest = define_date_receive_cash(date,1)[1]
+            amount =ratio_interest_fee *(account_partner.advance_cash_balance)*number_interest /total_date_interest
+        elif account_partner.cash_t1 ==0 and account_partner.cash_t2 !=0:
+            number_interest = define_date_receive_cash(date,2)[1]
+            amount = ratio_interest_fee *(account_partner.advance_cash_balance)*number_interest /total_date_interest  
+        else:
+            print('Vẫn còn âm tiền, cần giải pháp đòi nọ')
+            amount = 0
+            
+        if  amount <0 :
+            description = f"TK {account_partner.pk} tính phí ứng tiền bán tất toán cho {number_interest} ngày"
+            ExpenseStatementPartner.objects.create(
+                    account_partner=account_partner,
+                    date=date,
+                    type = 'advance_fee',
+                    amount = amount,
+                    description = description,
+                    advance_cash_balance = account_partner.advance_cash_balance
+                    )
+        withdraw_cash = BankCashTransfer.objects.create(
+                source='TCB-Ha',
+                partner = account_partner.partner,
+                account=account_partner,
+                amount= account_partner.nav,
+                type='trade_transfer',
+                date=date,
+                description=f"Lệnh nạp tiền tự dộng từ tất toán tiểu khoản {account_partner}",
+            )
+        cash_in = BankCashTransfer.objects.create(
+                source='TCB-Ha',
+                partner = account_partner.partner,
+                amount= -account_partner.nav,
+                type='trade_transfer',
+                date=date,
+                description=f"Lệnh nạp tiền tự dộng từ tất toán tiểu khoản {account_partner}",
+            )
+        
+        account_partner.delete()
+
+    return  status
+
+def setle_milestone_account(account):
+    status = False
+    if account.market_value == 0  and account.total_temporarily_interest !=0:  
         date=datetime.now().date()
         if account.cash_t1 !=0 and account.cash_t2 !=0:
             number_interest_t1 = define_date_receive_cash(date,1)[1]
@@ -959,7 +1022,7 @@ def setle_milestone_account(account ):
             advance_fee_paid = account.total_temporarily_advance_fee,
             closed_pl    = account.total_temporarily_pl   )
         
-        
+        # reset thong so account
         account.cash_t0 = 0
         account.cash_t1 = 0
         account.cash_t2 = 0
@@ -974,6 +1037,10 @@ def setle_milestone_account(account ):
         account.total_temporarily_advance_fee =0
         account.total_temporarily_pl = 0
         account.save()
+        status = True
+        account_partner = Account.objects.filter(account=account)
+        for item in account_partner:
+            setle_milestone_account_partner(item)
     return  status
 
 def old_add_list_interest(account, list_data, cash_t0, total_buy_value, date_interest):
