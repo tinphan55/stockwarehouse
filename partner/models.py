@@ -104,6 +104,7 @@ class AccountPartner (models.Model):
         self.total_advance_fee = self.total_temporarily_advance_fee + self.total_advance_fee_paid
         if self.partner.method_interest == 'total_buy_value':
             self.cash_balance = self.net_cash_flow + self.net_trading_value  + self.total_temporarily_interest + self.total_temporarily_advance_fee
+        
         elif self.partner.method_interest =='dept':
             self.cash_balance = self.net_cash_flow + self.net_trading_value 
             self.interest_cash_balance =self.cash_balance
@@ -272,4 +273,5 @@ def save_field_account_partner(sender, instance, **kwargs):
             account_partner.net_cash_flow +=  amount
             
         account_partner.save()
+    elif instance.type == 'trade_transfer' and instance.partner and instance.account is None:
         real_stock_account_when_update_cash(instance.partner)
