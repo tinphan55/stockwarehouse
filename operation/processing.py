@@ -11,11 +11,9 @@ def real_stock_account_when_update_transaction(partner):
         # Lấy tất cả các tài khoản của đối tác
         all_account = AccountPartner.objects.filter(partner=partner)
         # Tính toán các giá trị tài khoản thực sự
-        total_pl_closed = sum(item.total_pl + item.total_loan_interest +item.total_advance_fee  for item in all_account if item.nav==0)
         cash_balance_open_account = sum(item.cash_balance  for item in all_account)
         market_value = sum(item.market_value for item in all_account)
         # Cập nhật các trường trong tài khoản RealStockAccount
-        real_stock.total_pl_closed = total_pl_closed
         real_stock.cash_balance_open_account = cash_balance_open_account
         real_stock.market_value = market_value
         real_stock.save()
@@ -606,13 +604,17 @@ def save_field_account_1(sender, instance, **kwargs):
         else:
             account.net_cash_flow +=  instance.amount
             #tạo lệnh lệnh tiền tk bank tư động
+            if instance.amount >0:
+                description=f"Lệnh nạp tiền tự động từ KH {instance.account}"
+            else:
+                description=f"Lệnh rút tiền tự động từ KH {instance.account}"
             bank_cash_transfer = BankCashTransfer.objects.create(
                 source='TCB-Ha',
                 account=instance.account,
                 amount=instance.amount,
                 type='trade_transfer',
                 date=instance.date,
-                description=f"Lệnh nạp tiền tự dộng từ TK {instance.account}",
+                description=description,
                 customer_cash_id = instance.pk
             )
         
@@ -633,9 +635,7 @@ def save_field_account_1(sender, instance, **kwargs):
             update_account_transaction( account, transaction_items,date_mileston)
             # sửa accout_partner
             if instance.partner and instance.total_value != instance.previous_total_value:
-                partner_update_transaction(instance,date_mileston)
-                # update realstock từ account partner
-                real_stock_account_when_update_transaction(instance.partner)            
+                partner_update_transaction(instance,date_mileston)         
             # sửa hoa hồng cp
             if account.cpd:
                 account_all = Account.objects.all()
@@ -737,7 +737,9 @@ def save_field_account_4(sender, instance, **kwargs):
         account.total_advance_fee_paid = sum(item.advance_fee_paid for item in item_milestone)
         account.save()
 
-
+@receiver([post_save, post_delete], sender=AccountPartner)
+def save_field_account_5(sender, instance, **kwargs):
+    real_stock_account_when_update_transaction(instance.partner)
 
 #chạy 1 phút 1 lần
 def update_market_price_for_port():
@@ -1000,6 +1002,7 @@ def setle_milestone_account_partner(account_partner):
         account_partner.total_temporarily_interest = 0
         account_partner.total_temporarily_advance_fee =0
         account_partner.total_temporarily_pl = 0
+        account_partner.milestone_date_lated = date
         account_partner.save()
         
         

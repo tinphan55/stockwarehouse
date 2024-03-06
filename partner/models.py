@@ -63,13 +63,9 @@ class AccountPartner (models.Model):
     total_pl = models.FloatField(default=0,verbose_name= 'Tổng lời lỗ')
     total_closed_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ đã chốt')
     total_temporarily_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ tạm tính')
-    credit_limit = models.FloatField(default=get_credit_limit_default, verbose_name='Hạn mức mua')
-    # credit_limit = models.FloatField(default=1000000000, verbose_name='Hạn mức mua')
     milestone_date_lated = models.DateTimeField(null =True, blank =True, verbose_name = 'Ngày tất toán gần nhất')
     advance_cash_balance= models.FloatField(default=0,verbose_name= 'Số dư tiền tính phí ứng')
-    maintenance_margin_ratio = models.FloatField(default=15,verbose_name= 'Tỷ lệ gọi kí quỹ')
-    force_sell_margin_ratio= models.FloatField(default=13,verbose_name= 'Tỷ lệ giải chấp')
-
+    
     class Meta:
          verbose_name = 'Tài khoản đối tác'
          verbose_name_plural = 'Tài khoản đối tác'
@@ -104,10 +100,8 @@ class AccountPartner (models.Model):
         self.total_advance_fee = self.total_temporarily_advance_fee + self.total_advance_fee_paid
         if self.partner.method_interest == 'total_buy_value':
             self.cash_balance = self.net_cash_flow + self.net_trading_value  + self.total_temporarily_interest + self.total_temporarily_advance_fee
-        
         elif self.partner.method_interest =='dept':
             self.cash_balance = self.net_cash_flow + self.net_trading_value 
-            self.interest_cash_balance =self.cash_balance
         stock_mapping = {obj.stock: obj.initial_margin_requirement for obj in StockListMargin.objects.all()}
         port = PortfolioPartner.objects.filter(account=self.pk, sum_stock__gt=0)
         sum_initial_margin = 0
@@ -271,8 +265,6 @@ def save_field_account_partner(sender, instance, **kwargs):
             account_partner.net_cash_flow = sum(-item.amount for item in cash_items)
         else:
             account_partner.net_cash_flow +=  amount
-            
         account_partner.save()
-        real_stock_account_when_update_cash(instance.partner)
     elif instance.type == 'trade_transfer' and instance.partner and instance.account is None:
         real_stock_account_when_update_cash(instance.partner)

@@ -101,7 +101,7 @@ class BankCashTransferForm(forms.ModelForm):
 
 class BankCashTransferAdmin(admin.ModelAdmin):
     form  = BankCashTransferForm
-    list_display = ['source','date','account','partner', 'formatted_amount','description', 'user_created', 'created_at']
+    list_display = ['source','type','date','account','partner', 'formatted_amount','description', 'user_created', 'created_at']
     readonly_fields = ['user_created', 'user_modified','customer_cash_id']
     search_fields = ['account__id','account__name']
     list_filter = ['type','account__name']
@@ -178,7 +178,7 @@ class RealStockAccountForm(forms.ModelForm):
 
 
 class RealStockAccountAdmin(admin.ModelAdmin):
-    list_display = ['partner','description','formatted_total_pl_closed', 'formatted_cash_balance_open_account', 'formatted_net_cash_flow_operation', 'formatted_cash_balance', 'formatted_market_value', 'formatted_nav']
+    list_display = ['partner','description', 'formatted_cash_balance_open_account', 'formatted_net_cash_flow_operation', 'formatted_cash_balance', 'formatted_market_value', 'formatted_nav']
 
     def formatted_amount(self, obj):
         return '{:,.0f}'.format(obj.amount)
@@ -188,9 +188,6 @@ class RealStockAccountAdmin(admin.ModelAdmin):
     
     formatted_cash_balance_open_account.short_description = 'Tổng dư tiền TK đang GD'
 
-    def formatted_total_pl_closed(self, obj):
-        return '{:,.0f}'.format(obj.total_pl_closed)
-    formatted_total_pl_closed.short_description = 'Tổng lời/lỗ TK đã tất toán'
 
     def formatted_net_cash_flow_operation(self, obj):
         return '{:,.0f}'.format(obj.net_cash_flow_operation)
