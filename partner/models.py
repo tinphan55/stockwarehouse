@@ -273,5 +273,6 @@ def save_field_account_partner(sender, instance, **kwargs):
             account_partner.net_cash_flow +=  amount
             
         account_partner.save()
+        real_stock_account_when_update_cash(instance.partner)
     elif instance.type == 'trade_transfer' and instance.partner and instance.account is None:
         real_stock_account_when_update_cash(instance.partner)
