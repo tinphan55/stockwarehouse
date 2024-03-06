@@ -11,7 +11,7 @@ def real_stock_account_when_update_transaction(partner):
         # Lấy tất cả các tài khoản của đối tác
         all_account = AccountPartner.objects.filter(partner=partner)
         # Tính toán các giá trị tài khoản thực sự
-        total_pl_closed = sum(item.total_pl for item in all_account if item.nav==0)
+        total_pl_closed = sum(item.total_pl + item.total_loan_interest +item.total_advance_fee  for item in all_account if item.nav==0)
         cash_balance_open_account = sum(item.cash_balance  for item in all_account)
         market_value = sum(item.market_value for item in all_account)
         # Cập nhật các trường trong tài khoản RealStockAccount
