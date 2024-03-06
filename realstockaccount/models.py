@@ -108,14 +108,13 @@ class RealStockAccount(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
     description = models.TextField(max_length=255, blank=True,verbose_name = 'Mô tả')
-    total_interest_fee = models.FloatField(default=0,verbose_name= 'Tổng phí')
-    net_cash_flow_trading= models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng giao dịch')
+    total_pl_closed = models.FloatField(default=0,verbose_name= 'Tổng lời/lỗ đã chốt')
     net_cash_flow_operation = models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng bổ sung vốn')
-    net_cash_flow = models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng')
-    net_trading_value= models.FloatField(default=0,verbose_name= 'Giao dịch ròng')
+    cash_balance_open_account= models.FloatField(default=0,verbose_name= 'Số dư tiền TK đang mở')
     cash_balance  = models.FloatField(default=0,verbose_name= 'Số dư tiền')
     market_value = models.FloatField(default=0,verbose_name= 'Giá trị thị trường')
     nav = models.FloatField(default=0,verbose_name= 'Tài sản ròng')
+    deposit_fee = models.FloatField(default=0,verbose_name= 'Phí lưu kí')
     
     class Meta:
          verbose_name = 'Tài khoản chứng khoán'
@@ -125,8 +124,7 @@ class RealStockAccount(models.Model):
         return str(self.partner) 
     
     def save(self, *args, **kwargs):
-        self.net_cash_flow = self.net_cash_flow_trading + self.net_cash_flow_operation
-        self.cash_balance = self.net_cash_flow + self.net_trading_value  + self.total_interest_fee
+        self.cash_balance = self.total_pl_closed + self.net_cash_flow_operation +self.cash_balance_open_account+ self.deposit_fee
         self.nav = self.market_value + self.cash_balance
         super(RealStockAccount, self).save(*args, **kwargs)
 
