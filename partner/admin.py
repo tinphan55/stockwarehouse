@@ -33,7 +33,8 @@ class AccountPartnerAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
     # Chỉ trả về các bản ghi có nav khác 0
-        return super().get_queryset(request).filter(nav__ne=0)
+        return super().get_queryset(request).exclude(nav=0)
+
     
     def has_add_permission(self, request):
         # Return False to disable the "Add" button
