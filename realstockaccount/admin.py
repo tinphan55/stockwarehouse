@@ -168,3 +168,5 @@ class RealTradingPowerAdmin(admin.ModelAdmin):
 
 
 admin.site.register(RealTradingPower,RealTradingPowerAdmin)
+
+admin.site.register(RealStockAccount)

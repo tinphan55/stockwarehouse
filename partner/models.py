@@ -228,7 +228,14 @@ class CashTransferPartner(BankCashTransfer):
     def __str__(self):
         return str(self.account)
     
-
+def real_stock_account_when_update_cash(partner):
+    # Tìm hoặc tạo một tài khoản RealStockAccount cho đối tác
+    real_stock, created = RealStockAccount.objects.get_or_create(partner=partner)
+    # Lấy tất cả các giao dịch tiền mặt không có tài khoản liên kết
+    all_cash = BankCashTransfer.objects.filter(partner=partner, account=None)
+    # Tính toán các giá trị tài khoản thực sự
+    net_cash_flow_operation = -sum(item.amount for item in all_cash)
+    real_stock.save()
     
 
     
@@ -252,8 +259,8 @@ def save_field_account_partner(sender, instance, **kwargs):
         if not created:
             cash_items = BankCashTransfer.objects.filter(account=account,partner =instance.partner,created_at__gt = date_mileston)
             account_partner.net_cash_flow = sum(-item.amount for item in cash_items)
-
         else:
             account_partner.net_cash_flow +=  amount
             
         account_partner.save()
+        real_stock_account_when_update_cash(instance.partner)
