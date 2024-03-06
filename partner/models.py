@@ -230,13 +230,14 @@ class CashTransferPartner(BankCashTransfer):
     
 def real_stock_account_when_update_cash(partner):
     # Tìm hoặc tạo một tài khoản RealStockAccount cho đối tác
-    real_stock, created = RealStockAccount.objects.get_or_create(partner=partner)
-    # Lấy tất cả các giao dịch tiền mặt không có tài khoản liên kết
-    all_cash = BankCashTransfer.objects.filter(partner=partner, account=None)
-    # Tính toán các giá trị tài khoản thực sự
-    net_cash_flow_operation = -sum(item.amount for item in all_cash)
-    real_stock.save()
-    
+    if partner.method_interest == 'dept':
+        real_stock, created = RealStockAccount.objects.get_or_create(partner=partner)
+        # Lấy tất cả các giao dịch tiền mặt không có tài khoản liên kết
+        all_cash = BankCashTransfer.objects.filter(partner=partner, account=None)
+        # Tính toán các giá trị tài khoản thực sự
+        net_cash_flow_operation = -sum(item.amount for item in all_cash)
+        real_stock.save()
+        
 
     
 @receiver([post_save, post_delete], sender=BankCashTransfer)

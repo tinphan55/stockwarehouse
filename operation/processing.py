@@ -6,21 +6,22 @@ from django.db.models import Sum, Case, When, F, Value, IntegerField
 
 def real_stock_account_when_update_transaction(partner):
     # Tìm hoặc tạo một tài khoản RealStockAccount cho đối tác
-    real_stock, created = RealStockAccount.objects.get_or_create(partner=partner)
-    # Lấy tất cả các tài khoản của đối tác
-    all_account = AccountPartner.objects.filter(partner=partner)
-    # Tính toán các giá trị tài khoản thực sự
-    total_interest_fee = sum(item.total_loan_interest + item.total_advance_fee for item in all_account)
-    net_cash_flow_trading = sum(item.net_cash_flow for item in all_account)
-    net_trading_value = sum(item.net_trading_value for item in all_account)
-    market_value = sum(item.market_value for item in all_account)
-    # Cập nhật các trường trong tài khoản RealStockAccount
-    real_stock.net_cash_flow_trading = net_cash_flow_trading
-    real_stock.net_trading_value = net_trading_value
-    real_stock.market_value = market_value
-    real_stock.total_interest_fee = total_interest_fee
-    # Lưu tài khoản RealStockAccount
-    real_stock.save()
+    if partner.method_interest == 'dept':
+        real_stock, created = RealStockAccount.objects.get_or_create(partner=partner)
+        # Lấy tất cả các tài khoản của đối tác
+        all_account = AccountPartner.objects.filter(partner=partner)
+        # Tính toán các giá trị tài khoản thực sự
+        total_interest_fee = sum(item.total_loan_interest + item.total_advance_fee for item in all_account)
+        net_cash_flow_trading = sum(item.net_cash_flow for item in all_account)
+        net_trading_value = sum(item.net_trading_value for item in all_account)
+        market_value = sum(item.market_value for item in all_account)
+        # Cập nhật các trường trong tài khoản RealStockAccount
+        real_stock.net_cash_flow_trading = net_cash_flow_trading
+        real_stock.net_trading_value = net_trading_value
+        real_stock.market_value = market_value
+        real_stock.total_interest_fee = total_interest_fee
+        # Lưu tài khoản RealStockAccount
+        real_stock.save()
 
 
 
