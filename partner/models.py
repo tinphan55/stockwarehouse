@@ -244,7 +244,7 @@ def real_stock_account_when_update_cash(partner):
         # Lấy tất cả các giao dịch tiền mặt không có tài khoản liên kết
         all_cash = BankCashTransfer.objects.filter(partner=partner, account=None)
         # Tính toán các giá trị tài khoản thực sự
-        net_cash_flow_operation = -sum(item.amount for item in all_cash)
+        real_stock.net_cash_flow_operation = -sum(item.amount for item in all_cash)
         real_stock.save()
         
 
