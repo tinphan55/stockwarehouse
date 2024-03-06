@@ -337,9 +337,13 @@
                                                 <p class="mb-0 fw-normal"
                                                     id="status">
                                                     {% if account.status %}
-                                                    {{ account.status }}
+                                                        {{ account.status }}
                                                     {% else %}
-                                                    Bình thường
+                                                        {% if account.price_force_sell %}
+                                                            Bình thường, giá giải chấp {{ account.price_force_sell }}
+                                                        {% else %}
+                                                            Bình thường
+                                                        {% endif %}
                                                     {% endif %}
                                                 </p>
                                             </td>

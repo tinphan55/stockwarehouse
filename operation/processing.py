@@ -3,6 +3,27 @@ from partner.models import *
 from django.db.models import Sum, Case, When, F, Value, IntegerField
 
 
+
+def real_stock_account_when_update_transaction(partner):
+    # Tìm hoặc tạo một tài khoản RealStockAccount cho đối tác
+    real_stock, created = RealStockAccount.objects.get_or_create(partner=partner)
+    # Lấy tất cả các tài khoản của đối tác
+    all_account = AccountPartner.objects.filter(partner=partner)
+    # Tính toán các giá trị tài khoản thực sự
+    total_interest_fee = sum(item.total_loan_interest + item.total_advance_fee for item in all_account)
+    net_cash_flow_trading = sum(item.net_cash_flow for item in all_account)
+    net_trading_value = sum(item.net_trading_value for item in all_account)
+    market_value = sum(item.market_value for item in all_account)
+    # Cập nhật các trường trong tài khoản RealStockAccount
+    real_stock.net_cash_flow_trading = net_cash_flow_trading
+    real_stock.net_trading_value = net_trading_value
+    real_stock.market_value = market_value
+    real_stock.total_interest_fee = total_interest_fee
+    # Lưu tài khoản RealStockAccount
+    real_stock.save()
+
+
+
 def update_or_created_expense_partner(instance,account, description_type):
     description_tax = f"Thuế với lệnh bán {instance.stock} số lượng {instance.qty} và giá {instance.price } "
     description_transaction = f"PGD phát sinh với lệnh {instance.position} {instance.stock} số lượng {instance.qty} và giá {instance.price } "
@@ -584,8 +605,6 @@ def save_field_account_1(sender, instance, **kwargs):
 
         else:
             account.net_cash_flow +=  instance.amount
-        
-            
             #tạo lệnh lệnh tiền tk bank tư động
             bank_cash_transfer = BankCashTransfer.objects.create(
                 source='TCB-Ha',
@@ -615,6 +634,8 @@ def save_field_account_1(sender, instance, **kwargs):
             # sửa accout_partner
             if instance.partner and instance.total_value != instance.previous_total_value:
                 partner_update_transaction(instance,date_mileston)
+                # update realstock từ account partner
+                real_stock_account_when_update_transaction(instance.partner)            
             # sửa hoa hồng cp
             if account.cpd:
                 account_all = Account.objects.all()
@@ -1213,6 +1234,7 @@ def old_setle_milestone_account(account ):
         account.total_temporarily_pl = 0
         account.save()
     return  status
+
 
 
     

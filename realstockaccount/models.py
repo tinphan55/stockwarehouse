@@ -3,7 +3,8 @@ from django.utils import timezone
 from django.contrib.auth.models import User, Group
 from operation.models import Account, PartnerInfo
 from realstockaccount import *
-
+from django.db.models.signals import post_save, post_delete,pre_save, pre_delete
+from django.dispatch import receiver
 
 # Create your models here.
 class RealStockAccountCashTransfer(models.Model):
@@ -102,3 +103,30 @@ class RealTradingPower(models.Model):
     def __str__(self):
         return str(self.date) 
     
+class RealStockAccount(models.Model):
+    partner = models.ForeignKey(PartnerInfo,on_delete=models.CASCADE,verbose_name="Đối tác")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
+    modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
+    description = models.TextField(max_length=255, blank=True,verbose_name = 'Mô tả')
+    total_interest_fee = models.FloatField(default=0,verbose_name= 'Tổng phí')
+    net_cash_flow_trading= models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng giao dịch')
+    net_cash_flow_operation = models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng bổ sung vốn')
+    net_cash_flow = models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng')
+    net_trading_value= models.FloatField(default=0,verbose_name= 'Giao dịch ròng')
+    cash_balance  = models.FloatField(default=0,verbose_name= 'Số dư tiền')
+    market_value = models.FloatField(default=0,verbose_name= 'Giá trị thị trường')
+    nav = models.FloatField(default=0,verbose_name= 'Tài sản ròng')
+    
+    class Meta:
+         verbose_name = 'Tài khoản chứng khoán'
+         verbose_name_plural = 'Tài khoản chứng khoán'
+    
+    def __str__(self):
+        return str(self.partner) 
+    
+    def save(self, *args, **kwargs):
+        self.net_cash_flow = self.net_cash_flow_trading + self.net_cash_flow_operation
+        self.cash_balance = self.net_cash_flow + self.net_trading_value  + self.total_interest_fee
+        self.nav = self.market_value + self.cash_balance
+        super(RealStockAccount, self).save(*args, **kwargs)
+

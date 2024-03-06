@@ -194,6 +194,17 @@ class Account (models.Model):
         return self.name
     
     @property
+    # giá áp dụng cho port chỉ có 1 mã
+    def price_force_sell(self):
+        port = Portfolio.objects.filter(account_id = self.pk, sum_stock__gt=0)
+        if len(port)==1:
+            item = port[0]
+            price_force_sell = round(-self.cash_balance/( 0.87* item.sum_stock),0)
+            return '{:,.0f}'.format(abs(price_force_sell))
+        else:
+            return None
+
+    @property
     def status(self):
         check = self.margin_ratio
         value_force = round((maintenance_margin_ratio - self.margin_ratio)*self.market_value/100,0)
