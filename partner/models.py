@@ -79,27 +79,34 @@ class AccountPartner (models.Model):
     
     @property
     def status(self):
-        check = self.margin_ratio
-        value_force = round((maintenance_margin_ratio - self.margin_ratio)*self.market_value/100,0)
-        value_force_str = '{:,.0f}'.format(value_force)
-        status = ""
-        port = PortfolioPartner.objects.filter(account_id = self.pk, sum_stock__gt=0).first()
-        if port:
-            price_force_sell = round(-self.cash_balance/( 0.87* port.sum_stock),0)
-            if abs(self.cash_balance) >1000 and value_force !=0:
-                if check <= maintenance_margin_ratio and check >force_sell_margin_ratio:
-                    status = f"CẢNH BÁO, số âm {value_force_str}, giá bán {port.stock}: {'{:,.0f}'.format(price_force_sell)}"
-                elif check <= force_sell_margin_ratio:
-                    status = f"GIẢI CHẤP {'{:,.0f}'.format(value_force*5)}, giá bán {port.stock}:\n{'{:,.0f}'.format(price_force_sell)}"
+        if self.partner.method_interest == 'total_buy_value':
+            check = self.margin_ratio
+            value_force = round((maintenance_margin_ratio - self.margin_ratio)*self.market_value/100,0)
+            value_force_str = '{:,.0f}'.format(value_force)
+            status = ""
+            port = PortfolioPartner.objects.filter(account_id = self.pk, sum_stock__gt=0).first()
+            if port:
+                price_force_sell = round(-self.cash_balance/( 0.87* port.sum_stock),0)
+                if abs(self.cash_balance) >1000 and value_force !=0:
+                    if check <= maintenance_margin_ratio and check >force_sell_margin_ratio:
+                        status = f"CẢNH BÁO, số âm {value_force_str}, giá bán {port.stock}: {'{:,.0f}'.format(price_force_sell)}"
+                    elif check <= force_sell_margin_ratio:
+                        status = f"GIẢI CHẤP {'{:,.0f}'.format(value_force*5)}, giá bán {port.stock}:\n{'{:,.0f}'.format(price_force_sell)}"
 
                 return status
+        else:
+            return None
    
     
     def save(self, *args, **kwargs):
     # Your first save method code
         self.total_loan_interest = self.total_temporarily_interest + self.total_interest_paid
         self.total_advance_fee = self.total_temporarily_advance_fee + self.total_advance_fee_paid
-        self.cash_balance = self.net_cash_flow + self.net_trading_value  + self.total_temporarily_interest + self.total_temporarily_advance_fee
+        if self.partner.method_interest == 'total_buy_value':
+            self.cash_balance = self.net_cash_flow + self.net_trading_value  + self.total_temporarily_interest + self.total_temporarily_advance_fee
+        elif self.partner.method_interest =='dept':
+            self.cash_balance = self.net_cash_flow + self.net_trading_value 
+            self.interest_cash_balance =self.cash_balance
         stock_mapping = {obj.stock: obj.initial_margin_requirement for obj in StockListMargin.objects.all()}
         port = PortfolioPartner.objects.filter(account=self.pk, sum_stock__gt=0)
         sum_initial_margin = 0
@@ -113,8 +120,9 @@ class AccountPartner (models.Model):
         self.market_value = market_value
         self.nav = self.market_value + self.cash_balance
         self.initial_margin_requirement = sum_initial_margin
-        self.excess_equity = self.nav - self.initial_margin_requirement
         self.advance_cash_balance = (self.cash_t1 + self.cash_t2)*-1
+        self.excess_equity = self.nav - self.initial_margin_requirement
+        
         if self.market_value != 0:
             self.margin_ratio = abs(round((self.nav / self.market_value) * 100, 2))
         self.total_temporarily_pl= self.nav - self.net_cash_flow

@@ -76,7 +76,8 @@ def created_transaction_partner(instance,account,date_mileston):
         #điều chỉnh account partner
         account_partner.net_trading_value += instance.partner_net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
         account_partner.total_buy_trading_value+= instance.partner_net_total_value #Dẫn tới thay đổi interest_cash_balance 
-        account_partner.interest_cash_balance += instance.partner_net_total_value
+        if partner.method_interest == 'total_buy_value':    
+            account_partner.interest_cash_balance += instance.partner_net_total_value
         try:
             portfolio_partner = PortfolioPartner.objects.get(stock=instance.stock, account=account_partner)
             # Nếu đối tượng tồn tại, điều chỉnh danh mục
@@ -99,10 +100,10 @@ def created_transaction_partner(instance,account,date_mileston):
         account_partner.net_trading_value += instance.partner_net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
         if partner.method_interest == 'total_buy_value':
             account_partner.cash_t2 += instance.total_value #Dẫn tới thay đổi cash_t0 trong tương lai và thay đổi interest_cash_balance 
+            account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston, end_date,account_partner)
         else:
             account_partner.cash_t2 += instance.partner_net_total_value
         end_date = datetime.now().date()
-        account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston, end_date,account_partner)
         update_or_created_expense_partner(instance,account_partner, description_type='tax')
     
     account_partner.save()
@@ -546,32 +547,33 @@ def delete_and_recreate_account_expense(account):
 
 
 def delete_and_recreate_account_partner_expense(account, account_partner):
-    expense_list= create_expense_list_when_edit_transaction(account,account_partner)
-    expense_interest = ExpenseStatementPartner.objects.filter(account = account_partner, type ='interest')
-    expense_advance_fee = ExpenseStatementPartner.objects.filter(account = account_partner, type ='advance_fee')
-    expense_interest.delete()
-    expense_advance_fee.delete()
-    for item in expense_list:
-        if item['interest'] != 0:
-            formatted_interest_cash_balance = "{:,.0f}".format(item['interest_cash_balance'])
-            ExpenseStatementPartner.objects.create(
-                description=f"Số dư tính lãi {formatted_interest_cash_balance}",
-                type='interest',
-                account=account_partner,
-                date=item['date'],
-                amount=item['interest'],
-                interest_cash_balance=item['interest_cash_balance']
-        )
-        if item['advance_fee'] != 0:
-            formatted_advance_cash_balance = "{:,.0f}".format(item['advance_cash_balance'])
-            ExpenseStatementPartner.objects.create(
-                description=f"Số dư tính lãi {formatted_advance_cash_balance}",
-                type='advance_fee',
-                account=account_partner,
-                date=item['date'],
-                amount=item['advance_fee'],
-                advance_cash_balance=item['advance_cash_balance']
-        )
+    if account_partner.partner.method_interest == 'total_buy_value':
+        expense_list= create_expense_list_when_edit_transaction(account,account_partner)
+        expense_interest = ExpenseStatementPartner.objects.filter(account = account_partner, type ='interest')
+        expense_advance_fee = ExpenseStatementPartner.objects.filter(account = account_partner, type ='advance_fee')
+        expense_interest.delete()
+        expense_advance_fee.delete()
+        for item in expense_list:
+            if item['interest'] != 0:
+                formatted_interest_cash_balance = "{:,.0f}".format(item['interest_cash_balance'])
+                ExpenseStatementPartner.objects.create(
+                    description=f"Số dư tính lãi {formatted_interest_cash_balance}",
+                    type='interest',
+                    account=account_partner,
+                    date=item['date'],
+                    amount=item['interest'],
+                    interest_cash_balance=item['interest_cash_balance']
+            )
+            if item['advance_fee'] != 0:
+                formatted_advance_cash_balance = "{:,.0f}".format(item['advance_cash_balance'])
+                ExpenseStatementPartner.objects.create(
+                    description=f"Số dư tính lãi {formatted_advance_cash_balance}",
+                    type='advance_fee',
+                    account=account_partner,
+                    date=item['date'],
+                    amount=item['advance_fee'],
+                    advance_cash_balance=item['advance_cash_balance']
+            )
     return 
 
 
@@ -778,7 +780,7 @@ def calculate_interest():
                     interest_cash_balance = instance.interest_cash_balance
                     )
     # kt tài khoản con, tính lãi
-    account_interest = AccountPartner.objects.filter(interest_cash_balance__lt=0)
+    account_interest = AccountPartner.objects.filter(interest_cash_balance__lt=0,partner__method_interest = 'total_buy_value')
     if account_interest:
         for instance in account_interest:
             formatted_interest_cash_balance = "{:,.0f}".format(instance.interest_cash_balance)
@@ -793,7 +795,7 @@ def calculate_interest():
                     interest_cash_balance = instance.interest_cash_balance
                     )
     # KT tài khoảng tổng chạy tính lãi phí ứng
-    account_advance_fee = AccountPartner.objects.filter(advance_cash_balance__lt=0)
+    account_interest = AccountPartner.objects.filter(advance_cash_balance__lt=0,partner__method_interest = 'total_buy_value')
     if account_advance_fee:
         for instance in account_advance_fee:
             formatted_advance_cash_balance= "{:,.0f}".format(instance.advance_cash_balance)
