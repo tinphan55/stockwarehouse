@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib import admin
 from realstockaccount.models import *
-
+from django.contrib.admin.views.main import ChangeList
+from django.db.models import Count, Sum
 # Register your models here.
 
 
@@ -21,77 +22,7 @@ class RealCashTransferForm(forms.ModelForm):
             raise forms.ValidationError("Bạn không có quyền sửa đổi các bản ghi được tạo ngày trước đó.")
 
         return cleaned_data
-    
-class RealStockAccountCashTransferAdmin(admin.ModelAdmin):
-    form  = RealCashTransferForm
-    list_display = ['date','account', 'formatted_amount','description', 'user_created', 'user_modified', 'created_at']
-    readonly_fields = ['user_created', 'user_modified']
-    search_fields = ['account__id','account__name']
 
-    def formatted_amount(self, obj):
-        return '{:,.0f}'.format(obj.amount)
-
-    formatted_amount.short_description = 'Số tiền'
-    
-    def save_model(self, request, obj, form, change):
-        if not change:  # Kiểm tra xem có phải là tạo mới hay không
-            obj.user_created = request.user
-         # Check if the record is being edited
-        else:
-            obj.user_modified = request.user.username
-                
-        super().save_model(request, obj, form, change)
-
-        
-
-
-admin.site.register(RealStockAccountCashTransfer,RealStockAccountCashTransferAdmin)
-
-
-
-
-class RealBankCashTransferForm(forms.ModelForm):
-    class Meta:
-        model = RealBankCashTransfer
-        fields = '__all__'
-
-    # def clean(self):
-    #     cleaned_data = super().clean()
-    #     change = self.instance.pk is not None  # Kiểm tra xem có phải là sửa đổi không
-
-    #     today = timezone.now().date()
-
-    #     # Kiểm tra quyền
-    #     if change and self.instance.created_at.date() != today:
-    #         raise forms.ValidationError("Bạn không có quyền sửa đổi các bản ghi được tạo ngày trước đó.")
-
-    #     return cleaned_data
-    
-class RealBankCashTransferAdmin(admin.ModelAdmin):
-    form  = RealBankCashTransferForm
-    list_display = ['account','date', 'formatted_amount','description', 'user_created', 'user_modified', 'created_at']
-    readonly_fields = ['user_created', 'user_modified',]
-    search_fields = ['account__id','account__name']
-    list_filter = ['type',]
-
-    def formatted_amount(self, obj):
-        return '{:,.0f}'.format(obj.amount)
-
-    formatted_amount.short_description = 'Số tiền'
-    
-    def save_model(self, request, obj, form, change):
-        if not change:  # Kiểm tra xem có phải là tạo mới hay không
-            obj.user_created = request.user
-         # Check if the record is being edited
-        else:
-            obj.user_modified = request.user.username
-                
-        super().save_model(request, obj, form, change)
-
-        
-
-
-admin.site.register(RealBankCashTransfer,RealBankCashTransferAdmin)
 
 
 class BankCashTransferForm(forms.ModelForm):
@@ -99,13 +30,28 @@ class BankCashTransferForm(forms.ModelForm):
         model = BankCashTransfer
         fields = '__all__'
 
+
+
+class MyChangeList(ChangeList):
+    def get_total_amount(self, queryset):
+        total_amount = queryset.aggregate(total_amount=Sum('amount'))['total_amount'] or 0
+        return "{:,.0f}".format(total_amount,0)
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        self.total_amount = self.get_total_amount(queryset)
+        return queryset
+
 class BankCashTransferAdmin(admin.ModelAdmin):
     form  = BankCashTransferForm
     list_display = ['source','type','date','account','partner', 'formatted_amount','description', 'user_created', 'created_at']
     readonly_fields = ['user_created', 'user_modified','customer_cash_id']
     search_fields = ['account__id','account__name']
     list_filter = ['type','account__name']
-
+    
+    def get_changelist(self, request):
+        return MyChangeList
+    
     def formatted_amount(self, obj):
         return '{:,.0f}'.format(obj.amount)
 

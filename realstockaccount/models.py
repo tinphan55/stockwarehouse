@@ -73,8 +73,8 @@ class BankCashTransfer(models.Model):
                              verbose_name="Người chỉnh sửa")
     customer_cash_id = models.FloatField(null =True, blank = True,verbose_name = 'Mã nạp tiền KH')
     class Meta:
-         verbose_name = 'New -Sao kê tiền TKNH'
-         verbose_name_plural =  'New -Sao kê tiền TKNH'
+         verbose_name = 'Sao kê tiền TKNH'
+         verbose_name_plural =  'Sao kê tiền TKNH'
     
     def __str__(self):
         return f"{self.type}_{self.amount}" 
