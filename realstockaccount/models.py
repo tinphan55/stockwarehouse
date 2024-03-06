@@ -114,8 +114,13 @@ class RealStockAccount(models.Model):
     cash_balance  = models.FloatField(default=0,verbose_name= 'Số dư tiền')
     market_value = models.FloatField(default=0,verbose_name= 'Giá trị thị trường')
     nav = models.FloatField(default=0,verbose_name= 'Tài sản ròng')
-    deposit_fee = models.FloatField(default=0,verbose_name= 'Phí lưu kí')
-    
+    total_deposit_fee= models.FloatField(default=0,verbose_name= 'Tổng lãi vay')
+    total_deposit_fee_paid= models.FloatField(default=0,verbose_name= 'Tổng lãi vay đã trả')
+    total_temporarily_deposit_fee =models.FloatField(default=0,verbose_name= 'Tổng lãi vay tạm tính')
+    total_loan_interest= models.FloatField(default=0,verbose_name= 'Tổng lãi vay')
+    total_interest_paid= models.FloatField(default=0,verbose_name= 'Tổng lãi vay đã trả')
+    total_temporarily_interest =models.FloatField(default=0,verbose_name= 'Tổng lãi vay tạm tính')
+    interest_cash_balance = models.FloatField(default=0,verbose_name= 'Số dư tính lãi')
     class Meta:
          verbose_name = 'Tài khoản chứng khoán'
          verbose_name_plural = 'Tài khoản chứng khoán'
@@ -124,7 +129,7 @@ class RealStockAccount(models.Model):
         return str(self.partner) 
     
     def save(self, *args, **kwargs):
-        self.cash_balance = self.total_pl_closed + self.net_cash_flow_operation +self.cash_balance_open_account+ self.deposit_fee
+        self.cash_balance = self.total_pl_closed + self.net_cash_flow_operation +self.cash_balance_open_account+ self.total_deposit_fee +self.total_loan_interest
         self.nav = self.market_value + self.cash_balance
         super(RealStockAccount, self).save(*args, **kwargs)
 
