@@ -120,7 +120,7 @@ class RealStockAccount(models.Model):
     total_loan_interest= models.FloatField(default=0,verbose_name= 'Tổng lãi vay')
     total_interest_paid= models.FloatField(default=0,verbose_name= 'Tổng lãi vay đã trả')
     total_temporarily_interest =models.FloatField(default=0,verbose_name= 'Tổng lãi vay tạm tính')
-    
+    interest_cash_balance = models.FloatField(default=0,verbose_name= 'Số dư tính lãi')
     class Meta:
          verbose_name = 'Tài khoản chứng khoán'
          verbose_name_plural = 'Tài khoản chứng khoán'
