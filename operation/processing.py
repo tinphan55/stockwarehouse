@@ -145,6 +145,7 @@ def partner_update_transaction(instance,date_mileston):
         for item in item_all_sell:
             if define_t_plus(item.date,today) == 0:
                 if account_partner.partner.method_interest == 'total_buy_value':
+                    account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston, end_date,account_partner)
                     cash_t2 += item.total_value 
                 else:
                     cash_t2+= item.partner_net_total_value
@@ -164,7 +165,7 @@ def partner_update_transaction(instance,date_mileston):
     account_partner.total_buy_trading_value = total_value_buy
     account_partner.net_trading_value = sum(item.partner_net_total_value for item in transaction)
     end_date = datetime.now().date()
-    account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston, end_date,account_partner)
+    
 
     account_partner.save()
 
@@ -714,14 +715,15 @@ def save_field_account_2(sender, instance, **kwargs):
 @receiver([post_save, post_delete], sender=ExpenseStatementPartner)
 def save_field_account_3(sender, instance, **kwargs):
     account_partner = instance.account
-    account = account_partner.account
-    milestone_account = AccountMilestone.objects.filter(account = account).order_by('-created_at').first()
-    if milestone_account:
-        date_mileston = milestone_account.created_at
-    else:
-        date_mileston = account.created_at
-    account_expense_period = ExpenseStatementPartner.objects.filter(account= account_partner , created_at__gt = date_mileston)
-    sum_temporarily_account_when_edit_expense(instance, account_partner ,account_expense_period)
+    if account_partner.partner.method_interest == 'total_buy_value':
+        account = account_partner.account
+        lated_mileston = account_partner.milestone_date_lated
+        if lated_mileston:
+            date_mileston = lated_mileston
+        else:
+            date_mileston = account.created_at
+        account_expense_period = ExpenseStatementPartner.objects.filter(account= account_partner , created_at__gt = date_mileston)
+        sum_temporarily_account_when_edit_expense(instance, account_partner ,account_expense_period)
                         
 
     
@@ -979,16 +981,17 @@ def setle_milestone_account_partner(account_partner):
                 amount= account_partner.nav,
                 type='trade_transfer',
                 date=date,
-                description=f"Lệnh rút tiền tự dộng từ tất toán tiểu khoản {account_partner}",
+                description=f"Lệnh chuyển tiền tự động từ tiểu khoản {account_partner} đến TKNH khi tất toán ",
             )
-        cash_in = BankCashTransfer.objects.create(
-                source='TCB-Ha',
-                partner = account_partner.partner,
-                amount= -account_partner.nav,
-                type='trade_transfer',
-                date=date,
-                description=f"Lệnh nạp tiền tự dộng từ tất toán tiểu khoản {account_partner}",
-            )
+        if partner.name == 'MCF':
+            cash_in = BankCashTransfer.objects.create(
+                    source='TCB-Ha',
+                    partner = account_partner.partner,
+                    amount= -account_partner.nav,
+                    type='trade_transfer',
+                    date=date,
+                    description=f"Lệnh chuyển tiền từ TKNH đến TKCK của MCF khi tất toán" ,
+                )
         # reset thong so account_partner
         account_partner.cash_t0 = 0
         account_partner.cash_t1 = 0

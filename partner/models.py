@@ -253,9 +253,9 @@ def save_field_account_partner(sender, instance, **kwargs):
         partner=instance.partner,
         defaults={'description': ''}  # Trường 'description' không bị cập nhật
             )
-        milestone_account = AccountMilestone.objects.filter(account =account).order_by('-created_at').first()
-        if milestone_account:
-            date_mileston = milestone_account.created_at
+        lated_mileston = account_partner.milestone_date_lated
+        if lated_mileston:
+            date_mileston = lated_mileston
         else:
             date_mileston = account.created_at
         amount =instance.amount*-1

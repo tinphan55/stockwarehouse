@@ -60,7 +60,7 @@ class BankCashTransfer(models.Model):
         ('TCB-Vinh','TCB-Vĩnh')
     ]
     source = models.CharField(max_length=20,choices=SOURCE_CHOICES,default = 'TCB',verbose_name = 'Nguồn' )
-    account = models.ForeignKey(Account,on_delete=models.CASCADE,null=True, blank= True,verbose_name="Tài khoản")
+    account = models.ForeignKey(Account,on_delete=models.CASCADE,null=True, blank= True,verbose_name="Khách hàng")
     partner = models.ForeignKey(PartnerInfo,on_delete=models.CASCADE,null=True, blank= True,verbose_name="Đối tác")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
