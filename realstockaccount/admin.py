@@ -178,32 +178,25 @@ class RealStockAccountForm(forms.ModelForm):
 
 
 class RealStockAccountAdmin(admin.ModelAdmin):
-    list_display = ['partner', 'formatted_total_interest_fee', 'formatted_net_cash_flow_trading', 'formatted_net_cash_flow_operation', 'formatted_net_cash_flow', 'formatted_net_trading_value', 'formatted_cash_balance', 'formatted_market_value', 'formatted_nav']
+    list_display = ['partner','description','formatted_total_pl_closed', 'formatted_cash_balance_open_account', 'formatted_net_cash_flow_operation', 'formatted_cash_balance', 'formatted_market_value', 'formatted_nav']
 
     def formatted_amount(self, obj):
         return '{:,.0f}'.format(obj.amount)
     
-    def formatted_total_interest_fee(self, obj):
-        return '{:,.0f}'.format(obj.total_interest_fee)
+    def formatted_cash_balance_open_account(self, obj):
+        return '{:,.0f}'.format(obj.cash_balance_open_account)
     
-    formatted_total_interest_fee.short_description = 'Tổng phí'
+    formatted_cash_balance_open_account.short_description = 'Tổng dư tiền TK đang GD'
 
-    def formatted_net_cash_flow_trading(self, obj):
-        return '{:,.0f}'.format(obj.net_cash_flow_trading)
-    formatted_net_cash_flow_trading.short_description = 'Nạp rút tiền ròng giao dịch'
+    def formatted_total_pl_closed(self, obj):
+        return '{:,.0f}'.format(obj.total_pl_closed)
+    formatted_total_pl_closed.short_description = 'Tổng lời/lỗ TK đã tất toán'
 
     def formatted_net_cash_flow_operation(self, obj):
         return '{:,.0f}'.format(obj.net_cash_flow_operation)
     formatted_net_cash_flow_operation.short_description = 'Nạp rút tiền ròng bổ sung vốn'
 
-    def formatted_net_cash_flow(self, obj):
-        return '{:,.0f}'.format(obj.net_cash_flow)
-    formatted_net_cash_flow.short_description = 'Nạp rút tiền ròng'
-
-    def formatted_net_trading_value(self, obj):
-        return '{:,.0f}'.format(obj.net_trading_value)
-    formatted_net_trading_value.short_description = 'Giao dịch ròng'
-
+   
     def formatted_cash_balance(self, obj):
         return '{:,.0f}'.format(obj.cash_balance)
     formatted_cash_balance.short_description = 'Số dư tiền'
