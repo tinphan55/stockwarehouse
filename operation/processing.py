@@ -701,7 +701,7 @@ def sum_temporarily_account_when_edit_expense(instance,account,account_expense_p
     account.save()
 
 @receiver([post_save, post_delete], sender=ExpenseStatement)
-def save_field_account_2(sender, instance, **kwargs):
+def save_field_account_2_1(sender, instance, **kwargs):
     account = instance.account
     milestone_account = AccountMilestone.objects.filter(account = account).order_by('-created_at').first()
     if milestone_account:
@@ -713,7 +713,7 @@ def save_field_account_2(sender, instance, **kwargs):
     sum_temporarily_account_when_edit_expense(instance,account,account_expense_period)
 
 @receiver([post_save, post_delete], sender=ExpenseStatementPartner)
-def save_field_account_3(sender, instance, **kwargs):
+def save_field_account_2_2(sender, instance, **kwargs):
     account_partner = instance.account
     if account_partner.partner.method_interest == 'total_buy_value':
         account = account_partner.account
@@ -724,7 +724,40 @@ def save_field_account_3(sender, instance, **kwargs):
             date_mileston = account.created_at
         account_expense_period = ExpenseStatementPartner.objects.filter(account= account_partner , created_at__gt = date_mileston)
         sum_temporarily_account_when_edit_expense(instance, account_partner ,account_expense_period)
-                        
+
+@receiver([post_save, post_delete], sender=ExpenseStatementRealStockAccount)
+def save_field_account_2_3(sender, instance, **kwargs):
+    account_real_stock = instance.account
+    current_date = datetime.now()
+    year = current_date.year
+    month = current_date.month
+    if current_date.day == 1:  # Nếu là ngày đầu tháng
+        if month == 1:  # Nếu là tháng 1
+            start_date = datetime(year - 1, 12, 1)
+        else:
+            start_date = datetime(year, month - 1, 1)
+        end_date = datetime(year, month, 1) - timedelta(days=1)
+    else:
+        start_date = datetime(year, month, 1)
+        end_date = datetime(year, month + 1, 1) - timedelta(days=1)
+
+    # Tính tổng amount của các record trong khoảng thời gian có type là 'loan_interest' hoặc 'deposit_interest'
+    total_interest_amount = ExpenseStatementRealStockAccount.objects.filter(
+        account=account_real_stock,
+        date__range=(start_date, end_date),
+        type__in=['loan_interest', 'deposit_interest']
+    ).aggregate(Sum('amount'))['amount__sum'] or 0.0
+    
+    account_real_stock.total_temporarily_interest = total_interest_amount
+
+    if current_date.day == 1: 
+        account_real_stock.total_interest_paid += account_real_stock.total_temporarily_interest
+        account_real_stock.total_temporarily_interest = 0
+    
+    account_real_stock.save()
+        
+        
+                                               
 
     
         
@@ -818,13 +851,14 @@ def calculate_interest():
     for instance in real_stock_account_interest:
             formatted_cash_balance= "{:,.0f}".format(instance.cash_balance)
             if instance.cash_balance >0:
-                amount =instance.partner.ratio_interest_fee  * instance.cash_balance/instance.partner.total_date_interest
-                type = 'deposit_interest'
-                description = f"Số dư tính lãi vay {formatted_cash_balance}"
-            else:
                 amount = 0.0001  * instance.cash_balance/instance.partner.total_date_interest
-                type = 'loan_interest'
+                type = 'deposit_interest'
                 description = f"Số dư tính lãi tiền gửi không kì hạn {formatted_cash_balance}"
+                
+            else:
+                type = 'loan_interest'
+                amount =instance.partner.ratio_interest_fee  * instance.cash_balance/instance.partner.total_date_interest
+                description = f"Số dư tính lãi vay {formatted_cash_balance}"
             ExpenseStatementRealStockAccount.objects.create(
                     account=instance,
                     date=datetime.now().date()-timedelta(days=1),
