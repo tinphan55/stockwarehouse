@@ -181,4 +181,5 @@ class ExpenseStatementRealStockAccountAdmin(admin.ModelAdmin):
         if not change:  # Kiểm tra xem có phải là tạo mới hay không
             obj.user_created = request.user
             super().save_model(request, obj, form, change)
-        
+
+admin.site.register(ExpenseStatementRealStockAccount,ExpenseStatementRealStockAccountAdmin)
