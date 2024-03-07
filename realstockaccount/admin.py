@@ -157,7 +157,7 @@ admin.site.register(RealStockAccount, RealStockAccountAdmin)
 class ExpenseStatementRealStockAccountAdmin(admin.ModelAdmin):
     model = ExpenseStatementRealStockAccount
     list_display = ['account','get_partner', 'date', 'type', 'formatted_amount', 'description']
-    list_filter = ['account__account__name','account__partner__name','type']
+    # list_filter = ['account__account__name','account__partner__name','type']
 
     def get_partner(self,obj):
         return obj.account.partner
