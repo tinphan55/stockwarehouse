@@ -134,3 +134,26 @@ class RealStockAccount(models.Model):
         self.nav = self.market_value + self.cash_balance
         super(RealStockAccount, self).save(*args, **kwargs)
 
+class ExpenseStatementRealStockAccount(models.Model):
+    POSITION_CHOICES = [
+        ('loan_interest', 'Lãi vay'),
+        ('transaction_fee', 'Phí giao dịch'),
+        ('tax', 'Thuế bán'),
+        ('deposit_fee', 'Phí lưu kí'),
+        ('deposit_interest', 'Lãi tiền gửi'),
+
+    ]
+    account = models.ForeignKey(RealStockAccount,on_delete=models.CASCADE,  verbose_name = 'Tài khoản CK' )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
+    modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
+    date =models.DateField( verbose_name = 'Ngày' )
+    type =models.CharField(max_length=50, choices=POSITION_CHOICES, null=False, blank=False,verbose_name = 'Loại phí')
+    amount = models.FloatField (verbose_name='Số tiền')
+    description = models.CharField(max_length=100,null=True, blank=True, verbose_name='Diễn giải')
+    interest_cash_balance = models.FloatField (null = True,blank =True ,verbose_name='Số dư tiền tính lãi')
+    total_qty_stock= models.FloatField (null = True,blank =True ,verbose_name='Tổng số cổ phiếu lưu kí')
+
+    class Meta:
+         verbose_name = 'Bảng kê chi phí TKCK'
+         verbose_name_plural = 'Bảng kê chi phí TKCK'
+    

@@ -784,11 +784,11 @@ def calculate_interest():
                     interest_cash_balance = instance.interest_cash_balance
                     )
     # kt tài khoản con, tính lãi
-    account_interest = AccountPartner.objects.filter(interest_cash_balance__lt=0,partner__method_interest = 'total_buy_value')
-    if account_interest:
-        for instance in account_interest:
+    account_partner_interest = AccountPartner.objects.filter(interest_cash_balance__lt=0,partner__method_interest = 'total_buy_value')
+    if account_partner_interest:
+        for instance in account_partner_interest:
             formatted_interest_cash_balance = "{:,.0f}".format(instance.interest_cash_balance)
-            interest_amount = instance.partner.ratio_interest_fee * instance.interest_cash_balance/360
+            interest_amount = instance.partner.ratio_interest_fee * instance.interest_cash_balance/instance.partner.total_date_interest
             if abs(interest_amount)>10:
                 ExpenseStatementPartner.objects.create(
                     account=instance,
@@ -799,11 +799,11 @@ def calculate_interest():
                     interest_cash_balance = instance.interest_cash_balance
                     )
     # KT tài khoảng tổng chạy tính lãi phí ứng
-    account_interest = AccountPartner.objects.filter(advance_cash_balance__lt=0,partner__method_interest = 'total_buy_value')
-    if account_advance_fee:
-        for instance in account_advance_fee:
+    account_partner_advance = AccountPartner.objects.filter(advance_cash_balance__lt=0,partner__method_interest = 'total_buy_value')
+    if account_partner_advance:
+        for instance in account_partner_advance:
             formatted_advance_cash_balance= "{:,.0f}".format(instance.advance_cash_balance)
-            advance_amount =instance.partner.ratio_advance_fee * instance.advance_cash_balance/360
+            advance_amount =instance.partner.ratio_advance_fee * instance.advance_cash_balance/instance.partner.total_date_interest
             if abs(advance_amount)>10:
                 ExpenseStatementPartner.objects.create(
                     account=instance,
@@ -813,7 +813,26 @@ def calculate_interest():
                     description=f"Số dư tính phí ứng {formatted_advance_cash_balance}",
                     interest_cash_balance = instance.interest_cash_balance
                     )
-
+    #kt tài khoản ck thực chạy tính lãi
+    real_stock_account_interest = RealStockAccount.objects.filter(partner__method_interest = 'dept')
+    for instance in real_stock_account_interest:
+            formatted_cash_balance= "{:,.0f}".format(instance.cash_balance)
+            if instance.cash_balance >0:
+                amount =instance.partner.ratio_interest_fee  * instance.cash_balance/instance.partner.total_date_interest
+                type = 'deposit_interest'
+                description = f"Số dư tính lãi vay {formatted_cash_balance}"
+            else:
+                amount = 0.0001  * instance.cash_balance/instance.partner.total_date_interest
+                type = 'loan_interest'
+                description = f"Số dư tính lãi tiền gửi không kì hạn {formatted_cash_balance}"
+            ExpenseStatementRealStockAccount.objects.create(
+                    account=instance,
+                    date=datetime.now().date()-timedelta(days=1),
+                    type = type,
+                    amount = amount,
+                    description=description,
+                    interest_cash_balance = instance.cash_balance
+                    )
 
 def pay_money_back():
     # chạy tk tổng

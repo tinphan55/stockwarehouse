@@ -142,6 +142,9 @@ class PartnerInfo(models.Model):
 
     def __str__(self):
         return str(self.name) + '_' + str(self.pk)
+    
+
+# nếu sau này 1 partner có nhiều đối tác, cần chuyển models realstockaccount qua đây, gán trasaction và banktransfer với realstockacount thay vì trực tiếp partner
 # Create your models here.
 class Account (models.Model):
     name = models.CharField(max_length=50, unique=True, verbose_name= 'Tên Khách hàng')
