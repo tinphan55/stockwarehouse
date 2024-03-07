@@ -153,3 +153,32 @@ class RealStockAccountAdmin(admin.ModelAdmin):
     formatted_nav.short_description = 'Tài sản ròng'
 
 admin.site.register(RealStockAccount, RealStockAccountAdmin)
+
+class ExpenseStatementRealStockAccountAdmin(admin.ModelAdmin):
+    model = ExpenseStatementRealStockAccount
+    list_display = ['account','get_partner', 'date', 'type', 'formatted_amount', 'description']
+    list_filter = ['account__account__name','account__partner__name','type']
+
+    def get_partner(self,obj):
+        return obj.account.partner
+    get_partner.short_description = 'Đối tác'
+    
+    def has_add_permission(self, request):
+        # Return False to disable the "Add" button
+        return False
+    def formatted_amount(self, obj):
+        return '{:,.0f}'.format(obj.amount)
+    
+
+    formatted_amount.short_description = 'Số tiền'
+
+    def has_add_permission(self, request):
+        # Return False to disable the "Add" button
+        return False
+
+    def save_model(self, request, obj, form, change):
+        # Lưu người dùng đang đăng nhập vào trường user nếu đang tạo cart mới
+        if not change:  # Kiểm tra xem có phải là tạo mới hay không
+            obj.user_created = request.user
+            super().save_model(request, obj, form, change)
+        
