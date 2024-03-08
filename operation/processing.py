@@ -742,16 +742,24 @@ def save_field_account_2_3(sender, instance, **kwargs):
         end_date = datetime(year, month + 1, 1) - timedelta(days=1)
 
     # Tính tổng amount của các record trong khoảng thời gian có type là 'loan_interest' hoặc 'deposit_interest'
-    total_interest_amount = ExpenseStatementRealStockAccount.objects.filter(
+    total_loan_interest_amount = ExpenseStatementRealStockAccount.objects.filter(
         account=account_real_stock,
         date__range=(start_date, end_date),
-        type__in=['loan_interest', 'deposit_interest']
+        type__in=['loan_interest']
     ).aggregate(Sum('amount'))['amount__sum'] or 0.0
-    
-    account_real_stock.total_temporarily_interest = total_interest_amount
+
+     
+    account_real_stock.total_temporarily_interest = total_loan_interest_amount
 
     if current_date.day == 1: 
-        account_real_stock.total_interest_paid += account_real_stock.total_temporarily_interest
+        total_deposit_interest_amount = ExpenseStatementRealStockAccount.objects.filter(
+        account=account_real_stock,
+        date__range=(start_date, end_date),
+        type__in=['deposit_interest']
+            ).aggregate(Sum('amount'))['amount__sum'] or 0.0
+        
+        account_real_stock.total_deposit_interest_paid =total_deposit_interest_amount
+        account_real_stock.total_interest_paid += account_real_stock.total_temporarily_interest 
         account_real_stock.total_temporarily_interest = 0
     
     account_real_stock.save()
