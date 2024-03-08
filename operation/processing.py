@@ -95,13 +95,13 @@ def created_transaction_partner(instance,account,date_mileston):
         portfolio_partner.on_hold = portfolio_partner.on_hold -instance.qty
         portfolio_partner.save()
         #điều chỉnh account_partner
+        end_date = datetime.now().date()
         account_partner.net_trading_value += instance.partner_net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
         if partner.method_interest == 'total_buy_value':
             account_partner.cash_t2 += instance.total_value #Dẫn tới thay đổi cash_t0 trong tương lai và thay đổi interest_cash_balance 
             account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston, end_date,account_partner)
         else:
             account_partner.cash_t2 += instance.partner_net_total_value
-        end_date = datetime.now().date()
         update_or_created_expense_partner(instance,account_partner, description_type='tax')
     
     account_partner.save()
