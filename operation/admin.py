@@ -259,7 +259,7 @@ class TransactionForm(forms.ModelForm):
 class TransactionAdmin(admin.ModelAdmin):
     form = TransactionForm
     list_display_links = ['stock',]
-    list_display = ['account','date','stock','position','formatted_price','formatted_qty','formatted_net_total_value','created_at','user_created','formatted_transaction_fee','formatted_tax']
+    list_display = ['account','partner','date','stock','position','formatted_price','formatted_qty','formatted_net_total_value','created_at','user_created','formatted_transaction_fee','formatted_tax']
     readonly_fields = ['user_created','user_modified','transaction_fee','tax','total_value','net_total_value']
     fieldsets = (
         ('Thông tin giao dịch', {
