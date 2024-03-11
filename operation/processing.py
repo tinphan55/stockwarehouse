@@ -839,7 +839,7 @@ def calculate_interest():
                     description=f"Số dư tính lãi {formatted_interest_cash_balance}",
                     interest_cash_balance = instance.interest_cash_balance
                     )
-    # KT tài khoảng tổng chạy tính lãi phí ứng
+    # KT tài khoảng con chạy tính lãi phí ứng
     account_partner_advance = AccountPartner.objects.filter(advance_cash_balance__lt=0,partner__method_interest = 'total_buy_value')
     if account_partner_advance:
         for instance in account_partner_advance:
