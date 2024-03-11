@@ -4,6 +4,7 @@ from django import forms
 from django.utils.html import format_html
 from django.core.exceptions import PermissionDenied
 from django.contrib import messages
+from operation.processing import setle_milestone_account_partner
 # Register your models here.
 
 class PartnerInfoProxyAdmin(admin.ModelAdmin):
@@ -30,6 +31,23 @@ class AccountPartnerAdmin(admin.ModelAdmin):
                        ]
     search_fields = ['id','account__name']
     list_filter = ['partner__name','account__name',]
+
+    actions = ['select_account_partner_settlement']
+
+    def select_account_partner_settlement(self, request, queryset):
+         # Check if the user is a superuser
+        if request.user.is_superuser:
+            # Custom action to reset selected accounts
+            for account_partner in queryset:
+                status = setle_milestone_account_partner(account_partner)
+                if status == True:
+                    self.message_user(request, f'Đã tất toán {queryset.count()} tài khoản đã chọn.')
+                else:
+                    self.message_user(request, 'Tài khoản chưa đủ điều kiện để thanh toán lãi', level='ERROR')
+        else:
+            self.message_user(request, 'Bạn chưa có quyền thực hiện nghiệp vụ này.', level='ERROR')
+
+    select_account_partner_settlement.short_description = 'Tất toán tài khoản đối tác'
     
     def get_queryset(self, request):
     # Chỉ trả về các bản ghi có nav khác 0

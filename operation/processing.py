@@ -96,13 +96,13 @@ def created_transaction_partner(instance,account,date_mileston):
         portfolio_partner.on_hold = portfolio_partner.on_hold -instance.qty
         portfolio_partner.save()
         #điều chỉnh account_partner
+        end_date = datetime.now().date()
         account_partner.net_trading_value += instance.partner_net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
         if partner.method_interest == 'total_buy_value':
             account_partner.cash_t2 += instance.total_value #Dẫn tới thay đổi cash_t0 trong tương lai và thay đổi interest_cash_balance 
             account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston, end_date,account_partner)
         else:
             account_partner.cash_t2 += instance.partner_net_total_value
-        end_date = datetime.now().date()
         update_or_created_expense_partner(instance,account_partner, description_type='tax')
     
     account_partner.save()
@@ -751,16 +751,24 @@ def save_field_account_2_3(sender, instance, **kwargs):
         end_date = datetime(year, month + 1, 1) - timedelta(days=1)
 
     # Tính tổng amount của các record trong khoảng thời gian có type là 'loan_interest' hoặc 'deposit_interest'
-    total_interest_amount = ExpenseStatementRealStockAccount.objects.filter(
+    total_loan_interest_amount = ExpenseStatementRealStockAccount.objects.filter(
         account=account_real_stock,
         date__range=(start_date, end_date),
-        type__in=['loan_interest', 'deposit_interest']
+        type__in=['loan_interest']
     ).aggregate(Sum('amount'))['amount__sum'] or 0.0
-    
-    account_real_stock.total_temporarily_interest = total_interest_amount
+
+     
+    account_real_stock.total_temporarily_interest = total_loan_interest_amount
 
     if current_date.day == 1: 
-        account_real_stock.total_interest_paid += account_real_stock.total_temporarily_interest
+        total_deposit_interest_amount = ExpenseStatementRealStockAccount.objects.filter(
+        account=account_real_stock,
+        date__range=(start_date, end_date),
+        type__in=['deposit_interest']
+            ).aggregate(Sum('amount'))['amount__sum'] or 0.0
+        
+        account_real_stock.total_deposit_interest_paid =total_deposit_interest_amount
+        account_real_stock.total_interest_paid += account_real_stock.total_temporarily_interest 
         account_real_stock.total_temporarily_interest = 0
     
     account_real_stock.save()
@@ -840,7 +848,7 @@ def calculate_interest():
                     description=f"Số dư tính lãi {formatted_interest_cash_balance}",
                     interest_cash_balance = instance.interest_cash_balance
                     )
-    # KT tài khoảng tổng chạy tính lãi phí ứng
+    # KT tài khoảng con chạy tính lãi phí ứng
     account_partner_advance = AccountPartner.objects.filter(advance_cash_balance__lt=0,partner__method_interest = 'total_buy_value')
     if account_partner_advance:
         for instance in account_partner_advance:
