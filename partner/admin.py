@@ -8,7 +8,7 @@ from django.contrib import messages
 
 class PartnerInfoProxyAdmin(admin.ModelAdmin):
     models = PartnerInfoProxy
-    list_display = ['name', 'ratio_trading_fee','ratio_interest_fee','ratio_advance_fee','ratio_advance_fee','method_interest','total_date_interest']
+    list_display = ['name', 'ratio_trading_fee','ratio_interest_fee','ratio_advance_fee','method_interest','total_date_interest']
    
 admin.site.register(PartnerInfoProxy,PartnerInfoProxyAdmin)
 

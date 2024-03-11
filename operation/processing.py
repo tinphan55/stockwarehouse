@@ -26,7 +26,8 @@ def update_or_created_expense_partner(instance,account, description_type):
     if description_type=='tax':
         amount = instance.tax*-1
     elif description_type== 'transaction_fee':
-        amount = instance.transaction_fee*-1
+        ratio_transaction_fee = instance.partner.ratio_trading_fee
+        amount = -instance.total_value*ratio_transaction_fee
 
     ExpenseStatementPartner.objects.update_or_create(
         transaction_id=instance.pk,
@@ -226,13 +227,21 @@ def define_date_receive_cash(initial_date, t_plus):
 @receiver (post_save, sender=StockPriceFilter)
 def update_market_price_port(sender, instance, created, **kwargs):
     port = Portfolio.objects.filter(sum_stock__gt=0, stock =instance.ticker)
+    port_partner = PortfolioPartner.objects.filter(sum_stock__gt=0, stock =instance.ticker)
     if port:
         for item in port:
             new_price = instance.close*1000
             item.market_price = new_price*item.sum_stock
             item.save()
-            account = Account.objects.get(pk =item.account.pk)
+            account = item.account
             account.save()
+    if port_partner:
+        for item in port_partner:
+            new_price = instance.close*1000
+            item.market_price = new_price*item.sum_stock
+            item.save()
+            account_partner = item.account
+            account_partner.save()
 
 
             

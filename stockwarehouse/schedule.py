@@ -50,7 +50,8 @@ def get_info_stock_price_filter():
     not_trading_dates = DateNotTrading.objects.filter(date=today)
     if not not_trading_dates:
         try:
-            stock_list = Portfolio.objects.values_list('stock', flat=True).distinct()
+            # Get distinct stocks where sum_stock > 0
+            stock_list = Portfolio.objects.filter(sum_stock__gt=0).values_list('stock', flat=True).distinct()
             stock_list_python = list(stock_list)
             get_list_stock_price(stock_list_python)
         except Exception as e_afternoon_check:
