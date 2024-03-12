@@ -2,6 +2,7 @@ from django.db import models
 from datetime import datetime, timedelta
 from operation.models import *
 from cpd.models import *
+from partner.models import *
 from realstockaccount.models import *
 
 # Create your models here.
@@ -72,7 +73,7 @@ def define_period_date(month_year,start_date =20, end_date=20):
     start_period = start_period.replace(day=start_date)
     return start_period, end_period
 
-def run_sale_report(month_year_str,start_date, end_date):
+def old_run_sale_report(month_year_str,start_date, end_date):
     cp_item = ClientPartnerCommission.objects.filter(month_year_str = month_year_str)
     report = SaleReportParam.objects.get(month_year_str = month_year_str)
     period_date = define_period_date(report.month_year,start_date, end_date)
@@ -93,7 +94,7 @@ def run_sale_report(month_year_str,start_date, end_date):
     salary = -sum(item.amount for item in bank_expense if item.type =='salary')
     other_expense= -sum(item.amount for item in bank_expense if item.type =='other_expense')
     total_deposit_interest_revenue = report.total_deposit_interest_revenue
-    return {
+    value = {
         'month_year' : report,
         'transaction_fee_revenue': transaction_fee_revenue,
         'interest_revenue': interest_revenue,
@@ -111,9 +112,92 @@ def run_sale_report(month_year_str,start_date, end_date):
 
     }
     
-def update_or_create_sale_report(month_year_str,start_date, end_date):
-    value = run_sale_report(month_year_str,start_date, end_date)
-    # Kiểm tra và gán giá trị mặc định 0 cho các trường nếu không tồn tại trong value
+    default_values = {
+        'transaction_fee_revenue': 0,
+        'interest_revenue': 0,
+        'advance_fee_revenue': 0,
+        'brokerage_commission': 0,
+        'transaction_costs_paid_securities': 0,
+        'interest_costs_paid_securities': 0,
+        'depository_fees': 0,
+        'interest_paid_partners': 0,
+        'advance_paid_partners': 0,
+        'cp_commission': 0,
+        'salary':0,
+        'other_expense':0,
+        'total_deposit_interest_revenue':0,
+    }
+    for key in default_values:
+        value[key] = value.get(key, default_values[key])
+
+    try:
+        # Kiểm tra xem có bản ghi SaleReport nào có month_year_str tương ứng không
+        sale_report = SaleReport.objects.get(month_year_str=month_year_str)
+        
+        # Cập nhật các trường của bản ghi đã tồn tại với giá trị từ value
+        for key, val in value.items():
+            setattr(sale_report, key, val)
+        
+        # Lưu lại các thay đổi
+        sale_report.save()
+        
+        return sale_report
+    except SaleReport.DoesNotExist:
+        # Nếu không có bản ghi nào thỏa mãn điều kiện, tạo mới SaleReport với value
+        sale_report = SaleReport(month_year_str=month_year_str, **value)
+        sale_report.save()
+        
+        return sale_report
+
+
+def run_sale_report(month_year_str,start_date, end_date):
+    cp_item = ClientPartnerCommission.objects.filter(month_year_str = month_year_str)
+    report = SaleReportParam.objects.get(month_year_str = month_year_str)
+    period_date = define_period_date(report.month_year,start_date, end_date)
+    transaction_item = Transaction.objects.filter(date__gt = period_date[0],date__lte = period_date[1])
+    expense = ExpenseStatement.objects.filter(date__gt = period_date[0],date__lte = period_date[1])
+    advance_fee_revenue = -sum(item.amount for item in expense if item.type == 'advance_fee')
+    interest_revenue = -sum(item.amount for item in expense if item.type == 'interest')
+    total_value = sum(item.total_value for item in transaction_item)
+    transaction_fee_revenue = total_value * get_transaction_fee_default()
+    #sửa lại tính chi phí vốn theo tk đối tác
+    transaction_item_partner = ExpenseStatementPartner.objects.filter(date__gt = period_date[0],date__lte = period_date[1])
+    transaction_costs_paid = -sum(item.amount for item in transaction_item_partner if item.type =='transaction_fee')
+    # transaction_costs_paid_securities = total_value *report.ratio_fee_transaction_securities
+    interest_paid_partners = -sum(item.amount for item in transaction_item_partner if item.type =='interest')
+    # interest_paid_partners = report.total_interest_fee_paid_partner
+    advance_paid_partners = -sum(item.amount for item in transaction_item_partner if item.type =='advance_fee')
+    # advance_paid_partners = report.total_addvance_fee_paid_partner
+    
+    expense_securities = ExpenseStatementRealStockAccount.objects.filter(date__gt = period_date[0],date__lte = period_date[1])
+    interest_costs_paid_securities = -sum(item.amount for item in expense_securities if item.type =='loan_interest')
+    depository_fees =  -sum(item.amount for item in expense_securities if item.type =='deposit_fee')
+    total_deposit_interest_revenue = sum(item.amount for item in expense_securities if item.type =='deposit_interest')
+    brokerage_commission = (total_value*report.ratio_fee_transaction_securities - total_value*0.0003)*report.ratio_commission_securities*(1-report.ratio_tax_broker)
+    cp_commission = sum(item.total_commission for item in cp_item)
+    
+    bank_expense = RealBankCashTransfer.objects.filter(date__gt = period_date[0],date__lte = period_date[1])
+    salary = -sum(item.amount for item in bank_expense if item.type =='salary')
+    other_expense= -sum(item.amount for item in bank_expense if item.type =='other_expense')
+    
+    value = {
+        'month_year' : report,
+        'transaction_fee_revenue': transaction_fee_revenue,
+        'interest_revenue': interest_revenue,
+        'advance_fee_revenue': advance_fee_revenue,
+        'brokerage_commission':brokerage_commission,
+        'transaction_costs_paid_securities': transaction_costs_paid,
+        'interest_costs_paid_securities': interest_costs_paid_securities,
+        'depository_fees': depository_fees,
+        'interest_paid_partners': interest_paid_partners,
+        'advance_paid_partners': advance_paid_partners,
+        'cp_commission': cp_commission,
+        'salary':salary,
+        'other_expense':other_expense,
+        'total_deposit_interest_revenue':total_deposit_interest_revenue,
+
+    }
+    
     default_values = {
         'transaction_fee_revenue': 0,
         'interest_revenue': 0,
@@ -153,4 +237,4 @@ def update_or_create_sale_report(month_year_str,start_date, end_date):
     
 @receiver([post_save, post_delete], sender=SaleReportParam)
 def auto_create_sale_report(sender, instance, **kwargs):
-    update_or_create_sale_report(instance.month_year_str,start_date=20, end_date=20)
+    run_sale_report(instance.month_year_str,start_date=20, end_date=20)
