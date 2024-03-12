@@ -1107,7 +1107,7 @@ def setle_milestone_account_partner(account_partner):
         account_partner.total_temporarily_interest = 0
         account_partner.total_temporarily_advance_fee =0
         account_partner.total_temporarily_pl = 0
-        account_partner.milestone_date_lated = date
+        account_partner.milestone_date_lated = datetime.now()
         account_partner.save()
         
         
