@@ -1043,7 +1043,7 @@ def check_dividend():
 
 def setle_milestone_account_partner(account_partner):
     status = False
-    if account_partner.market_value == 0 and  account_partner.total_temporarily_interest !=0:
+    if account_partner.market_value == 0:
         status = True
         date=datetime.now().date()
         partner =account_partner.partner
