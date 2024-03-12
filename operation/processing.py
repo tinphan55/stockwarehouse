@@ -20,23 +20,30 @@ def real_stock_account_when_update_transaction(partner):
 
 
 
-def update_or_created_expense_partner(instance,account, description_type):
-    description_tax = f"Thuế với lệnh bán {instance.stock} số lượng {instance.qty} và giá {instance.price } "
-    description_transaction = f"PGD phát sinh với lệnh {instance.position} {instance.stock} số lượng {instance.qty} và giá {instance.price } "
+def update_or_created_expense_partner(instance,account_partner, description_type):
     if description_type=='tax':
         amount = instance.tax*-1
+        description = f"Thuế với lệnh bán {instance.stock} số lượng {"{:,.0f}".format(instance.qty)} và giá {"{:,.0f}".format(instance.price)} "
     elif description_type== 'transaction_fee':
         ratio_transaction_fee = instance.partner.ratio_trading_fee
         amount = -instance.total_value*ratio_transaction_fee
-
+        description = f"PGD phát sinh với lệnh {instance.position} {instance.stock} số lượng {"{:,.0f}".format(instance.qty)} và giá {"{:,.0f}".format(instance.price) } "
+    elif description_type== 'advance_fee':
+        partner = instance.partner
+        ratio_interest_fee = partner.ratio_interest_fee
+        total_date_interest =partner.total_date_interest
+        number_interest = define_date_receive_cash(instance.date,2)[1]
+        amount = -ratio_interest_fee *instance.total_value*number_interest /total_date_interest  
+        description = f"TK {account_partner} tính phí ứng tiền bán cho {number_interest} ngày, số dư tính phí là {"{:,.0f}".format(instance.total_value)}"
+                
     ExpenseStatementPartner.objects.update_or_create(
         transaction_id=instance.pk,
         type=description_type,
         defaults={
-            'account': account,
+            'account': account_partner,
             'date': instance.date,
             'amount': amount,
-            'description': description_tax if description_type == 'tax' else description_transaction,
+            'description': description,
     
         }
     )
@@ -109,20 +116,26 @@ def created_transaction_partner(instance,account,date_mileston):
         else:
             account_partner.cash_t2 += instance.partner_net_total_value
         update_or_created_expense_partner(instance,account_partner, description_type='tax')
+        # tạo phí ứng
+        if partner.method_interest == 'total_buy_value':
+            update_or_created_expense_partner(instance,account_partner, description_type='advance_fee')
     
     account_partner.save()
 
 def partner_update_transaction(instance,date_mileston):
+    account_partner = AccountPartner.objects.get(account=instance.account, partner=instance.partner)
     if account_partner.milestone_date_lated:
         date_mileston_apply = account_partner.milestone_date_lated
     else:
         date_mileston_apply = date_mileston
-    account_partner = AccountPartner.objects.get(account=instance.account, partner=instance.partner)
     transaction = Transaction.objects.filter(account = instance.account,partner =instance.partner,created_at__gt = date_mileston_apply)
     # sửa chi phí
     update_or_created_expense_partner(instance,account_partner, description_type='transaction_fee')
     if instance.position == 'sell':
         update_or_created_expense_partner(instance,account_partner, description_type='tax')
+        # bổ sung phí ứng
+        if instance.partner.method_interest == 'total_buy_value':
+            update_or_created_expense_partner(instance,account_partner, description_type='advance_fee')
     # sửa danh mục
     portfolio_partner = PortfolioPartner.objects.filter(stock =instance.stock, account= account_partner).first()
     stock_transaction = transaction.filter(stock = instance.stock)
@@ -155,7 +168,7 @@ def partner_update_transaction(instance,date_mileston):
         for item in item_all_sell:
             if define_t_plus(item.date,today) == 0:
                 if account_partner.partner.method_interest == 'total_buy_value':
-                    account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston_apply, end_date,account_partner)
+                    account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston_apply,today,account_partner)
                     cash_t2 += item.total_value 
                 else:
                     cash_t2+= item.partner_net_total_value
@@ -368,16 +381,25 @@ def update_account_transaction(account, transaction_items,date_mileston):
 
 
 def update_or_created_expense_transaction(instance, description_type):
-    description_tax = f"Thuế với lệnh bán {instance.stock} số lượng {instance.qty} và giá {instance.price } "
-    description_transaction = f"PGD phát sinh với lệnh {instance.position} {instance.stock} số lượng {instance.qty} và giá {instance.price } "
+    if description_type=='tax':
+        amount = instance.tax*-1
+        description = f"Thuế với lệnh bán {instance.stock} số lượng {"{:,.0f}".format(instance.qty)} và giá {"{:,.0f}".format(instance.price) } "
+    elif description_type== 'transaction_fee':
+        amount = instance.transaction_fee*-1
+        description = f"PGD phát sinh với lệnh {instance.position} {instance.stock} số lượng {"{:,.0f}".format(instance.qty)} và giá {"{:,.0f}".format(instance.price) } "
+    elif description_type== 'advance_fee':
+        number_interest = define_date_receive_cash(instance.date,2)[1]
+        amount = -instance.account.interest_fee *instance.total_value*number_interest /360
+        description = f"TK {instance.account} tính phí ứng tiền bán cho {number_interest} ngày, số dư tính phí ứng là {"{:,.0f}".format(instance.total_value)}"
+    
     ExpenseStatement.objects.update_or_create(
         transaction_id=instance.pk,
         type=description_type,
         defaults={
             'account': instance.account,
             'date': instance.date,
-            'amount': instance.tax*-1 if description_type == 'tax' else instance.transaction_fee*-1,
-            'description': description_tax if description_type == 'tax' else description_transaction,
+            'amount': amount,
+            'description': description,
     
         }
     )
@@ -645,6 +667,7 @@ def save_field_account_1(sender, instance, **kwargs):
             update_or_created_expense_transaction(instance,'transaction_fee' )
             if instance.position =='sell':
                 update_or_created_expense_transaction(instance,'tax' )
+                update_or_created_expense_transaction(instance, 'advance_fee')
             # sửa sao kê lãi
             # sửa danh mục
             update_portfolio_transaction(instance,transaction_items, portfolio)
@@ -669,6 +692,8 @@ def save_field_account_1(sender, instance, **kwargs):
         else:
             created_transaction(instance, portfolio, account,date_mileston)
             update_or_created_expense_transaction(instance,'transaction_fee' )
+            if instance.position =='sell':
+                update_or_created_expense_transaction(instance, 'advance_fee')
             if account.cpd:
                 cp_create_transaction(instance)
             #xủ lí account partner
@@ -825,21 +850,21 @@ def calculate_interest():
                     description=f"Số dư tính lãi {formatted_interest_cash_balance}",
                     interest_cash_balance = instance.interest_cash_balance
                     )
-    # KT tài khoảng tổng chạy tính lãi phí ứng
-    account_advance_fee = Account.objects.filter(advance_cash_balance__lt=0)
-    if account_advance_fee:
-        for instance in account_advance_fee:
-            formatted_advance_cash_balance= "{:,.0f}".format(instance.advance_cash_balance)
-            advance_amount =instance.interest_fee * instance.advance_cash_balance/360
-            if abs(advance_amount)>10:
-                ExpenseStatement.objects.create(
-                    account=instance,
-                    date=datetime.now().date()-timedelta(days=1),
-                    type = 'advance_fee',
-                    amount = advance_amount,
-                    description=f"Số dư tính phí ứng {formatted_advance_cash_balance}",
-                    interest_cash_balance = instance.interest_cash_balance
-                    )
+    # # KT tài khoảng tổng chạy tính lãi phí ứng
+    # account_advance_fee = Account.objects.filter(advance_cash_balance__lt=0)
+    # if account_advance_fee:
+    #     for instance in account_advance_fee:
+    #         formatted_advance_cash_balance= "{:,.0f}".format(instance.advance_cash_balance)
+    #         advance_amount =instance.interest_fee * instance.advance_cash_balance/360
+    #         if abs(advance_amount)>10:
+    #             ExpenseStatement.objects.create(
+    #                 account=instance,
+    #                 date=datetime.now().date()-timedelta(days=1),
+    #                 type = 'advance_fee',
+    #                 amount = advance_amount,
+    #                 description=f"Số dư tính phí ứng {formatted_advance_cash_balance}",
+    #                 advance_cash_balance = instance.advance_cash_balance
+    #                 )
     # kt tài khoản con, tính lãi
     account_partner_interest = AccountPartner.objects.filter(interest_cash_balance__lt=0,partner__method_interest = 'total_buy_value')
     if account_partner_interest:
@@ -855,21 +880,21 @@ def calculate_interest():
                     description=f"Số dư tính lãi {formatted_interest_cash_balance}",
                     interest_cash_balance = instance.interest_cash_balance
                     )
-    # KT tài khoảng con chạy tính lãi phí ứng
-    account_partner_advance = AccountPartner.objects.filter(advance_cash_balance__lt=0,partner__method_interest = 'total_buy_value')
-    if account_partner_advance:
-        for instance in account_partner_advance:
-            formatted_advance_cash_balance= "{:,.0f}".format(instance.advance_cash_balance)
-            advance_amount =instance.partner.ratio_advance_fee * instance.advance_cash_balance/instance.partner.total_date_interest
-            if abs(advance_amount)>10:
-                ExpenseStatementPartner.objects.create(
-                    account=instance,
-                    date=datetime.now().date()-timedelta(days=1),
-                    type = 'advance_fee',
-                    amount = advance_amount,
-                    description=f"Số dư tính phí ứng {formatted_advance_cash_balance}",
-                    interest_cash_balance = instance.interest_cash_balance
-                    )
+    # # KT tài khoảng con chạy tính lãi phí ứng
+    # account_partner_advance = AccountPartner.objects.filter(advance_cash_balance__lt=0,partner__method_interest = 'total_buy_value')
+    # if account_partner_advance:
+    #     for instance in account_partner_advance:
+    #         formatted_advance_cash_balance= "{:,.0f}".format(instance.advance_cash_balance)
+    #         advance_amount =instance.partner.ratio_advance_fee * instance.advance_cash_balance/instance.partner.total_date_interest
+    #         if abs(advance_amount)>10:
+    #             ExpenseStatementPartner.objects.create(
+    #                 account=instance,
+    #                 date=datetime.now().date()-timedelta(days=1),
+    #                 type = 'advance_fee',
+    #                 amount = advance_amount,
+    #                 description=f"Số dư tính phí ứng {formatted_advance_cash_balance}",
+    #                 interest_cash_balance = instance.interest_cash_balance
+    #                 )
     #kt tài khoản ck thực chạy tính lãi
     real_stock_account_interest = RealStockAccount.objects.filter(partner__method_interest = 'dept')
     for instance in real_stock_account_interest:
@@ -1022,35 +1047,35 @@ def setle_milestone_account_partner(account_partner):
         status = True
         date=datetime.now().date()
         partner =account_partner.partner
-        ratio_interest_fee = partner.ratio_interest_fee
-        total_date_interest =partner.total_date_interest
-        if account_partner.cash_t1 !=0 and account_partner.cash_t2 !=0:
-            number_interest_t1 = define_date_receive_cash(date,1)[1]
-            number_interest_t2 = define_date_receive_cash(date,2)[1]
-            amount1 = ratio_interest_fee *(account_partner.advance_cash_balance)*number_interest_t1 /total_date_interest
-            amount2 = ratio_interest_fee *(account_partner.advance_cash_balance + account_partner.cash_t1)*(number_interest_t2-number_interest_t1) /total_date_interest
-            amount =amount1+amount2
+        # ratio_interest_fee = partner.ratio_interest_fee
+        # total_date_interest =partner.total_date_interest
+        # if account_partner.cash_t1 !=0 and account_partner.cash_t2 !=0:
+        #     number_interest_t1 = define_date_receive_cash(date,1)[1]
+        #     number_interest_t2 = define_date_receive_cash(date,2)[1]
+        #     amount1 = ratio_interest_fee *(account_partner.advance_cash_balance)*number_interest_t1 /total_date_interest
+        #     amount2 = ratio_interest_fee *(account_partner.advance_cash_balance + account_partner.cash_t1)*(number_interest_t2-number_interest_t1) /total_date_interest
+        #     amount =amount1+amount2
     
-        elif account_partner.cash_t1 !=0 and account_partner.cash_t2 ==0:
-            number_interest = define_date_receive_cash(date,1)[1]
-            amount =ratio_interest_fee *(account_partner.advance_cash_balance)*number_interest /total_date_interest
-        elif account_partner.cash_t1 ==0 and account_partner.cash_t2 !=0:
-            number_interest = define_date_receive_cash(date,2)[1]
-            amount = ratio_interest_fee *(account_partner.advance_cash_balance)*number_interest /total_date_interest  
-        else:
-            print('Vẫn còn âm tiền, cần giải pháp đòi nọ')
-            amount = 0
+        # elif account_partner.cash_t1 !=0 and account_partner.cash_t2 ==0:
+        #     number_interest = define_date_receive_cash(date,1)[1]
+        #     amount =ratio_interest_fee *(account_partner.advance_cash_balance)*number_interest /total_date_interest
+        # if account_partner.cash_t1 ==0 and account_partner.cash_t2 !=0:
+        #     number_interest = define_date_receive_cash(date,2)[1]
+        #     amount = ratio_interest_fee *(account_partner.advance_cash_balance)*number_interest /total_date_interest  
+        # else:
+        #     print('Vẫn còn âm tiền, cần giải pháp đòi nọ')
+        #     amount = 0
             
-        if  amount <0 :
-            description = f"TK {account_partner} tính phí ứng tiền bán tất toán cho {number_interest} ngày"
-            ExpenseStatementPartner.objects.create(
-                    account=account_partner,
-                    date=date,
-                    type = 'advance_fee',
-                    amount = amount,
-                    description = description,
-                    advance_cash_balance = account_partner.advance_cash_balance
-                    )
+        # if  amount <0 :
+        #     description = f"TK {account_partner} tính phí ứng tiền bán tất toán cho {number_interest} ngày"
+        #     ExpenseStatementPartner.objects.create(
+        #             account=account_partner,
+        #             date=date,
+        #             type = 'advance_fee',
+        #             amount = amount,
+        #             description = description,
+        #             advance_cash_balance = account_partner.advance_cash_balance
+        #             )
         withdraw_cash = BankCashTransfer.objects.create(
                 source='TCB-Ha',
                 partner = account_partner.partner,
@@ -1093,33 +1118,33 @@ def setle_milestone_account(account):
     status = False
     if account.market_value == 0  and account.total_temporarily_interest !=0:  
         date=datetime.now().date()
-        if account.cash_t1 !=0 and account.cash_t2 !=0:
-            number_interest_t1 = define_date_receive_cash(date,1)[1]
-            number_interest_t2 = define_date_receive_cash(date,2)[1]
-            amount1 = account.interest_fee *(account.advance_cash_balance)*number_interest_t1 /360
-            amount2 = account.interest_fee *(account.advance_cash_balance + account.cash_t1)*(number_interest_t2-number_interest_t1) /360
-            amount =amount1+amount2
+        # if account.cash_t1 !=0 and account.cash_t2 !=0:
+        #     number_interest_t1 = define_date_receive_cash(date,1)[1]
+        #     number_interest_t2 = define_date_receive_cash(date,2)[1]
+        #     amount1 = account.interest_fee *(account.advance_cash_balance)*number_interest_t1 /360
+        #     amount2 = account.interest_fee *(account.advance_cash_balance + account.cash_t1)*(number_interest_t2-number_interest_t1) /360
+        #     amount =amount1+amount2
     
-        elif account.cash_t1 !=0 and account.cash_t2 ==0:
-            number_interest = define_date_receive_cash(date,1)[1]
-            amount =account.interest_fee *(account.advance_cash_balance)*number_interest /360
-        elif account.cash_t1 ==0 and account.cash_t2 !=0:
-            number_interest = define_date_receive_cash(date,2)[1]
-            amount = account.interest_fee *(account.advance_cash_balance)*number_interest /360  
-        else:
-            print('Vẫn còn âm tiền, cần giải pháp đòi nọ')
-            amount = 0
+        # elif account.cash_t1 !=0 and account.cash_t2 ==0:
+        #     number_interest = define_date_receive_cash(date,1)[1]
+        #     amount =account.interest_fee *(account.advance_cash_balance)*number_interest /360
+        # elif account.cash_t1 ==0 and account.cash_t2 !=0:
+        #     number_interest = define_date_receive_cash(date,2)[1]
+        #     amount = account.interest_fee *(account.advance_cash_balance)*number_interest /360  
+        # else:
+        #     print('Vẫn còn âm tiền, cần giải pháp đòi nọ')
+        #     amount = 0
             
-        if  amount <0 :
-            description = f"TK {account.pk} tính phí ứng tiền bán tất toán cho {number_interest} ngày"
-            ExpenseStatement.objects.create(
-                    account=account,
-                    date=date,
-                    type = 'advance_fee',
-                    amount = amount,
-                    description = description,
-                    advance_cash_balance = account.advance_cash_balance
-                    )
+        # if  amount <0 :
+        #     description = f"TK {account.pk} tính phí ứng tiền bán tất toán cho {number_interest} ngày"
+        #     ExpenseStatement.objects.create(
+        #             account=account,
+        #             date=date,
+        #             type = 'advance_fee',
+        #             amount = amount,
+        #             description = description,
+        #             advance_cash_balance = account.advance_cash_balance
+        #             )
         withdraw_cash = CashTransfer.objects.create(
             account = account,
             date = date,
