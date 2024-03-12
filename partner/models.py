@@ -174,8 +174,8 @@ class PortfolioPartner (models.Model):
     sum_stock =models.IntegerField(default=0,null=True,blank=True,verbose_name = 'Tổng cổ phiếu')
     market_value = models.FloatField(default=0,null=True,blank=True,verbose_name = 'Giá trị thị trường')
     class Meta:
-         verbose_name = 'Danh mục đối tác'
-         verbose_name_plural = 'Danh mục đối tác'
+        verbose_name = 'Danh mục đối tác'
+        verbose_name_plural = 'Danh mục đối tác'
 
     def __str__(self):
         return self.stock

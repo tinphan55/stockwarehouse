@@ -64,11 +64,16 @@ def define_t_plus(initial_date, date_milestone):
 
 def created_transaction_partner(instance,account,date_mileston):
     partner = instance.partner
+ 
     account_partner , created= AccountPartner.objects.get_or_create(
         account=account,
         partner=partner,
         defaults={'description': ''}  # Trường 'description' không bị cập nhật
     )
+    if account_partner.milestone_date_lated:
+        date_mileston_apply = account_partner.milestone_date_lated
+    else:
+        date_mileston_apply = date_mileston
     # tạo phí giao dịch
     update_or_created_expense_partner(instance,account_partner, description_type='transaction_fee')
     if instance.position == 'buy':
@@ -100,7 +105,7 @@ def created_transaction_partner(instance,account,date_mileston):
         account_partner.net_trading_value += instance.partner_net_total_value # Dẫn tới thay đổi cash_balace, nav, pl
         if partner.method_interest == 'total_buy_value':
             account_partner.cash_t2 += instance.total_value #Dẫn tới thay đổi cash_t0 trong tương lai và thay đổi interest_cash_balance 
-            account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston, end_date,account_partner)
+            account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston_apply, end_date,account_partner)
         else:
             account_partner.cash_t2 += instance.partner_net_total_value
         update_or_created_expense_partner(instance,account_partner, description_type='tax')
@@ -108,8 +113,12 @@ def created_transaction_partner(instance,account,date_mileston):
     account_partner.save()
 
 def partner_update_transaction(instance,date_mileston):
+    if account_partner.milestone_date_lated:
+        date_mileston_apply = account_partner.milestone_date_lated
+    else:
+        date_mileston_apply = date_mileston
     account_partner = AccountPartner.objects.get(account=instance.account, partner=instance.partner)
-    transaction = Transaction.objects.filter(account = instance.account,partner =instance.partner,created_at__gt = date_mileston)
+    transaction = Transaction.objects.filter(account = instance.account,partner =instance.partner,created_at__gt = date_mileston_apply)
     # sửa chi phí
     update_or_created_expense_partner(instance,account_partner, description_type='transaction_fee')
     if instance.position == 'sell':
@@ -146,7 +155,7 @@ def partner_update_transaction(instance,date_mileston):
         for item in item_all_sell:
             if define_t_plus(item.date,today) == 0:
                 if account_partner.partner.method_interest == 'total_buy_value':
-                    account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston, end_date,account_partner)
+                    account_partner.interest_cash_balance =define_interest_cash_balace(account_partner.account, date_mileston_apply, end_date,account_partner)
                     cash_t2 += item.total_value 
                 else:
                     cash_t2+= item.partner_net_total_value
@@ -167,7 +176,6 @@ def partner_update_transaction(instance,date_mileston):
     account_partner.net_trading_value = sum(item.partner_net_total_value for item in transaction)
     end_date = datetime.now().date()
     
-
     account_partner.save()
 
 def define_t_plus(initial_date, date_milestone):
@@ -672,7 +680,6 @@ def save_field_account_1(sender, instance, **kwargs):
     account.save()
 
         
-          
             
 @receiver(post_delete, sender=Transaction)
 def delete_expense_statement(sender, instance, **kwargs):

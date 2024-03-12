@@ -130,7 +130,7 @@ class TransactionPartnerForm(forms.ModelForm):
 class TransationPartnerAdmin(admin.ModelAdmin):
     form = TransactionPartnerForm
     list_display_links = ['stock',]
-    list_display = ['account','partner','date','stock','position','formatted_price','formatted_qty','formatted_partner_net_total_value','created_at','user_created','formatted_transaction_fee','formatted_tax']
+    list_display = ['account','partner','date','stock','position','formatted_price','formatted_qty','formatted_partner_net_total_value','created_at','user_created',]
     readonly_fields = ['account','partner', 'date', 'stock', 'position', 'price', 'qty','user_created','user_modified','transaction_fee','tax','total_value',]
     fieldsets = (
         ('Thông tin giao dịch', {
@@ -155,11 +155,6 @@ class TransationPartnerAdmin(admin.ModelAdmin):
     
     def formatted_price(self, obj):
         return self.formatted_number(obj.price)
-    def formatted_tax(self, obj):
-        return self.formatted_number(obj.tax)
-    
-    def formatted_transaction_fee(self, obj):
-        return self.formatted_number(obj.transaction_fee)
     
     def formatted_qty(self, obj):
         return self.formatted_number(obj.qty)
@@ -171,8 +166,6 @@ class TransationPartnerAdmin(admin.ModelAdmin):
         return self.formatted_number(obj.partner_net_total_value)
     # Add other formatted_* methods for other numeric fields
     formatted_partner_net_total_value.short_description = 'Giá trị giao dịch ròng'
-    formatted_transaction_fee.short_description = 'Phí giao dịch'
-    formatted_tax.short_description = 'Thuế'
     formatted_price.short_description = 'Giá'
     formatted_qty.short_description = 'Khối lượng'
     formatted_net_total_value.short_description = 'Giá trị giao dịch ròng'
