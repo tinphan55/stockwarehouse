@@ -383,10 +383,10 @@ def update_account_transaction(account, transaction_items,date_mileston):
 def update_or_created_expense_transaction(instance, description_type):
     if description_type=='tax':
         amount = instance.tax*-1
-        description = f"Thuế với lệnh bán {instance.stock} số lượng {instance.qty} và giá {instance.price } "
+        description = f"Thuế với lệnh bán {instance.stock} số lượng {"{:,.0f}".format(instance.qty)} và giá {"{:,.0f}".format(instance.price) } "
     elif description_type== 'transaction_fee':
         amount = instance.transaction_fee*-1
-        description = f"PGD phát sinh với lệnh {instance.position} {instance.stock} số lượng {instance.qty} và giá {instance.price } "
+        description = f"PGD phát sinh với lệnh {instance.position} {instance.stock} số lượng {"{:,.0f}".format(instance.qty)} và giá {"{:,.0f}".format(instance.price) } "
     elif description_type== 'advance_fee':
         number_interest = define_date_receive_cash(instance.date,2)[1]
         amount = -instance.account.interest_fee *instance.total_value*number_interest /360
@@ -1047,8 +1047,8 @@ def setle_milestone_account_partner(account_partner):
         status = True
         date=datetime.now().date()
         partner =account_partner.partner
-        ratio_interest_fee = partner.ratio_interest_fee
-        total_date_interest =partner.total_date_interest
+        # ratio_interest_fee = partner.ratio_interest_fee
+        # total_date_interest =partner.total_date_interest
         # if account_partner.cash_t1 !=0 and account_partner.cash_t2 !=0:
         #     number_interest_t1 = define_date_receive_cash(date,1)[1]
         #     number_interest_t2 = define_date_receive_cash(date,2)[1]
@@ -1059,23 +1059,23 @@ def setle_milestone_account_partner(account_partner):
         # elif account_partner.cash_t1 !=0 and account_partner.cash_t2 ==0:
         #     number_interest = define_date_receive_cash(date,1)[1]
         #     amount =ratio_interest_fee *(account_partner.advance_cash_balance)*number_interest /total_date_interest
-        if account_partner.cash_t1 ==0 and account_partner.cash_t2 !=0:
-            number_interest = define_date_receive_cash(date,2)[1]
-            amount = ratio_interest_fee *(account_partner.advance_cash_balance)*number_interest /total_date_interest  
-        else:
-            print('Vẫn còn âm tiền, cần giải pháp đòi nọ')
-            amount = 0
+        # if account_partner.cash_t1 ==0 and account_partner.cash_t2 !=0:
+        #     number_interest = define_date_receive_cash(date,2)[1]
+        #     amount = ratio_interest_fee *(account_partner.advance_cash_balance)*number_interest /total_date_interest  
+        # else:
+        #     print('Vẫn còn âm tiền, cần giải pháp đòi nọ')
+        #     amount = 0
             
-        if  amount <0 :
-            description = f"TK {account_partner} tính phí ứng tiền bán tất toán cho {number_interest} ngày"
-            ExpenseStatementPartner.objects.create(
-                    account=account_partner,
-                    date=date,
-                    type = 'advance_fee',
-                    amount = amount,
-                    description = description,
-                    advance_cash_balance = account_partner.advance_cash_balance
-                    )
+        # if  amount <0 :
+        #     description = f"TK {account_partner} tính phí ứng tiền bán tất toán cho {number_interest} ngày"
+        #     ExpenseStatementPartner.objects.create(
+        #             account=account_partner,
+        #             date=date,
+        #             type = 'advance_fee',
+        #             amount = amount,
+        #             description = description,
+        #             advance_cash_balance = account_partner.advance_cash_balance
+        #             )
         withdraw_cash = BankCashTransfer.objects.create(
                 source='TCB-Ha',
                 partner = account_partner.partner,
@@ -1118,33 +1118,33 @@ def setle_milestone_account(account):
     status = False
     if account.market_value == 0  and account.total_temporarily_interest !=0:  
         date=datetime.now().date()
-        if account.cash_t1 !=0 and account.cash_t2 !=0:
-            number_interest_t1 = define_date_receive_cash(date,1)[1]
-            number_interest_t2 = define_date_receive_cash(date,2)[1]
-            amount1 = account.interest_fee *(account.advance_cash_balance)*number_interest_t1 /360
-            amount2 = account.interest_fee *(account.advance_cash_balance + account.cash_t1)*(number_interest_t2-number_interest_t1) /360
-            amount =amount1+amount2
+        # if account.cash_t1 !=0 and account.cash_t2 !=0:
+        #     number_interest_t1 = define_date_receive_cash(date,1)[1]
+        #     number_interest_t2 = define_date_receive_cash(date,2)[1]
+        #     amount1 = account.interest_fee *(account.advance_cash_balance)*number_interest_t1 /360
+        #     amount2 = account.interest_fee *(account.advance_cash_balance + account.cash_t1)*(number_interest_t2-number_interest_t1) /360
+        #     amount =amount1+amount2
     
-        elif account.cash_t1 !=0 and account.cash_t2 ==0:
-            number_interest = define_date_receive_cash(date,1)[1]
-            amount =account.interest_fee *(account.advance_cash_balance)*number_interest /360
-        elif account.cash_t1 ==0 and account.cash_t2 !=0:
-            number_interest = define_date_receive_cash(date,2)[1]
-            amount = account.interest_fee *(account.advance_cash_balance)*number_interest /360  
-        else:
-            print('Vẫn còn âm tiền, cần giải pháp đòi nọ')
-            amount = 0
+        # elif account.cash_t1 !=0 and account.cash_t2 ==0:
+        #     number_interest = define_date_receive_cash(date,1)[1]
+        #     amount =account.interest_fee *(account.advance_cash_balance)*number_interest /360
+        # elif account.cash_t1 ==0 and account.cash_t2 !=0:
+        #     number_interest = define_date_receive_cash(date,2)[1]
+        #     amount = account.interest_fee *(account.advance_cash_balance)*number_interest /360  
+        # else:
+        #     print('Vẫn còn âm tiền, cần giải pháp đòi nọ')
+        #     amount = 0
             
-        if  amount <0 :
-            description = f"TK {account.pk} tính phí ứng tiền bán tất toán cho {number_interest} ngày"
-            ExpenseStatement.objects.create(
-                    account=account,
-                    date=date,
-                    type = 'advance_fee',
-                    amount = amount,
-                    description = description,
-                    advance_cash_balance = account.advance_cash_balance
-                    )
+        # if  amount <0 :
+        #     description = f"TK {account.pk} tính phí ứng tiền bán tất toán cho {number_interest} ngày"
+        #     ExpenseStatement.objects.create(
+        #             account=account,
+        #             date=date,
+        #             type = 'advance_fee',
+        #             amount = amount,
+        #             description = description,
+        #             advance_cash_balance = account.advance_cash_balance
+        #             )
         withdraw_cash = CashTransfer.objects.create(
             account = account,
             date = date,
