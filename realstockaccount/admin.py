@@ -124,10 +124,15 @@ class RealStockAccountForm(forms.ModelForm):
 
 
 class RealStockAccountAdmin(admin.ModelAdmin):
-    list_display = ['partner','description', 'formatted_cash_balance_open_account', 'formatted_net_cash_flow_operation', 'formatted_cash_balance', 'formatted_market_value', 'formatted_nav']
+    list_display = ['partner','description', 'formatted_cash_balance_open_account', 'formatted_net_cash_flow_operation','formatted_interest_cash_balance', 'formatted_cash_balance', 'formatted_market_value', 'formatted_nav']
 
     def formatted_amount(self, obj):
         return '{:,.0f}'.format(obj.amount)
+    def formatted_interest_cash_balance(self, obj):
+        return '{:,.0f}'.format(obj.interest_cash_balance)
+    
+    formatted_interest_cash_balance.short_description = 'Số dư tính lãi'
+    
     
     def formatted_cash_balance_open_account(self, obj):
         return '{:,.0f}'.format(obj.cash_balance_open_account)
