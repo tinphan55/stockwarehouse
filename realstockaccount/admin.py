@@ -29,6 +29,21 @@ class BankCashTransferForm(forms.ModelForm):
     class Meta:
         model = BankCashTransfer
         fields = '__all__'
+        widgets = {
+            'partner': forms.TextInput(attrs={'placeholder': 'Luôn luôn nhập tên đối tác nếu là chuyển tiền giao dịch', 'required': True})
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        change = self.instance.pk is not None  # Kiểm tra xem có phải là sửa đổi không
+
+        today = timezone.now().date()
+
+        # Kiểm tra quyền
+        if change and self.instance.created_at.date() != today:
+            raise forms.ValidationError("Bạn không có quyền sửa đổi các bản ghi được tạo ngày trước đó.")
+
+        return cleaned_data
 
 
 

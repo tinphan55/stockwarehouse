@@ -21,7 +21,7 @@ def real_stock_account_when_update_transaction(partner):
         real_stock.save()
 
 
-
+        
 def update_or_created_expense_partner(instance,account_partner, description_type):
     if description_type=='tax':
         amount = instance.tax*-1
@@ -900,23 +900,23 @@ def calculate_interest():
     #kt tài khoản ck thực chạy tính lãi
     real_stock_account_interest = RealStockAccount.objects.filter(partner__method_interest = 'dept')
     for instance in real_stock_account_interest:
-            formatted_cash_balance= "{:,.0f}".format(instance.cash_balance)
-            if instance.cash_balance >0:
-                amount = 0.0001  * instance.cash_balance/instance.partner.total_date_interest
+            formatted_interest_cash_balance= "{:,.0f}".format(instance.interest_cash_balance)
+            if instance.interest_cash_balance >0:
+                amount = 0.0001  * instance.interest_cash_balance/instance.partner.total_date_interest
                 type = 'deposit_interest'
-                description = f"Số dư tính lãi tiền gửi không kì hạn {formatted_cash_balance}"
+                description = f"Số dư tính lãi tiền gửi không kì hạn {formatted_interest_cash_balance}"
                 
             else:
                 type = 'loan_interest'
-                amount =instance.partner.ratio_interest_fee  * instance.cash_balance/instance.partner.total_date_interest
-                description = f"Số dư tính lãi vay {formatted_cash_balance}"
+                amount =instance.partner.ratio_interest_fee  * instance.interest_cash_balance/instance.partner.total_date_interest
+                description = f"Số dư tính lãi vay {formatted_interest_cash_balance}"
             ExpenseStatementRealStockAccount.objects.create(
                     account=instance,
                     date=datetime.now().date()-timedelta(days=1),
                     type = type,
                     amount = amount,
                     description=description,
-                    interest_cash_balance = instance.cash_balance
+                    interest_cash_balance = instance.interest_cash_balance
                     )
 
 def pay_money_back():
