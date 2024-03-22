@@ -9,10 +9,10 @@ def real_stock_account_when_update_transaction(partner):
     if partner.method_interest == 'dept':
         real_stock, created = RealStockAccount.objects.get_or_create(partner=partner)
         # Lấy tất cả các tài khoản của đối tác
-        all_account = AccountPartner.objects.filter(partner=partner)
+        all_account = AccountPartner.objects.filter(partner=partner).exclude(nav=0)
         # Tính toán các giá trị tài khoản thực sự
         cash_balance_open_account = sum(item.cash_balance  for item in all_account)
-        interest_cash_balance = sum(item.cash_t1 + item.cash_t2 +item.net_trading_value +item.net_cash_flow for item in all_account)
+        interest_cash_balance = sum(item.cash_t0 +item.total_buy_trading_value +item.net_cash_flow for item in all_account)
         market_value = sum(item.market_value for item in all_account)
         # Cập nhật các trường trong tài khoản RealStockAccount
         real_stock.cash_balance_open_account = cash_balance_open_account
