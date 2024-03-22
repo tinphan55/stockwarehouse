@@ -238,7 +238,10 @@ def real_stock_account_when_update_cash(partner):
         # Lấy tất cả các giao dịch tiền mặt không có tài khoản liên kết
         all_cash = BankCashTransfer.objects.filter(partner=partner, account=None)
         # Tính toán các giá trị tài khoản thực sự
+        all_account = AccountPartner.objects.filter(partner=partner).exclude(nav=0)
+        interest_cash_balance = sum(item.cash_t0 +item.total_buy_trading_value +item.net_cash_flow for item in all_account)
         real_stock.net_cash_flow_operation = -sum(item.amount for item in all_cash)
+        real_stock.interest_cash_balance = interest_cash_balance +real_stock.net_cash_flow_operation-570765#phí lãi tất toán của tháng 2
         real_stock.save()
         
 

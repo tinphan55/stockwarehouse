@@ -17,7 +17,7 @@ def real_stock_account_when_update_transaction(partner):
         # Cập nhật các trường trong tài khoản RealStockAccount
         real_stock.cash_balance_open_account = cash_balance_open_account
         real_stock.market_value = market_value
-        real_stock.interest_cash_balance = interest_cash_balance +real_stock.net_cash_flow_operation
+        real_stock.interest_cash_balance = interest_cash_balance +real_stock.net_cash_flow_operation-570765#phí lãi tất toán của tháng 2
         real_stock.save()
 
 
