@@ -24,13 +24,14 @@ class RealCashTransferForm(forms.ModelForm):
         return cleaned_data
 
 
-
 class BankCashTransferForm(forms.ModelForm):
+    partner = forms.ModelChoiceField(queryset=PartnerInfo.objects.all())
+
     class Meta:
         model = BankCashTransfer
         fields = '__all__'
         widgets = {
-            'partner': forms.TextInput(attrs={'placeholder': 'Luôn luôn nhập tên đối tác nếu là chuyển tiền giao dịch', 'required': True})
+            'partner': forms.Select(attrs={'placeholder': 'Luôn luôn nhập tên đối tác nếu là chuyển tiền giao dịch', 'required': True})
         }
 
     def clean(self):
